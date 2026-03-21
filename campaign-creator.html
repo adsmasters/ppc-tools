@@ -1037,10 +1037,22 @@ function generateExcel() {
                 }
             });
 
-            // Negatives - Auto campaign gets negative keywords (not neg product targeting)
+            // Negatives - Auto campaign gets both ad-group level AND campaign level negatives
             if (document.getElementById('neg-auto').checked) {
+                // Ad-group level negatives (from "Negative Keywords" fields)
                 addAdGroupNegKeywords(campName, adGroupName);
+                // Campaign level negatives (from "Kampagnen Negative Keywords" fields)
                 addCampaignNegatives(campName);
+                // Also add campaign-level negatives from the regular negative fields
+                // (in case user only filled one set of fields)
+                negKwExactList.forEach(kw => {
+                    if (!campNegKwExactList.includes(kw)) addCampNegKeywordRow(campName, kw, mt.negExact);
+                });
+                negKwPhraseList.forEach(kw => {
+                    if (!campNegKwPhraseList.includes(kw)) addCampNegKeywordRow(campName, kw, mt.negPhrase);
+                });
+                // Also add negative product targeting for auto campaigns
+                negProdTargetList.forEach(asin => addNegProdTargetingRow(campName, adGroupName, asin));
             }
         }
 
