@@ -89,6 +89,8 @@
         .btn-add-product { display: inline-flex; align-items: center; gap: 4px; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px dashed #30363d; background: transparent; color: #8b949e; margin-top: 4px; }
         .btn-add-product:hover { color: #e6edf3; border-color: #8b949e; }
         .field-hint { font-size: 11px; color: #8b949e; margin-top: 2px; font-weight: 400; }
+        .error-container { margin-bottom: 16px; }
+        .error-msg { color: #f85149; font-size: 13px; padding: 8px 12px; border: 1px solid #f85149; border-radius: 6px; margin-bottom: 6px; background: #f8514911; }
 
         @media (max-width: 900px) {
             .layout { grid-template-columns: 1fr; }
@@ -433,6 +435,9 @@
                 </div>
             </div>
 
+            <!-- Error Container -->
+            <div class="error-container" id="errorContainer"></div>
+
             <!-- Buttons -->
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="resetAll()">Zurücksetzen</button>
@@ -616,10 +621,115 @@ function resetAll() {
     updateCounter('compAsins', 'compAsinAlloc', 'compAsinCounter');
     setMode('vendor');
     setLang('de');
+
+    // Clear error messages
+    document.getElementById('errorContainer').innerHTML = '';
+
+    // Re-mark all Step 4 fields as auto-fillable
+    budgetIds.forEach(id => autoFilledBudgets.add(id));
+    bidIds.forEach(id => autoFilledBids.add(id));
+    autoBidIds.forEach(id => autoFilledBids.add(id));
 }
+
+// --- Auto-fill Overall Budget/Bid to Step 4 ---
+const autoFilledBudgets = new Set();
+const autoFilledBids = new Set();
+let isAutoFilling = false;
+
+const budgetIds = ['budget-auto', 'budget-generic-exact', 'budget-generic-broad', 'budget-brand-exact', 'budget-brand-broad', 'budget-brand-phrase', 'budget-comp-exact', 'budget-comp-broad', 'budget-pt-comp', 'budget-pt-brand', 'budget-single'];
+const bidIds = ['bid-auto', 'bid-generic-exact', 'bid-generic-broad', 'bid-brand-exact', 'bid-brand-broad', 'bid-brand-phrase', 'bid-comp-exact', 'bid-comp-broad', 'bid-pt-comp', 'bid-pt-brand', 'bid-single'];
+const autoBidIds = ['bid-auto-close', 'bid-auto-loose', 'bid-auto-substitutes', 'bid-auto-complements'];
+
+// Mark all as auto-filled initially
+budgetIds.forEach(id => autoFilledBudgets.add(id));
+bidIds.forEach(id => autoFilledBids.add(id));
+autoBidIds.forEach(id => autoFilledBids.add(id));
+
+// When user manually edits a Step 4 field, remove it from auto-filled set
+budgetIds.forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+        if (!isAutoFilling) autoFilledBudgets.delete(id);
+    });
+});
+bidIds.forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+        if (!isAutoFilling) autoFilledBids.delete(id);
+    });
+});
+autoBidIds.forEach(id => {
+    document.getElementById(id).addEventListener('input', function() {
+        if (!isAutoFilling) autoFilledBids.delete(id);
+    });
+});
+
+document.getElementById('dailyBudget').addEventListener('input', function() {
+    const val = this.value;
+    isAutoFilling = true;
+    budgetIds.forEach(id => {
+        if (autoFilledBudgets.has(id)) {
+            document.getElementById(id).value = val;
+        }
+    });
+    isAutoFilling = false;
+});
+
+document.getElementById('overallBid').addEventListener('input', function() {
+    const val = this.value;
+    isAutoFilling = true;
+    bidIds.forEach(id => {
+        if (autoFilledBids.has(id)) {
+            document.getElementById(id).value = val;
+        }
+    });
+    autoBidIds.forEach(id => {
+        if (autoFilledBids.has(id)) {
+            document.getElementById(id).value = val;
+        }
+    });
+    isAutoFilling = false;
+});
 
 // --- Excel Generation ---
 function generateExcel() {
+    // Clear previous errors
+    const errorContainer = document.getElementById('errorContainer');
+    errorContainer.innerHTML = '';
+    const errors = [];
+
+    // Allocation validation
+    const genericKwsCount = unique(getLines('genericKw')).length;
+    const genericAllocVal = parseInt(getLines('genericAlloc')[0], 10) || 0;
+    if (genericAllocVal > 0 && genericAllocVal > genericKwsCount && genericKwsCount > 0) {
+        // This is fine - allocation per campaign > total means 1 campaign with all keywords
+    }
+    // Check if allocation sum exceeds total keywords
+    // Generic: if allocation is set, number of campaigns = ceil(total/alloc), total allocated = total
+    // The error case is when generic exact + generic broad are both checked and total allocation > keywords
+    // Actually the request says: "If Generic Keyword Allocation sums to more than total generic keywords"
+    // This means the allocation number per campaign * number of checked generic campaign types > total keywords
+    // But re-reading: it's about the allocation value itself being larger than keywords available
+    // Let me interpret: allocation per campaign should not exceed total keywords available
+
+    const compKwsCount = unique(getLines('compKw')).length;
+    const compKwAllocVal = parseInt(getLines('compKwAlloc')[0], 10) || 0;
+    const compAsinsCount = unique(getLines('compAsins')).length;
+    const compAsinAllocVal = parseInt(getLines('compAsinAlloc')[0], 10) || 0;
+
+    if (genericAllocVal > genericKwsCount && genericKwsCount > 0) {
+        errors.push('Generische Keyword-Zuordnung (' + genericAllocVal + ') übersteigt die Anzahl verfügbarer Keywords (' + genericKwsCount + ').');
+    }
+    if (compKwAllocVal > compKwsCount && compKwsCount > 0) {
+        errors.push('Wettbewerber Keyword-Zuordnung (' + compKwAllocVal + ') übersteigt die Anzahl verfügbarer Keywords (' + compKwsCount + ').');
+    }
+    if (compAsinAllocVal > compAsinsCount && compAsinsCount > 0) {
+        errors.push('Wettbewerber ASIN-Zuordnung (' + compAsinAllocVal + ') übersteigt die Anzahl verfügbarer ASINs (' + compAsinsCount + ').');
+    }
+
+    if (errors.length > 0) {
+        errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
+        return;
+    }
+
     // Gather all product blocks
     const productBlocks = getProductBlocks();
     const allProducts = [];
@@ -769,44 +879,44 @@ function generateExcel() {
     // Iterate over ALL product blocks
     allProducts.forEach(productData => {
         const productName = productData.name;
-        const products = productData.items;
+        const productItems = productData.items; // ASINs or SKUs for this product
 
-        // For each ASIN/SKU in this product block
-        products.forEach(product => {
-            const productId = product;
+        const spLabel = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
 
-            // --- Campaign Row builder ---
-            function addCampaignRow(campName, targetType, budget, bidStrat) {
+        // --- Campaign Row builder ---
+        function addCampaignRow(campName, targetType, budget, bidStrat) {
+            const r = emptyRow();
+            r[hProduct] = spLabel;
+            r[hEntity] = ent.campaign;
+            r[hOp] = op;
+            r[hCampId] = campName;
+            r[hCampName] = campName;
+            r[hStartDate] = startDate;
+            r[hTargetType] = targetType;
+            r[hState] = state;
+            r[hBudget] = budget;
+            r[hBiddingStrat] = bidStrat;
+            rows.push(r);
+        }
+
+        function addAdGroupRow(campName, adGroupName, defaultBid) {
+            const r = emptyRow();
+            r[hProduct] = spLabel;
+            r[hEntity] = ent.adGroup;
+            r[hOp] = op;
+            r[hCampId] = campName;
+            r[hAdGroupId] = adGroupName;
+            r[hAdGroupName] = adGroupName;
+            r[hState] = state;
+            r[hAdGroupBid] = defaultBid;
+            rows.push(r);
+        }
+
+        // Add product ad rows for ALL ASINs/SKUs in this product block
+        function addProductAdRows(campName, adGroupName) {
+            productItems.forEach(productId => {
                 const r = emptyRow();
-                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-                r[hEntity] = ent.campaign;
-                r[hOp] = op;
-                r[hCampId] = campName;
-                r[hCampName] = campName;
-                r[hStartDate] = startDate;
-                r[hTargetType] = targetType;
-                r[hState] = state;
-                r[hBudget] = budget;
-                r[hBiddingStrat] = bidStrat;
-                rows.push(r);
-            }
-
-            function addAdGroupRow(campName, adGroupName, defaultBid) {
-                const r = emptyRow();
-                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-                r[hEntity] = ent.adGroup;
-                r[hOp] = op;
-                r[hCampId] = campName;
-                r[hAdGroupId] = adGroupName;
-                r[hAdGroupName] = adGroupName;
-                r[hState] = state;
-                r[hAdGroupBid] = defaultBid;
-                rows.push(r);
-            }
-
-            function addProductAdRow(campName, adGroupName) {
-                const r = emptyRow();
-                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+                r[hProduct] = spLabel;
                 r[hEntity] = ent.productAd;
                 r[hOp] = op;
                 r[hCampId] = campName;
@@ -818,236 +928,243 @@ function generateExcel() {
                     r[hSku] = productId;
                 }
                 rows.push(r);
-            }
+            });
+        }
 
-            function addKeywordRow(campName, adGroupName, kwText, matchType, bid) {
-                const r = emptyRow();
-                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-                r[hEntity] = ent.keyword;
-                r[hOp] = op;
-                r[hCampId] = campName;
-                r[hAdGroupId] = adGroupName;
-                r[hState] = state;
-                r[hKwText] = kwText;
-                r[hMatchType] = matchType;
-                r[hBid] = bid;
-                rows.push(r);
-            }
+        function addKeywordRow(campName, adGroupName, kwText, matchType, bid) {
+            const r = emptyRow();
+            r[hProduct] = spLabel;
+            r[hEntity] = ent.keyword;
+            r[hOp] = op;
+            r[hCampId] = campName;
+            r[hAdGroupId] = adGroupName;
+            r[hState] = state;
+            r[hKwText] = kwText;
+            r[hMatchType] = matchType;
+            r[hBid] = bid;
+            rows.push(r);
+        }
 
-            function addNegKeywordRow(campName, adGroupName, kwText, matchType) {
-                const r = emptyRow();
-                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-                r[hEntity] = ent.negKeyword;
-                r[hOp] = op;
-                r[hCampId] = campName;
-                r[hAdGroupId] = adGroupName;
-                r[hState] = state;
-                r[hKwText] = kwText;
-                r[hMatchType] = matchType;
-                rows.push(r);
-            }
+        function addNegKeywordRow(campName, adGroupName, kwText, matchType) {
+            const r = emptyRow();
+            r[hProduct] = spLabel;
+            r[hEntity] = ent.negKeyword;
+            r[hOp] = op;
+            r[hCampId] = campName;
+            r[hAdGroupId] = adGroupName;
+            r[hState] = state;
+            r[hKwText] = kwText;
+            r[hMatchType] = matchType;
+            rows.push(r);
+        }
 
-            function addCampNegKeywordRow(campName, kwText, matchType) {
-                const r = emptyRow();
-                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-                r[hEntity] = ent.negCampKeyword;
-                r[hOp] = op;
-                r[hCampId] = campName;
-                r[hState] = state;
-                r[hKwText] = kwText;
-                r[hMatchType] = matchType;
-                rows.push(r);
-            }
+        function addCampNegKeywordRow(campName, kwText, matchType) {
+            const r = emptyRow();
+            r[hProduct] = spLabel;
+            r[hEntity] = ent.negCampKeyword;
+            r[hOp] = op;
+            r[hCampId] = campName;
+            r[hState] = state;
+            r[hKwText] = kwText;
+            r[hMatchType] = matchType;
+            rows.push(r);
+        }
 
-            function addProdTargetingRow(campName, adGroupName, expr, bid) {
-                const r = emptyRow();
-                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-                r[hEntity] = ent.prodTargeting;
-                r[hOp] = op;
-                r[hCampId] = campName;
-                r[hAdGroupId] = adGroupName;
-                r[hState] = state;
-                r[hBid] = bid;
-                r[hPtExpr] = expr;
-                rows.push(r);
-            }
+        function addProdTargetingRow(campName, adGroupName, expr, bid) {
+            const r = emptyRow();
+            r[hProduct] = spLabel;
+            r[hEntity] = ent.prodTargeting;
+            r[hOp] = op;
+            r[hCampId] = campName;
+            r[hAdGroupId] = adGroupName;
+            r[hState] = state;
+            r[hBid] = bid;
+            r[hPtExpr] = expr;
+            rows.push(r);
+        }
 
-            function addNegProdTargetingRow(campName, adGroupName, asinVal) {
-                const r = emptyRow();
-                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-                r[hEntity] = ent.negProdTargeting;
-                r[hOp] = op;
-                r[hCampId] = campName;
-                r[hAdGroupId] = adGroupName;
-                r[hState] = state;
-                r[hPtExpr] = 'asin="' + asinVal + '"';
-                rows.push(r);
-            }
+        function addNegProdTargetingRow(campName, adGroupName, asinVal) {
+            const r = emptyRow();
+            r[hProduct] = spLabel;
+            r[hEntity] = ent.negProdTargeting;
+            r[hOp] = op;
+            r[hCampId] = campName;
+            r[hAdGroupId] = adGroupName;
+            r[hState] = state;
+            r[hPtExpr] = 'asin="' + asinVal + '"';
+            rows.push(r);
+        }
 
-            // Add ad-group level negative keywords
-            function addAdGroupNegatives(campName, adGroupName) {
-                negKwExactList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
-                negKwPhraseList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
-                negProdTargetList.forEach(asin => addNegProdTargetingRow(campName, adGroupName, asin));
-            }
+        // Add ad-group level negative keywords only (for keyword campaigns)
+        function addAdGroupNegKeywords(campName, adGroupName) {
+            negKwExactList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
+            negKwPhraseList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
+        }
 
-            // Add campaign level negative keywords
-            function addCampaignNegatives(campName) {
-                campNegKwExactList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negExact));
-                campNegKwPhraseList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negPhrase));
-            }
+        // Add ad-group level negative product targeting only (for ASIN/product targeting campaigns)
+        function addAdGroupNegProdTargeting(campName, adGroupName) {
+            negProdTargetList.forEach(asin => addNegProdTargetingRow(campName, adGroupName, asin));
+        }
 
-            // ========== AUTO CAMPAIGN ==========
-            if (document.getElementById('chk-auto').checked) {
-                const bid = parseFloat(document.getElementById('bid-auto').value) || 0.50;
-                const budget = parseFloat(document.getElementById('budget-auto').value) || 10.00;
-                const campName = cn.auto + ' - ' + productName;
-                const adGroupName = 'ALL';
+        // Add campaign level negative keywords (for keyword campaigns only)
+        function addCampaignNegatives(campName) {
+            campNegKwExactList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negExact));
+            campNegKwPhraseList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negPhrase));
+        }
 
-                addCampaignRow(campName, targetAuto, budget, biddingStrategy);
-                addAdGroupRow(campName, adGroupName, bid);
-                addProductAdRow(campName, adGroupName);
+        // ========== AUTO CAMPAIGN ==========
+        if (document.getElementById('chk-auto').checked) {
+            const bid = parseFloat(document.getElementById('bid-auto').value) || 0.50;
+            const budget = parseFloat(document.getElementById('budget-auto').value) || 10.00;
+            const campName = cn.auto + ' - ' + productName;
+            const adGroupName = 'ALL';
 
-                // Sub-targets
-                const autoSubs = [
-                    { id: 'auto-close', bidId: 'bid-auto-close', expr: autoTargetExpr.close },
-                    { id: 'auto-loose', bidId: 'bid-auto-loose', expr: autoTargetExpr.loose },
-                    { id: 'auto-substitutes', bidId: 'bid-auto-substitutes', expr: autoTargetExpr.substitutes },
-                    { id: 'auto-complements', bidId: 'bid-auto-complements', expr: autoTargetExpr.complements }
-                ];
-                autoSubs.forEach(sub => {
-                    if (document.getElementById(sub.id).checked) {
-                        const subBid = parseFloat(document.getElementById(sub.bidId).value) || bid;
-                        addProdTargetingRow(campName, adGroupName, sub.expr, subBid);
-                    }
-                });
+            addCampaignRow(campName, targetAuto, budget, biddingStrategy);
+            addAdGroupRow(campName, adGroupName, bid);
+            addProductAdRows(campName, adGroupName);
 
-                // Negatives
-                if (document.getElementById('neg-auto').checked) {
-                    addAdGroupNegatives(campName, adGroupName);
+            // Sub-targets
+            const autoSubs = [
+                { id: 'auto-close', bidId: 'bid-auto-close', expr: autoTargetExpr.close },
+                { id: 'auto-loose', bidId: 'bid-auto-loose', expr: autoTargetExpr.loose },
+                { id: 'auto-substitutes', bidId: 'bid-auto-substitutes', expr: autoTargetExpr.substitutes },
+                { id: 'auto-complements', bidId: 'bid-auto-complements', expr: autoTargetExpr.complements }
+            ];
+            autoSubs.forEach(sub => {
+                if (document.getElementById(sub.id).checked) {
+                    const subBid = parseFloat(document.getElementById(sub.bidId).value) || bid;
+                    addProdTargetingRow(campName, adGroupName, sub.expr, subBid);
                 }
+            });
+
+            // Negatives - Auto campaign gets negative keywords (not neg product targeting)
+            if (document.getElementById('neg-auto').checked) {
+                addAdGroupNegKeywords(campName, adGroupName);
+                addCampaignNegatives(campName);
             }
+        }
 
-            // ========== KEYWORD CAMPAIGNS ==========
-            function buildKeywordCampaigns(kwList, allocNum, campNameBase, matchType, matchTypeLabel, chkId, bidId, budgetId, negId) {
-                if (!document.getElementById(chkId).checked || kwList.length === 0) return;
-                const bid = parseFloat(document.getElementById(bidId).value) || 0.50;
-                const budget = parseFloat(document.getElementById(budgetId).value) || 10.00;
-                const useNeg = document.getElementById(negId).checked;
+        // ========== KEYWORD CAMPAIGNS ==========
+        function buildKeywordCampaigns(kwList, allocNum, campNameBase, matchType, matchTypeLabel, chkId, bidId, budgetId, negId) {
+            if (!document.getElementById(chkId).checked || kwList.length === 0) return;
+            const bid = parseFloat(document.getElementById(bidId).value) || 0.50;
+            const budget = parseFloat(document.getElementById(budgetId).value) || 10.00;
+            const useNeg = document.getElementById(negId).checked;
 
-                const chunks = splitIntoChunks(kwList, allocNum);
-                const totalChunks = chunks.length;
+            const chunks = splitIntoChunks(kwList, allocNum);
+            const totalChunks = chunks.length;
 
-                chunks.forEach((chunk, idx) => {
-                    const splitLabel = totalChunks > 1 ? ' ' + (idx + 1) + '/' + totalChunks : '';
-                    const campName = campNameBase + splitLabel + ' - ' + productName;
-                    const adGroupName = matchTypeLabel;
+            chunks.forEach((chunk, idx) => {
+                const splitLabel = totalChunks > 1 ? ' ' + (idx + 1) + '/' + totalChunks : '';
+                const campName = campNameBase + splitLabel + ' - ' + productName;
+                const adGroupName = matchTypeLabel;
 
-                    addCampaignRow(campName, targetManual, budget, biddingStrategy);
-                    addAdGroupRow(campName, adGroupName, bid);
-                    addProductAdRow(campName, adGroupName);
+                addCampaignRow(campName, targetManual, budget, biddingStrategy);
+                addAdGroupRow(campName, adGroupName, bid);
+                addProductAdRows(campName, adGroupName);
 
-                    chunk.forEach(kw => {
-                        addKeywordRow(campName, adGroupName, kw, matchType, bid);
-                    });
-
-                    if (useNeg) {
-                        addCampaignNegatives(campName);
-                    }
+                chunk.forEach(kw => {
+                    addKeywordRow(campName, adGroupName, kw, matchType, bid);
                 });
+
+                if (useNeg) {
+                    addAdGroupNegKeywords(campName, adGroupName);
+                    addCampaignNegatives(campName);
+                }
+            });
+        }
+
+        // Generic Exact
+        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericExact, mt.exact, 'EXACT', 'chk-generic-exact', 'bid-generic-exact', 'budget-generic-exact', 'neg-generic-exact');
+
+        // Generic Broad
+        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericBroad, mt.broad, 'BROAD', 'chk-generic-broad', 'bid-generic-broad', 'budget-generic-broad', 'neg-generic-broad');
+
+        // Brand Exact
+        buildKeywordCampaigns(brandKws, 0, cn.brandExact, mt.exact, 'EXACT', 'chk-brand-exact', 'bid-brand-exact', 'budget-brand-exact', 'neg-brand-exact');
+
+        // Brand Broad
+        buildKeywordCampaigns(brandKws, 0, cn.brandBroad, mt.broad, 'BROAD', 'chk-brand-broad', 'bid-brand-broad', 'budget-brand-broad', 'neg-brand-broad');
+
+        // Brand Phrase
+        buildKeywordCampaigns(brandKws, 0, cn.brandPhrase, mt.phrase, 'PHRASE', 'chk-brand-phrase', 'bid-brand-phrase', 'budget-brand-phrase', 'neg-brand-phrase');
+
+        // Competitor Exact
+        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compExact, mt.exact, 'EXACT', 'chk-comp-exact', 'bid-comp-exact', 'budget-comp-exact', 'neg-comp-exact');
+
+        // Competitor Broad
+        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compBroad, mt.broad, 'BROAD', 'chk-comp-broad', 'bid-comp-broad', 'budget-comp-broad', 'neg-comp-broad');
+
+        // ========== PRODUCT TARGETING - BRAND ==========
+        if (document.getElementById('chk-pt-brand').checked && brandAsinsList.length > 0) {
+            const bid = parseFloat(document.getElementById('bid-pt-brand').value) || 0.50;
+            const budget = parseFloat(document.getElementById('budget-pt-brand').value) || 10.00;
+            const useNeg = document.getElementById('neg-pt-brand').checked;
+            const campName = cn.ptBrand + ' - ' + productName;
+            const adGroupName = 'ASIN';
+
+            addCampaignRow(campName, targetManual, budget, biddingStrategy);
+            addAdGroupRow(campName, adGroupName, bid);
+            addProductAdRows(campName, adGroupName);
+
+            brandAsinsList.forEach(asin => {
+                addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
+            });
+
+            if (useNeg) {
+                addAdGroupNegProdTargeting(campName, adGroupName);
             }
+        }
 
-            // Generic Exact
-            buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericExact, mt.exact, 'EXACT', 'chk-generic-exact', 'bid-generic-exact', 'budget-generic-exact', 'neg-generic-exact');
+        // ========== PRODUCT TARGETING - COMPETITOR ==========
+        if (document.getElementById('chk-pt-comp').checked && compAsinsList.length > 0) {
+            const bid = parseFloat(document.getElementById('bid-pt-comp').value) || 0.50;
+            const budget = parseFloat(document.getElementById('budget-pt-comp').value) || 10.00;
+            const useNeg = document.getElementById('neg-pt-comp').checked;
 
-            // Generic Broad
-            buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericBroad, mt.broad, 'BROAD', 'chk-generic-broad', 'bid-generic-broad', 'budget-generic-broad', 'neg-generic-broad');
+            const chunks = splitIntoChunks(compAsinsList, compAsinAllocNum);
+            const totalChunks = chunks.length;
 
-            // Brand Exact
-            buildKeywordCampaigns(brandKws, 0, cn.brandExact, mt.exact, 'EXACT', 'chk-brand-exact', 'bid-brand-exact', 'budget-brand-exact', 'neg-brand-exact');
-
-            // Brand Broad
-            buildKeywordCampaigns(brandKws, 0, cn.brandBroad, mt.broad, 'BROAD', 'chk-brand-broad', 'bid-brand-broad', 'budget-brand-broad', 'neg-brand-broad');
-
-            // Brand Phrase
-            buildKeywordCampaigns(brandKws, 0, cn.brandPhrase, mt.phrase, 'PHRASE', 'chk-brand-phrase', 'bid-brand-phrase', 'budget-brand-phrase', 'neg-brand-phrase');
-
-            // Competitor Exact
-            buildKeywordCampaigns(compKws, compKwAllocNum, cn.compExact, mt.exact, 'EXACT', 'chk-comp-exact', 'bid-comp-exact', 'budget-comp-exact', 'neg-comp-exact');
-
-            // Competitor Broad
-            buildKeywordCampaigns(compKws, compKwAllocNum, cn.compBroad, mt.broad, 'BROAD', 'chk-comp-broad', 'bid-comp-broad', 'budget-comp-broad', 'neg-comp-broad');
-
-            // ========== PRODUCT TARGETING - BRAND ==========
-            if (document.getElementById('chk-pt-brand').checked && brandAsinsList.length > 0) {
-                const bid = parseFloat(document.getElementById('bid-pt-brand').value) || 0.50;
-                const budget = parseFloat(document.getElementById('budget-pt-brand').value) || 10.00;
-                const useNeg = document.getElementById('neg-pt-brand').checked;
-                const campName = cn.ptBrand + ' - ' + productName;
+            chunks.forEach((chunk, idx) => {
+                const splitLabel = totalChunks > 1 ? ' - ' + (idx + 1) + '/' + totalChunks : '';
+                const campName = cn.ptComp + splitLabel + ' - ' + productName;
                 const adGroupName = 'ASIN';
 
                 addCampaignRow(campName, targetManual, budget, biddingStrategy);
                 addAdGroupRow(campName, adGroupName, bid);
-                addProductAdRow(campName, adGroupName);
+                addProductAdRows(campName, adGroupName);
 
-                brandAsinsList.forEach(asin => {
+                chunk.forEach(asin => {
                     addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
                 });
 
                 if (useNeg) {
+                    addAdGroupNegProdTargeting(campName, adGroupName);
+                }
+            });
+        }
+
+        // ========== SINGLE KEYWORD CAMPAIGNS ==========
+        if (document.getElementById('chk-single').checked && singleKws.length > 0) {
+            const bid = parseFloat(document.getElementById('bid-single').value) || 0.50;
+            const budget = parseFloat(document.getElementById('budget-single').value) || 10.00;
+            const useNeg = document.getElementById('neg-single').checked;
+
+            singleKws.forEach(kw => {
+                const campName = 'SP: KW "' + kw + '" - ' + productName;
+                const adGroupName = 'EXACT';
+
+                addCampaignRow(campName, targetManual, budget, biddingStrategy);
+                addAdGroupRow(campName, adGroupName, bid);
+                addProductAdRows(campName, adGroupName);
+                addKeywordRow(campName, adGroupName, kw, mt.exact, bid);
+
+                if (useNeg) {
+                    addAdGroupNegKeywords(campName, adGroupName);
                     addCampaignNegatives(campName);
                 }
-            }
-
-            // ========== PRODUCT TARGETING - COMPETITOR ==========
-            if (document.getElementById('chk-pt-comp').checked && compAsinsList.length > 0) {
-                const bid = parseFloat(document.getElementById('bid-pt-comp').value) || 0.50;
-                const budget = parseFloat(document.getElementById('budget-pt-comp').value) || 10.00;
-                const useNeg = document.getElementById('neg-pt-comp').checked;
-
-                const chunks = splitIntoChunks(compAsinsList, compAsinAllocNum);
-                const totalChunks = chunks.length;
-
-                chunks.forEach((chunk, idx) => {
-                    const splitLabel = totalChunks > 1 ? ' - ' + (idx + 1) + '/' + totalChunks : '';
-                    const campName = cn.ptComp + splitLabel + ' - ' + productName;
-                    const adGroupName = 'ASIN';
-
-                    addCampaignRow(campName, targetManual, budget, biddingStrategy);
-                    addAdGroupRow(campName, adGroupName, bid);
-                    addProductAdRow(campName, adGroupName);
-
-                    chunk.forEach(asin => {
-                        addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
-                    });
-
-                    if (useNeg) {
-                        addCampaignNegatives(campName);
-                    }
-                });
-            }
-
-            // ========== SINGLE KEYWORD CAMPAIGNS ==========
-            if (document.getElementById('chk-single').checked && singleKws.length > 0) {
-                const bid = parseFloat(document.getElementById('bid-single').value) || 0.50;
-                const budget = parseFloat(document.getElementById('budget-single').value) || 10.00;
-                const useNeg = document.getElementById('neg-single').checked;
-
-                singleKws.forEach(kw => {
-                    const campName = 'SP: KW "' + kw + '" - ' + productName;
-                    const adGroupName = 'EXACT';
-
-                    addCampaignRow(campName, targetManual, budget, biddingStrategy);
-                    addAdGroupRow(campName, adGroupName, bid);
-                    addProductAdRow(campName, adGroupName);
-                    addKeywordRow(campName, adGroupName, kw, mt.exact, bid);
-
-                    if (useNeg) {
-                        addCampaignNegatives(campName);
-                    }
-                });
-            }
-        }); // end products (ASINs/SKUs) loop
+            });
+        }
     }); // end allProducts (product blocks) loop
 
     if (rows.length === 0) {
