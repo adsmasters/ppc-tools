@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campaign Creator - AdsMasters PPC Tools</title>
+    <title>Kampagnen Ersteller - AdsMasters PPC Tools</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -73,9 +73,22 @@
         .btn-secondary { background: transparent; border: 1px solid #30363d; color: #8b949e; }
         .btn-secondary:hover { color: #e6edf3; border-color: #8b949e; }
 
-        .lang-select { display: flex; gap: 6px; margin-bottom: 14px; }
+        .lang-select { display: flex; gap: 6px; margin-bottom: 4px; }
         .lang-btn { padding: 5px 14px; border-radius: 5px; background: #0d1117; border: 1px solid #30363d; color: #8b949e; cursor: pointer; font-size: 12px; font-weight: 600; }
         .lang-btn.active { background: #3551FF; color: #fff; border-color: #3551FF; }
+        .lang-hint { font-size: 11px; color: #8b949e; margin-bottom: 14px; }
+
+        .product-block { border: 1px solid #30363d; border-radius: 8px; padding: 14px; margin-bottom: 14px; background: #0d1117; position: relative; }
+        .product-block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .product-block-header span { font-size: 13px; font-weight: 700; color: #e6edf3; }
+        .product-block-actions { display: flex; gap: 6px; }
+        .btn-sm { padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid #30363d; background: #161b22; color: #8b949e; }
+        .btn-sm:hover { color: #e6edf3; border-color: #8b949e; }
+        .btn-sm.danger { color: #f85149; border-color: #f85149; }
+        .btn-sm.danger:hover { background: #f8514922; }
+        .btn-add-product { display: inline-flex; align-items: center; gap: 4px; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px dashed #30363d; background: transparent; color: #8b949e; margin-top: 4px; }
+        .btn-add-product:hover { color: #e6edf3; border-color: #8b949e; }
+        .field-hint { font-size: 11px; color: #8b949e; margin-top: 2px; font-weight: 400; }
 
         @media (max-width: 900px) {
             .layout { grid-template-columns: 1fr; }
@@ -97,7 +110,7 @@
 
 <div class="main">
     <div class="page-header">
-        <h1 class="page-title">Campaign Creator</h1>
+        <h1 class="page-title">Kampagnen Ersteller</h1>
         <p class="page-sub">Amazon Sponsored Products Bulk Upload Sheet Generator</p>
     </div>
 
@@ -106,7 +119,7 @@
         <div class="col-left">
             <!-- STEP 1 -->
             <div class="card">
-                <div class="card-title"><span class="step">1</span> Products to be Advertised</div>
+                <div class="card-title"><span class="step">1</span> Beworbene Produkte</div>
 
                 <div class="toggle-group">
                     <button class="toggle-btn active" onclick="setMode('vendor')">Vendor: ASIN Listen</button>
@@ -117,20 +130,33 @@
                     <button class="lang-btn active" onclick="setLang('de')">Deutsch</button>
                     <button class="lang-btn" onclick="setLang('en')">English</button>
                 </div>
+                <div class="lang-hint">Sprache des Bulk Sheets</div>
 
-                <div class="field">
-                    <label>Produktname (fuer Kampagnennamen)</label>
-                    <input type="text" id="productName" placeholder="z.B. Langhantel">
+                <div id="productBlocksContainer">
+                    <div class="product-block" data-product-index="0">
+                        <div class="product-block-header">
+                            <span>Produkt 1</span>
+                            <div class="product-block-actions">
+                                <button class="btn-sm" onclick="duplicateProduct(this)">Produkt duplizieren</button>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Produktname</label>
+                            <div class="field-hint">(wird für die Kampagnenbenennung verwendet)</div>
+                            <input type="text" class="productName" placeholder="z.B. Langhantel">
+                        </div>
+                        <div class="field">
+                            <label class="productListLabel">ASINs (eine pro Zeile)</label>
+                            <textarea class="productList" rows="4" placeholder="B0XXXXXX&#10;B0YYYYYY"></textarea>
+                        </div>
+                    </div>
                 </div>
-                <div class="field">
-                    <label id="productListLabel">ASINs (eine pro Zeile)</label>
-                    <textarea id="productList" rows="4" placeholder="B0XXXXXX&#10;B0YYYYYY"></textarea>
-                </div>
+                <button class="btn-add-product" onclick="addProduct()">+ Produkt hinzufügen</button>
             </div>
 
             <!-- STEP 2 -->
             <div class="card">
-                <div class="card-title"><span class="step">2</span> Ad Placements - Keywords &amp; Targeting</div>
+                <div class="card-title"><span class="step">2</span> Keywords &amp; Targeting</div>
 
                 <!-- Generic Keywords -->
                 <div class="section-label">Generische Keywords</div>
@@ -144,61 +170,61 @@
                 </div>
                 <div class="counter" id="genericCounter">
                     <div class="counter-item">Keywords: <strong>0</strong></div>
-                    <div class="counter-item">Allocated: <strong>0</strong></div>
-                    <div class="counter-item">Remaining: <strong>0</strong></div>
-                    <div class="counter-item">Campaigns: <strong>0</strong></div>
+                    <div class="counter-item">Zugeordnet: <strong>0</strong></div>
+                    <div class="counter-item">Übrig: <strong>0</strong></div>
+                    <div class="counter-item">Kampagnen: <strong>0</strong></div>
                 </div>
 
                 <!-- Brand Keywords -->
-                <div class="section-label">Brand Keywords</div>
+                <div class="section-label">Eigenmarken Keywords</div>
                 <div class="field">
-                    <label>Brand Keywords (eine pro Zeile)</label>
+                    <label>Eigenmarken Keywords (eine pro Zeile)</label>
                     <textarea id="brandKw" rows="3" placeholder="eigenmarke keyword"></textarea>
                 </div>
 
                 <!-- Competitor Keywords -->
-                <div class="section-label">Competitor Keywords</div>
+                <div class="section-label">Wettbewerber Keywords</div>
                 <div class="field">
-                    <label>Competitor Keywords (eine pro Zeile)</label>
+                    <label>Wettbewerber Keywords (eine pro Zeile)</label>
                     <textarea id="compKw" rows="3" placeholder="wettbewerber keyword"></textarea>
                 </div>
                 <div class="field">
-                    <label>Competitor Keyword Allocation (pro Kampagne)</label>
+                    <label>Wettbewerber Keyword Zuordnung (pro Kampagne)</label>
                     <textarea id="compKwAlloc" rows="1" placeholder="10"></textarea>
                 </div>
                 <div class="counter" id="compKwCounter">
                     <div class="counter-item">Keywords: <strong>0</strong></div>
-                    <div class="counter-item">Allocated: <strong>0</strong></div>
-                    <div class="counter-item">Remaining: <strong>0</strong></div>
-                    <div class="counter-item">Campaigns: <strong>0</strong></div>
+                    <div class="counter-item">Zugeordnet: <strong>0</strong></div>
+                    <div class="counter-item">Übrig: <strong>0</strong></div>
+                    <div class="counter-item">Kampagnen: <strong>0</strong></div>
                 </div>
 
                 <!-- Single Keywords -->
-                <div class="section-label">Single Keywords</div>
+                <div class="section-label">Einzelne Keywords</div>
                 <div class="field">
-                    <label>Single Keywords (eine pro Zeile, jedes = eigene Kampagne)</label>
+                    <label>Einzelne Keywords (eine pro Zeile, jedes = eigene Kampagne)</label>
                     <textarea id="singleKw" rows="3" placeholder="langhantelstange"></textarea>
                 </div>
 
                 <!-- Product Placement -->
                 <div class="section-label">Produktausrichtung</div>
                 <div class="field">
-                    <label>Brand ASINs (eine pro Zeile)</label>
+                    <label>Eigenmarken ASINs (eine pro Zeile)</label>
                     <textarea id="brandAsins" rows="3" placeholder="B0XXXXXX"></textarea>
                 </div>
                 <div class="field">
-                    <label>Competitor ASINs (eine pro Zeile)</label>
+                    <label>Wettbewerber ASINs (eine pro Zeile)</label>
                     <textarea id="compAsins" rows="3" placeholder="B0XXXXXX"></textarea>
                 </div>
                 <div class="field">
-                    <label>Competitor ASIN Allocation (pro Kampagne)</label>
+                    <label>Wettbewerber ASIN Zuordnung (pro Kampagne)</label>
                     <textarea id="compAsinAlloc" rows="1" placeholder="10"></textarea>
                 </div>
                 <div class="counter" id="compAsinCounter">
                     <div class="counter-item">ASINs: <strong>0</strong></div>
-                    <div class="counter-item">Allocated: <strong>0</strong></div>
-                    <div class="counter-item">Remaining: <strong>0</strong></div>
-                    <div class="counter-item">Campaigns: <strong>0</strong></div>
+                    <div class="counter-item">Zugeordnet: <strong>0</strong></div>
+                    <div class="counter-item">Übrig: <strong>0</strong></div>
+                    <div class="counter-item">Kampagnen: <strong>0</strong></div>
                 </div>
             </div>
         </div>
@@ -207,55 +233,55 @@
         <div class="col-right">
             <!-- STEP 3 -->
             <div class="card">
-                <div class="card-title"><span class="step">3</span> Campaign Settings</div>
+                <div class="card-title"><span class="step">3</span> Kampagnen-Einstellungen</div>
 
                 <div class="field">
-                    <label>Bidding Strategy</label>
+                    <label>Gebotsstrategie</label>
                     <select id="biddingStrategy">
                         <option value="down">Dynamische Gebote &ndash; nur senken</option>
-                        <option value="updown">Dynamische Gebote &ndash; erhoehen und senken</option>
+                        <option value="updown">Dynamische Gebote &ndash; erhöhen und senken</option>
                         <option value="fixed">Feste Gebote</option>
                     </select>
                 </div>
                 <div class="field-row">
                     <div class="field">
-                        <label>Overall Daily Budget</label>
+                        <label>Tagesbudget</label>
                         <input type="number" id="dailyBudget" step="0.01" value="10.00">
                     </div>
                     <div class="field">
-                        <label>Overall Bid</label>
+                        <label>Standardgebot</label>
                         <input type="number" id="overallBid" step="0.01" value="0.50">
                     </div>
                 </div>
                 <div class="field">
-                    <label>Campaign Start Date</label>
+                    <label>Kampagnen-Startdatum</label>
                     <input type="date" id="startDate">
                 </div>
                 <div class="field">
                     <label>Negative Keywords (Exact)</label>
-                    <textarea id="negKwExact" rows="3" placeholder="ein keyword pro Zeile"></textarea>
+                    <textarea id="negKwExact" rows="3" placeholder="ein Keyword pro Zeile"></textarea>
                 </div>
                 <div class="field">
                     <label>Negative Keywords (Phrase)</label>
-                    <textarea id="negKwPhrase" rows="3" placeholder="ein keyword pro Zeile"></textarea>
+                    <textarea id="negKwPhrase" rows="3" placeholder="ein Keyword pro Zeile"></textarea>
                 </div>
                 <div class="field">
-                    <label>Campaign Negative Keywords (Exact)</label>
-                    <textarea id="campNegKwExact" rows="3" placeholder="ein keyword pro Zeile"></textarea>
+                    <label>Kampagnen Negative Keywords (Exact)</label>
+                    <textarea id="campNegKwExact" rows="3" placeholder="ein Keyword pro Zeile"></textarea>
                 </div>
                 <div class="field">
-                    <label>Campaign Negative Keywords (Phrase)</label>
-                    <textarea id="campNegKwPhrase" rows="3" placeholder="ein keyword pro Zeile"></textarea>
+                    <label>Kampagnen Negative Keywords (Phrase)</label>
+                    <textarea id="campNegKwPhrase" rows="3" placeholder="ein Keyword pro Zeile"></textarea>
                 </div>
                 <div class="field">
-                    <label>Negative Product Targeting (ASINs)</label>
+                    <label>Negatives Produkt-Targeting (ASINs)</label>
                     <textarea id="negProdTargeting" rows="3" placeholder="B0XXXXXX"></textarea>
                 </div>
             </div>
 
             <!-- STEP 4 -->
             <div class="card">
-                <div class="card-title"><span class="step">4</span> Pre-defined Campaign Setups</div>
+                <div class="card-title"><span class="step">4</span> Kampagnen-Vorlagen</div>
 
                 <!-- Auto Campaign -->
                 <div class="campaign-option" id="opt-auto">
@@ -264,15 +290,15 @@
                         <span class="co-label">SP: Auto-Kampagne</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-auto" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-auto" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-auto" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-auto" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-auto" checked><label>Negative KW</label></div>
                     </div>
                     <div class="auto-sub" id="autoSubOptions">
-                        <div class="auto-sub-item"><input type="checkbox" id="auto-close" checked><span>Enge Uebereinstimmung</span><input type="number" id="bid-auto-close" step="0.01" value="0.50"></div>
-                        <div class="auto-sub-item"><input type="checkbox" id="auto-loose" checked><span>Entfernte Uebereinstimmung</span><input type="number" id="bid-auto-loose" step="0.01" value="0.50"></div>
+                        <div class="auto-sub-item"><input type="checkbox" id="auto-close" checked><span>Enge Übereinstimmung</span><input type="number" id="bid-auto-close" step="0.01" value="0.50"></div>
+                        <div class="auto-sub-item"><input type="checkbox" id="auto-loose" checked><span>Entfernte Übereinstimmung</span><input type="number" id="bid-auto-loose" step="0.01" value="0.50"></div>
                         <div class="auto-sub-item"><input type="checkbox" id="auto-substitutes" checked><span>Ersatz</span><input type="number" id="bid-auto-substitutes" step="0.01" value="0.50"></div>
-                        <div class="auto-sub-item"><input type="checkbox" id="auto-complements" checked><span>Ergaenzungen</span><input type="number" id="bid-auto-complements" step="0.01" value="0.50"></div>
+                        <div class="auto-sub-item"><input type="checkbox" id="auto-complements" checked><span>Ergänzungen</span><input type="number" id="bid-auto-complements" step="0.01" value="0.50"></div>
                     </div>
                 </div>
 
@@ -283,8 +309,8 @@
                         <span class="co-label">SP: Generic-Keyword (Exact)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-generic-exact" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-generic-exact" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-generic-exact" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-generic-exact" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-generic-exact"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -296,8 +322,8 @@
                         <span class="co-label">SP: Generic-Keyword (Broad)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-generic-broad" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-generic-broad" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-generic-broad" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-generic-broad" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-generic-broad"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -309,8 +335,8 @@
                         <span class="co-label">SP: Brand-Keyword (Exact)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-brand-exact" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-brand-exact" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-brand-exact" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-brand-exact" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-exact"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -322,8 +348,8 @@
                         <span class="co-label">SP: Brand-Keyword (Broad)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-brand-broad" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-brand-broad" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-brand-broad" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-brand-broad" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-broad"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -335,8 +361,8 @@
                         <span class="co-label">SP: Brand-Keyword (Phrase)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-brand-phrase" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-brand-phrase" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-brand-phrase" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-brand-phrase" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-phrase"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -348,8 +374,8 @@
                         <span class="co-label">SP: Competitor-Keyword (Exact)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-comp-exact" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-comp-exact" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-comp-exact" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-comp-exact" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-comp-exact"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -361,8 +387,8 @@
                         <span class="co-label">SP: Competitor-Keyword (Broad)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-comp-broad" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-comp-broad" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-comp-broad" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-comp-broad" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-comp-broad"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -374,8 +400,8 @@
                         <span class="co-label">SP: Produktausrichtung (Competitor ASIN)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-pt-comp" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-pt-comp" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-pt-comp" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-pt-comp" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-pt-comp"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -387,8 +413,8 @@
                         <span class="co-label">SP: Produktausrichtung (Brand ASIN)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-pt-brand" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-pt-brand" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-pt-brand" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-pt-brand" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-pt-brand"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -397,11 +423,11 @@
                 <div class="campaign-option">
                     <div class="campaign-option-header">
                         <input type="checkbox" id="chk-single" checked>
-                        <span class="co-label">SP: Single Keyword</span>
+                        <span class="co-label">SP: Einzelnes Keyword</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Bid</label><input type="number" id="bid-single" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Daily Budget</label><input type="number" id="budget-single" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-single" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-single" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-single"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -409,8 +435,8 @@
 
             <!-- Buttons -->
             <div class="btn-row">
-                <button class="btn btn-secondary" onclick="resetAll()">Reset</button>
-                <button class="btn btn-primary" onclick="generateExcel()">Submit</button>
+                <button class="btn btn-secondary" onclick="resetAll()">Zurücksetzen</button>
+                <button class="btn btn-primary" onclick="generateExcel()">Bulk Sheet erstellen</button>
             </div>
         </div>
     </div>
@@ -426,8 +452,12 @@ function setMode(m) {
     document.querySelectorAll('.toggle-btn').forEach((b, i) => {
         b.classList.toggle('active', (i === 0 && m === 'vendor') || (i === 1 && m === 'seller'));
     });
-    document.getElementById('productListLabel').textContent = m === 'vendor' ? 'ASINs (eine pro Zeile)' : 'SKUs (eine pro Zeile)';
-    document.getElementById('productList').placeholder = m === 'vendor' ? 'B0XXXXXX\nB0YYYYYY' : 'SKU-001\nSKU-002';
+    document.querySelectorAll('.productListLabel').forEach(lbl => {
+        lbl.textContent = m === 'vendor' ? 'ASINs (eine pro Zeile)' : 'SKUs (eine pro Zeile)';
+    });
+    document.querySelectorAll('.productList').forEach(ta => {
+        ta.placeholder = m === 'vendor' ? 'B0XXXXXX\nB0YYYYYY' : 'SKU-001\nSKU-002';
+    });
 }
 
 function setLang(l) {
@@ -435,6 +465,84 @@ function setLang(l) {
     document.querySelectorAll('.lang-btn').forEach((b, i) => {
         b.classList.toggle('active', (i === 0 && l === 'de') || (i === 1 && l === 'en'));
     });
+}
+
+// --- Product block management ---
+let productCounter = 1;
+
+function getProductBlocks() {
+    return document.querySelectorAll('#productBlocksContainer .product-block');
+}
+
+function renumberProducts() {
+    const blocks = getProductBlocks();
+    blocks.forEach((block, idx) => {
+        block.querySelector('.product-block-header span').textContent = 'Produkt ' + (idx + 1);
+        // Show/hide remove button
+        const removeBtn = block.querySelector('.btn-remove');
+        if (removeBtn) {
+            removeBtn.style.display = blocks.length > 1 ? '' : 'none';
+        }
+    });
+}
+
+function createProductBlock(name, asins) {
+    productCounter++;
+    const block = document.createElement('div');
+    block.className = 'product-block';
+    block.dataset.productIndex = productCounter;
+    const labelText = mode === 'vendor' ? 'ASINs (eine pro Zeile)' : 'SKUs (eine pro Zeile)';
+    const placeholder = mode === 'vendor' ? 'B0XXXXXX\nB0YYYYYY' : 'SKU-001\nSKU-002';
+    block.innerHTML = `
+        <div class="product-block-header">
+            <span>Produkt</span>
+            <div class="product-block-actions">
+                <button class="btn-sm" onclick="duplicateProduct(this)">Produkt duplizieren</button>
+                <button class="btn-sm danger btn-remove" onclick="removeProduct(this)">&times; Entfernen</button>
+            </div>
+        </div>
+        <div class="field">
+            <label>Produktname</label>
+            <div class="field-hint">(wird für die Kampagnenbenennung verwendet)</div>
+            <input type="text" class="productName" placeholder="z.B. Langhantel" value="${escapeHtml(name || '')}">
+        </div>
+        <div class="field">
+            <label class="productListLabel">${labelText}</label>
+            <textarea class="productList" rows="4" placeholder="${placeholder}">${escapeHtml(asins || '')}</textarea>
+        </div>
+    `;
+    return block;
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function addProduct() {
+    const container = document.getElementById('productBlocksContainer');
+    const block = createProductBlock('', '');
+    container.appendChild(block);
+    renumberProducts();
+}
+
+function duplicateProduct(btn) {
+    const block = btn.closest('.product-block');
+    const name = block.querySelector('.productName').value;
+    const asins = block.querySelector('.productList').value;
+    const container = document.getElementById('productBlocksContainer');
+    const newBlock = createProductBlock(name, asins);
+    block.after(newBlock);
+    renumberProducts();
+}
+
+function removeProduct(btn) {
+    const block = btn.closest('.product-block');
+    const blocks = getProductBlocks();
+    if (blocks.length <= 1) return;
+    block.remove();
+    renumberProducts();
 }
 
 // --- Set default start date ---
@@ -480,14 +588,26 @@ function updateCounter(kwId, allocId, counterId) {
 
 // --- Reset ---
 function resetAll() {
-    document.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+    // Reset product blocks to a single empty one
+    const container = document.getElementById('productBlocksContainer');
+    container.innerHTML = '';
+    productCounter = 0;
+    const block = createProductBlock('', '');
+    container.appendChild(block);
+    // Remove the remove button from single block
+    const removeBtn = block.querySelector('.btn-remove');
+    if (removeBtn) removeBtn.style.display = 'none';
+    renumberProducts();
+
+    document.querySelectorAll('#productBlocksContainer input[type="text"], #productBlocksContainer textarea').forEach(el => el.value = '');
     document.querySelectorAll('input[type="number"]').forEach(el => {
         if (el.id.startsWith('bid')) el.value = '0.50';
         else if (el.id.startsWith('budget')) el.value = '10.00';
     });
     document.getElementById('dailyBudget').value = '10.00';
     document.getElementById('overallBid').value = '0.50';
-    document.getElementById('productName').value = '';
+    // Reset textareas outside product blocks
+    document.querySelectorAll('.col-left > .card:nth-child(2) textarea, .col-right textarea').forEach(el => el.value = '');
     const d = new Date();
     document.getElementById('startDate').value = d.toISOString().slice(0, 10);
     document.querySelectorAll('.campaign-option input[type="checkbox"]').forEach(el => el.checked = true);
@@ -500,10 +620,22 @@ function resetAll() {
 
 // --- Excel Generation ---
 function generateExcel() {
-    const productName = document.getElementById('productName').value.trim();
-    if (!productName) { alert('Bitte Produktnamen eingeben.'); return; }
-    const products = getLines('productList');
-    if (products.length === 0) { alert('Bitte mindestens ein Produkt (ASIN/SKU) eingeben.'); return; }
+    // Gather all product blocks
+    const productBlocks = getProductBlocks();
+    const allProducts = [];
+    for (const block of productBlocks) {
+        const name = block.querySelector('.productName').value.trim();
+        const listText = block.querySelector('.productList').value;
+        const items = listText.split('\n').map(s => s.trim()).filter(Boolean);
+        if (name && items.length > 0) {
+            allProducts.push({ name, items });
+        }
+    }
+
+    if (allProducts.length === 0) {
+        alert('Bitte mindestens ein Produkt mit Namen und ASINs/SKUs eingeben.');
+        return;
+    }
 
     const isVendor = mode === 'vendor';
     const isDE = lang === 'de';
@@ -634,286 +766,292 @@ function generateExcel() {
 
     const rows = [];
 
-    // For each product
-    products.forEach(product => {
-        const productId = product;
+    // Iterate over ALL product blocks
+    allProducts.forEach(productData => {
+        const productName = productData.name;
+        const products = productData.items;
 
-        // --- Campaign Row builder ---
-        function addCampaignRow(campName, targetType, budget, bidStrat) {
-            const r = emptyRow();
-            r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-            r[hEntity] = ent.campaign;
-            r[hOp] = op;
-            r[hCampId] = campName;
-            r[hCampName] = campName;
-            r[hStartDate] = startDate;
-            r[hTargetType] = targetType;
-            r[hState] = state;
-            r[hBudget] = budget;
-            r[hBiddingStrat] = bidStrat;
-            rows.push(r);
-        }
+        // For each ASIN/SKU in this product block
+        products.forEach(product => {
+            const productId = product;
 
-        function addAdGroupRow(campName, adGroupName, defaultBid) {
-            const r = emptyRow();
-            r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-            r[hEntity] = ent.adGroup;
-            r[hOp] = op;
-            r[hCampId] = campName;
-            r[hAdGroupId] = adGroupName;
-            r[hAdGroupName] = adGroupName;
-            r[hState] = state;
-            r[hAdGroupBid] = defaultBid;
-            rows.push(r);
-        }
-
-        function addProductAdRow(campName, adGroupName) {
-            const r = emptyRow();
-            r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-            r[hEntity] = ent.productAd;
-            r[hOp] = op;
-            r[hCampId] = campName;
-            r[hAdGroupId] = adGroupName;
-            r[hState] = state;
-            if (isVendor) {
-                r[hAsin] = productId;
-            } else {
-                r[hSku] = productId;
+            // --- Campaign Row builder ---
+            function addCampaignRow(campName, targetType, budget, bidStrat) {
+                const r = emptyRow();
+                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+                r[hEntity] = ent.campaign;
+                r[hOp] = op;
+                r[hCampId] = campName;
+                r[hCampName] = campName;
+                r[hStartDate] = startDate;
+                r[hTargetType] = targetType;
+                r[hState] = state;
+                r[hBudget] = budget;
+                r[hBiddingStrat] = bidStrat;
+                rows.push(r);
             }
-            rows.push(r);
-        }
 
-        function addKeywordRow(campName, adGroupName, kwText, matchType, bid) {
-            const r = emptyRow();
-            r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-            r[hEntity] = ent.keyword;
-            r[hOp] = op;
-            r[hCampId] = campName;
-            r[hAdGroupId] = adGroupName;
-            r[hState] = state;
-            r[hKwText] = kwText;
-            r[hMatchType] = matchType;
-            r[hBid] = bid;
-            rows.push(r);
-        }
+            function addAdGroupRow(campName, adGroupName, defaultBid) {
+                const r = emptyRow();
+                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+                r[hEntity] = ent.adGroup;
+                r[hOp] = op;
+                r[hCampId] = campName;
+                r[hAdGroupId] = adGroupName;
+                r[hAdGroupName] = adGroupName;
+                r[hState] = state;
+                r[hAdGroupBid] = defaultBid;
+                rows.push(r);
+            }
 
-        function addNegKeywordRow(campName, adGroupName, kwText, matchType) {
-            const r = emptyRow();
-            r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-            r[hEntity] = ent.negKeyword;
-            r[hOp] = op;
-            r[hCampId] = campName;
-            r[hAdGroupId] = adGroupName;
-            r[hState] = state;
-            r[hKwText] = kwText;
-            r[hMatchType] = matchType;
-            rows.push(r);
-        }
-
-        function addCampNegKeywordRow(campName, kwText, matchType) {
-            const r = emptyRow();
-            r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-            r[hEntity] = ent.negCampKeyword;
-            r[hOp] = op;
-            r[hCampId] = campName;
-            r[hState] = state;
-            r[hKwText] = kwText;
-            r[hMatchType] = matchType;
-            rows.push(r);
-        }
-
-        function addProdTargetingRow(campName, adGroupName, expr, bid) {
-            const r = emptyRow();
-            r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-            r[hEntity] = ent.prodTargeting;
-            r[hOp] = op;
-            r[hCampId] = campName;
-            r[hAdGroupId] = adGroupName;
-            r[hState] = state;
-            r[hBid] = bid;
-            r[hPtExpr] = expr;
-            rows.push(r);
-        }
-
-        function addNegProdTargetingRow(campName, adGroupName, asinVal) {
-            const r = emptyRow();
-            r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
-            r[hEntity] = ent.negProdTargeting;
-            r[hOp] = op;
-            r[hCampId] = campName;
-            r[hAdGroupId] = adGroupName;
-            r[hState] = state;
-            r[hPtExpr] = 'asin="' + asinVal + '"';
-            rows.push(r);
-        }
-
-        // Add ad-group level negative keywords
-        function addAdGroupNegatives(campName, adGroupName) {
-            negKwExactList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
-            negKwPhraseList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
-            negProdTargetList.forEach(asin => addNegProdTargetingRow(campName, adGroupName, asin));
-        }
-
-        // Add campaign level negative keywords
-        function addCampaignNegatives(campName) {
-            campNegKwExactList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negExact));
-            campNegKwPhraseList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negPhrase));
-        }
-
-        // ========== AUTO CAMPAIGN ==========
-        if (document.getElementById('chk-auto').checked) {
-            const bid = parseFloat(document.getElementById('bid-auto').value) || 0.50;
-            const budget = parseFloat(document.getElementById('budget-auto').value) || 10.00;
-            const campName = cn.auto + ' - ' + productName;
-            const adGroupName = 'ALL';
-
-            addCampaignRow(campName, targetAuto, budget, biddingStrategy);
-            addAdGroupRow(campName, adGroupName, bid);
-            addProductAdRow(campName, adGroupName);
-
-            // Sub-targets
-            const autoSubs = [
-                { id: 'auto-close', bidId: 'bid-auto-close', expr: autoTargetExpr.close },
-                { id: 'auto-loose', bidId: 'bid-auto-loose', expr: autoTargetExpr.loose },
-                { id: 'auto-substitutes', bidId: 'bid-auto-substitutes', expr: autoTargetExpr.substitutes },
-                { id: 'auto-complements', bidId: 'bid-auto-complements', expr: autoTargetExpr.complements }
-            ];
-            autoSubs.forEach(sub => {
-                if (document.getElementById(sub.id).checked) {
-                    const subBid = parseFloat(document.getElementById(sub.bidId).value) || bid;
-                    addProdTargetingRow(campName, adGroupName, sub.expr, subBid);
+            function addProductAdRow(campName, adGroupName) {
+                const r = emptyRow();
+                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+                r[hEntity] = ent.productAd;
+                r[hOp] = op;
+                r[hCampId] = campName;
+                r[hAdGroupId] = adGroupName;
+                r[hState] = state;
+                if (isVendor) {
+                    r[hAsin] = productId;
+                } else {
+                    r[hSku] = productId;
                 }
-            });
-
-            // Negatives
-            if (document.getElementById('neg-auto').checked) {
-                addAdGroupNegatives(campName, adGroupName);
+                rows.push(r);
             }
-        }
 
-        // ========== KEYWORD CAMPAIGNS ==========
-        function buildKeywordCampaigns(kwList, allocNum, campNameBase, matchType, matchTypeLabel, chkId, bidId, budgetId, negId) {
-            if (!document.getElementById(chkId).checked || kwList.length === 0) return;
-            const bid = parseFloat(document.getElementById(bidId).value) || 0.50;
-            const budget = parseFloat(document.getElementById(budgetId).value) || 10.00;
-            const useNeg = document.getElementById(negId).checked;
+            function addKeywordRow(campName, adGroupName, kwText, matchType, bid) {
+                const r = emptyRow();
+                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+                r[hEntity] = ent.keyword;
+                r[hOp] = op;
+                r[hCampId] = campName;
+                r[hAdGroupId] = adGroupName;
+                r[hState] = state;
+                r[hKwText] = kwText;
+                r[hMatchType] = matchType;
+                r[hBid] = bid;
+                rows.push(r);
+            }
 
-            const chunks = splitIntoChunks(kwList, allocNum);
-            const totalChunks = chunks.length;
+            function addNegKeywordRow(campName, adGroupName, kwText, matchType) {
+                const r = emptyRow();
+                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+                r[hEntity] = ent.negKeyword;
+                r[hOp] = op;
+                r[hCampId] = campName;
+                r[hAdGroupId] = adGroupName;
+                r[hState] = state;
+                r[hKwText] = kwText;
+                r[hMatchType] = matchType;
+                rows.push(r);
+            }
 
-            chunks.forEach((chunk, idx) => {
-                const splitLabel = totalChunks > 1 ? ' ' + (idx + 1) + '/' + totalChunks : '';
-                const campName = campNameBase + splitLabel + ' - ' + productName;
-                const adGroupName = matchTypeLabel;
+            function addCampNegKeywordRow(campName, kwText, matchType) {
+                const r = emptyRow();
+                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+                r[hEntity] = ent.negCampKeyword;
+                r[hOp] = op;
+                r[hCampId] = campName;
+                r[hState] = state;
+                r[hKwText] = kwText;
+                r[hMatchType] = matchType;
+                rows.push(r);
+            }
 
-                addCampaignRow(campName, targetManual, budget, biddingStrategy);
+            function addProdTargetingRow(campName, adGroupName, expr, bid) {
+                const r = emptyRow();
+                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+                r[hEntity] = ent.prodTargeting;
+                r[hOp] = op;
+                r[hCampId] = campName;
+                r[hAdGroupId] = adGroupName;
+                r[hState] = state;
+                r[hBid] = bid;
+                r[hPtExpr] = expr;
+                rows.push(r);
+            }
+
+            function addNegProdTargetingRow(campName, adGroupName, asinVal) {
+                const r = emptyRow();
+                r[hProduct] = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+                r[hEntity] = ent.negProdTargeting;
+                r[hOp] = op;
+                r[hCampId] = campName;
+                r[hAdGroupId] = adGroupName;
+                r[hState] = state;
+                r[hPtExpr] = 'asin="' + asinVal + '"';
+                rows.push(r);
+            }
+
+            // Add ad-group level negative keywords
+            function addAdGroupNegatives(campName, adGroupName) {
+                negKwExactList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
+                negKwPhraseList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
+                negProdTargetList.forEach(asin => addNegProdTargetingRow(campName, adGroupName, asin));
+            }
+
+            // Add campaign level negative keywords
+            function addCampaignNegatives(campName) {
+                campNegKwExactList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negExact));
+                campNegKwPhraseList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negPhrase));
+            }
+
+            // ========== AUTO CAMPAIGN ==========
+            if (document.getElementById('chk-auto').checked) {
+                const bid = parseFloat(document.getElementById('bid-auto').value) || 0.50;
+                const budget = parseFloat(document.getElementById('budget-auto').value) || 10.00;
+                const campName = cn.auto + ' - ' + productName;
+                const adGroupName = 'ALL';
+
+                addCampaignRow(campName, targetAuto, budget, biddingStrategy);
                 addAdGroupRow(campName, adGroupName, bid);
                 addProductAdRow(campName, adGroupName);
 
-                chunk.forEach(kw => {
-                    addKeywordRow(campName, adGroupName, kw, matchType, bid);
+                // Sub-targets
+                const autoSubs = [
+                    { id: 'auto-close', bidId: 'bid-auto-close', expr: autoTargetExpr.close },
+                    { id: 'auto-loose', bidId: 'bid-auto-loose', expr: autoTargetExpr.loose },
+                    { id: 'auto-substitutes', bidId: 'bid-auto-substitutes', expr: autoTargetExpr.substitutes },
+                    { id: 'auto-complements', bidId: 'bid-auto-complements', expr: autoTargetExpr.complements }
+                ];
+                autoSubs.forEach(sub => {
+                    if (document.getElementById(sub.id).checked) {
+                        const subBid = parseFloat(document.getElementById(sub.bidId).value) || bid;
+                        addProdTargetingRow(campName, adGroupName, sub.expr, subBid);
+                    }
                 });
 
-                if (useNeg) {
-                    addCampaignNegatives(campName);
+                // Negatives
+                if (document.getElementById('neg-auto').checked) {
+                    addAdGroupNegatives(campName, adGroupName);
                 }
-            });
-        }
-
-        // Generic Exact
-        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericExact, mt.exact, 'EXACT', 'chk-generic-exact', 'bid-generic-exact', 'budget-generic-exact', 'neg-generic-exact');
-
-        // Generic Broad
-        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericBroad, mt.broad, 'BROAD', 'chk-generic-broad', 'bid-generic-broad', 'budget-generic-broad', 'neg-generic-broad');
-
-        // Brand Exact
-        buildKeywordCampaigns(brandKws, 0, cn.brandExact, mt.exact, 'EXACT', 'chk-brand-exact', 'bid-brand-exact', 'budget-brand-exact', 'neg-brand-exact');
-
-        // Brand Broad
-        buildKeywordCampaigns(brandKws, 0, cn.brandBroad, mt.broad, 'BROAD', 'chk-brand-broad', 'bid-brand-broad', 'budget-brand-broad', 'neg-brand-broad');
-
-        // Brand Phrase
-        buildKeywordCampaigns(brandKws, 0, cn.brandPhrase, mt.phrase, 'PHRASE', 'chk-brand-phrase', 'bid-brand-phrase', 'budget-brand-phrase', 'neg-brand-phrase');
-
-        // Competitor Exact
-        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compExact, mt.exact, 'EXACT', 'chk-comp-exact', 'bid-comp-exact', 'budget-comp-exact', 'neg-comp-exact');
-
-        // Competitor Broad
-        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compBroad, mt.broad, 'BROAD', 'chk-comp-broad', 'bid-comp-broad', 'budget-comp-broad', 'neg-comp-broad');
-
-        // ========== PRODUCT TARGETING - BRAND ==========
-        if (document.getElementById('chk-pt-brand').checked && brandAsinsList.length > 0) {
-            const bid = parseFloat(document.getElementById('bid-pt-brand').value) || 0.50;
-            const budget = parseFloat(document.getElementById('budget-pt-brand').value) || 10.00;
-            const useNeg = document.getElementById('neg-pt-brand').checked;
-            const campName = cn.ptBrand + ' - ' + productName;
-            const adGroupName = 'ASIN';
-
-            addCampaignRow(campName, targetManual, budget, biddingStrategy);
-            addAdGroupRow(campName, adGroupName, bid);
-            addProductAdRow(campName, adGroupName);
-
-            brandAsinsList.forEach(asin => {
-                addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
-            });
-
-            if (useNeg) {
-                addCampaignNegatives(campName);
             }
-        }
 
-        // ========== PRODUCT TARGETING - COMPETITOR ==========
-        if (document.getElementById('chk-pt-comp').checked && compAsinsList.length > 0) {
-            const bid = parseFloat(document.getElementById('bid-pt-comp').value) || 0.50;
-            const budget = parseFloat(document.getElementById('budget-pt-comp').value) || 10.00;
-            const useNeg = document.getElementById('neg-pt-comp').checked;
+            // ========== KEYWORD CAMPAIGNS ==========
+            function buildKeywordCampaigns(kwList, allocNum, campNameBase, matchType, matchTypeLabel, chkId, bidId, budgetId, negId) {
+                if (!document.getElementById(chkId).checked || kwList.length === 0) return;
+                const bid = parseFloat(document.getElementById(bidId).value) || 0.50;
+                const budget = parseFloat(document.getElementById(budgetId).value) || 10.00;
+                const useNeg = document.getElementById(negId).checked;
 
-            const chunks = splitIntoChunks(compAsinsList, compAsinAllocNum);
-            const totalChunks = chunks.length;
+                const chunks = splitIntoChunks(kwList, allocNum);
+                const totalChunks = chunks.length;
 
-            chunks.forEach((chunk, idx) => {
-                const splitLabel = totalChunks > 1 ? ' - ' + (idx + 1) + '/' + totalChunks : '';
-                const campName = cn.ptComp + splitLabel + ' - ' + productName;
+                chunks.forEach((chunk, idx) => {
+                    const splitLabel = totalChunks > 1 ? ' ' + (idx + 1) + '/' + totalChunks : '';
+                    const campName = campNameBase + splitLabel + ' - ' + productName;
+                    const adGroupName = matchTypeLabel;
+
+                    addCampaignRow(campName, targetManual, budget, biddingStrategy);
+                    addAdGroupRow(campName, adGroupName, bid);
+                    addProductAdRow(campName, adGroupName);
+
+                    chunk.forEach(kw => {
+                        addKeywordRow(campName, adGroupName, kw, matchType, bid);
+                    });
+
+                    if (useNeg) {
+                        addCampaignNegatives(campName);
+                    }
+                });
+            }
+
+            // Generic Exact
+            buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericExact, mt.exact, 'EXACT', 'chk-generic-exact', 'bid-generic-exact', 'budget-generic-exact', 'neg-generic-exact');
+
+            // Generic Broad
+            buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericBroad, mt.broad, 'BROAD', 'chk-generic-broad', 'bid-generic-broad', 'budget-generic-broad', 'neg-generic-broad');
+
+            // Brand Exact
+            buildKeywordCampaigns(brandKws, 0, cn.brandExact, mt.exact, 'EXACT', 'chk-brand-exact', 'bid-brand-exact', 'budget-brand-exact', 'neg-brand-exact');
+
+            // Brand Broad
+            buildKeywordCampaigns(brandKws, 0, cn.brandBroad, mt.broad, 'BROAD', 'chk-brand-broad', 'bid-brand-broad', 'budget-brand-broad', 'neg-brand-broad');
+
+            // Brand Phrase
+            buildKeywordCampaigns(brandKws, 0, cn.brandPhrase, mt.phrase, 'PHRASE', 'chk-brand-phrase', 'bid-brand-phrase', 'budget-brand-phrase', 'neg-brand-phrase');
+
+            // Competitor Exact
+            buildKeywordCampaigns(compKws, compKwAllocNum, cn.compExact, mt.exact, 'EXACT', 'chk-comp-exact', 'bid-comp-exact', 'budget-comp-exact', 'neg-comp-exact');
+
+            // Competitor Broad
+            buildKeywordCampaigns(compKws, compKwAllocNum, cn.compBroad, mt.broad, 'BROAD', 'chk-comp-broad', 'bid-comp-broad', 'budget-comp-broad', 'neg-comp-broad');
+
+            // ========== PRODUCT TARGETING - BRAND ==========
+            if (document.getElementById('chk-pt-brand').checked && brandAsinsList.length > 0) {
+                const bid = parseFloat(document.getElementById('bid-pt-brand').value) || 0.50;
+                const budget = parseFloat(document.getElementById('budget-pt-brand').value) || 10.00;
+                const useNeg = document.getElementById('neg-pt-brand').checked;
+                const campName = cn.ptBrand + ' - ' + productName;
                 const adGroupName = 'ASIN';
 
                 addCampaignRow(campName, targetManual, budget, biddingStrategy);
                 addAdGroupRow(campName, adGroupName, bid);
                 addProductAdRow(campName, adGroupName);
 
-                chunk.forEach(asin => {
+                brandAsinsList.forEach(asin => {
                     addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
                 });
 
                 if (useNeg) {
                     addCampaignNegatives(campName);
                 }
-            });
-        }
+            }
 
-        // ========== SINGLE KEYWORD CAMPAIGNS ==========
-        if (document.getElementById('chk-single').checked && singleKws.length > 0) {
-            const bid = parseFloat(document.getElementById('bid-single').value) || 0.50;
-            const budget = parseFloat(document.getElementById('budget-single').value) || 10.00;
-            const useNeg = document.getElementById('neg-single').checked;
+            // ========== PRODUCT TARGETING - COMPETITOR ==========
+            if (document.getElementById('chk-pt-comp').checked && compAsinsList.length > 0) {
+                const bid = parseFloat(document.getElementById('bid-pt-comp').value) || 0.50;
+                const budget = parseFloat(document.getElementById('budget-pt-comp').value) || 10.00;
+                const useNeg = document.getElementById('neg-pt-comp').checked;
 
-            singleKws.forEach(kw => {
-                const campName = 'SP: KW "' + kw + '" - ' + productName;
-                const adGroupName = 'EXACT';
+                const chunks = splitIntoChunks(compAsinsList, compAsinAllocNum);
+                const totalChunks = chunks.length;
 
-                addCampaignRow(campName, targetManual, budget, biddingStrategy);
-                addAdGroupRow(campName, adGroupName, bid);
-                addProductAdRow(campName, adGroupName);
-                addKeywordRow(campName, adGroupName, kw, mt.exact, bid);
+                chunks.forEach((chunk, idx) => {
+                    const splitLabel = totalChunks > 1 ? ' - ' + (idx + 1) + '/' + totalChunks : '';
+                    const campName = cn.ptComp + splitLabel + ' - ' + productName;
+                    const adGroupName = 'ASIN';
 
-                if (useNeg) {
-                    addCampaignNegatives(campName);
-                }
-            });
-        }
-    }); // end products loop
+                    addCampaignRow(campName, targetManual, budget, biddingStrategy);
+                    addAdGroupRow(campName, adGroupName, bid);
+                    addProductAdRow(campName, adGroupName);
+
+                    chunk.forEach(asin => {
+                        addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
+                    });
+
+                    if (useNeg) {
+                        addCampaignNegatives(campName);
+                    }
+                });
+            }
+
+            // ========== SINGLE KEYWORD CAMPAIGNS ==========
+            if (document.getElementById('chk-single').checked && singleKws.length > 0) {
+                const bid = parseFloat(document.getElementById('bid-single').value) || 0.50;
+                const budget = parseFloat(document.getElementById('budget-single').value) || 10.00;
+                const useNeg = document.getElementById('neg-single').checked;
+
+                singleKws.forEach(kw => {
+                    const campName = 'SP: KW "' + kw + '" - ' + productName;
+                    const adGroupName = 'EXACT';
+
+                    addCampaignRow(campName, targetManual, budget, biddingStrategy);
+                    addAdGroupRow(campName, adGroupName, bid);
+                    addProductAdRow(campName, adGroupName);
+                    addKeywordRow(campName, adGroupName, kw, mt.exact, bid);
+
+                    if (useNeg) {
+                        addCampaignNegatives(campName);
+                    }
+                });
+            }
+        }); // end products (ASINs/SKUs) loop
+    }); // end allProducts (product blocks) loop
 
     if (rows.length === 0) {
-        alert('Keine Kampagnen ausgewaehlt oder keine Keywords/ASINs eingegeben.');
+        alert('Keine Kampagnen ausgewählt oder keine Keywords/ASINs eingegeben.');
         return;
     }
 
