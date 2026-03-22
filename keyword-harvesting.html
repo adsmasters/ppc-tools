@@ -405,7 +405,9 @@ function handleFileUpload(file) {
             });
 
             // Pass 1: Extract campaign structure, keywords, product ads, targeting type
-            parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }) => {
+            let _pass1SkuCount = 0;
+            parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }, sheetIdx) => {
+                console.log('[Pass1] Sheet', sheetIdx, 'hasEntity:', hasEntity, 'cm.sku:', cm.sku, 'cm.asin:', cm.asin);
                 if (!hasEntity) return;
                 for (let i = headerIdx + 1; i < rows.length; i++) {
                     const r = rows[i];
@@ -416,6 +418,7 @@ function handleFileUpload(file) {
                     const kwText = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim().toLowerCase() : '';
                     const asin = cm.asin !== -1 ? String(r[cm.asin] || '').trim() : '';
                     const sku = cm.sku !== -1 ? String(r[cm.sku] || '').trim() : '';
+                    if (sku && _pass1SkuCount < 3) { console.log('[Pass1] Found SKU:', sku, 'in campaign:', campName, 'entity:', entity); _pass1SkuCount++; }
 
                     // Collect existing keywords
                     if (kwText && (entity.includes('keyword') || entity.includes('mot-cl') || entity.includes('palabra') || entity.includes('parola'))) {
