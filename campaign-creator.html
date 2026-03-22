@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kampagnen Ersteller - AdsMasters PPC Tools</title>
+    <meta name="ui-lang" content="de">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
         /* --- Theme Variables --- */
@@ -59,6 +60,10 @@
 
         .theme-toggle { background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; line-height: 1; display: flex; align-items: center; gap: 6px; }
         .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+        .lang-toggle { background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; line-height: 1; display: flex; align-items: center; gap: 2px; }
+        .lang-toggle .lang-opt { padding: 2px 6px; border-radius: 3px; }
+        .lang-toggle .lang-opt.active { background: var(--accent); color: #fff; }
+        .lang-toggle:hover { border-color: var(--accent); }
 
         .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
         .page-header { margin-bottom: 24px; }
@@ -211,20 +216,21 @@
     <div class="topbar-left">
         <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
         <nav class="topbar-nav">
-            <a href="dashboard.html">Dashboard</a>
-            <a href="help.html">Hilfe</a>
+            <a href="dashboard.html" data-i18n="nav_dashboard">Dashboard</a>
+            <a href="help.html" data-i18n="nav_help">Hilfe</a>
         </nav>
     </div>
     <div class="topbar-right">
+        <button class="lang-toggle" id="uiLangToggle" onclick="toggleUILang()" title="Sprache / Language"><span class="lang-opt active" id="langOptDE">DE</span><span class="lang-opt" id="langOptEN">EN</span></button>
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Theme wechseln"><span id="themeIcon">🌙</span> <span id="themeLabel">Dark</span></button>
-        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';" data-i18n="btn_logout">Logout</button>
     </div>
 </div>
 
 <div class="main">
     <div class="page-header">
-        <h1 class="page-title">Kampagnen Ersteller</h1>
-        <p class="page-sub">Amazon Sponsored Products Bulk Upload Sheet Generator</p>
+        <h1 class="page-title" data-i18n="page_title">Kampagnen Ersteller</h1>
+        <p class="page-sub" data-i18n="page_sub">Amazon Sponsored Products Bulk Upload Sheet Generator</p>
     </div>
 
     <!-- Hidden preset elements (keep functionality but hide UI) -->
@@ -238,15 +244,15 @@
         <div class="col-left">
             <!-- STEP 1 -->
             <div class="card">
-                <div class="card-title"><span class="step">1</span> Beworbene Produkte</div>
+                <div class="card-title"><span class="step">1</span> <span data-i18n="step1_title">Beworbene Produkte</span></div>
 
                 <div class="toggle-group">
-                    <button class="toggle-btn active" onclick="setMode('vendor')">Vendor: ASIN Listen</button>
-                    <button class="toggle-btn" onclick="setMode('seller')">Seller: SKU Listen</button>
+                    <button class="toggle-btn active" data-i18n="toggle_vendor" onclick="setMode('vendor')">Vendor: ASIN Listen</button>
+                    <button class="toggle-btn" data-i18n="toggle_seller" onclick="setMode('seller')">Seller: SKU Listen</button>
                 </div>
 
                 <div class="field">
-                    <label>Marketplace <span class="tooltip-icon" data-tip="Bestimmt die Sprache aller Spalten, Entitäten und Match Types im Bulk Sheet.">?</span></label>
+                    <label><span data-i18n="lbl_marketplace">Marketplace</span> <span class="tooltip-icon" data-tip="Bestimmt die Sprache aller Spalten, Entitäten und Match Types im Bulk Sheet." data-i18n-tip="tip_marketplace">?</span></label>
                     <select id="marketplaceSelect" onchange="setMarketplace(this.value)">
                         <option value="de">Deutschland (DE)</option>
                         <option value="en">USA / UK (EN)</option>
@@ -257,91 +263,91 @@
                 </div>
 
                 <div class="field">
-                    <label>Produktname</label>
-                    <div class="field-hint">(wird für die Kampagnenbenennung verwendet)</div>
-                    <input type="text" id="productName" placeholder="z.B. Langhantel">
+                    <label data-i18n="lbl_product_name">Produktname</label>
+                    <div class="field-hint" data-i18n="hint_product_name">(wird für die Kampagnenbenennung verwendet)</div>
+                    <input type="text" id="productName" placeholder="z.B. Langhantel" data-i18n-ph="ph_product_name">
                 </div>
                 <div class="field">
-                    <label class="productListLabel" id="productListLabel">ASINs (eine pro Zeile)</label>
+                    <label class="productListLabel" id="productListLabel" data-i18n="lbl_asins">ASINs (eine pro Zeile)</label>
                     <textarea id="productList" rows="4" placeholder="B0XXXXXX&#10;B0YYYYYY"></textarea>
                 </div>
                 <div class="field">
-                    <label>Portfolio-ID <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
-                    <input type="text" id="portfolioId" placeholder="z.B. 123456789">
+                    <label><span data-i18n="lbl_portfolio_id">Portfolio-ID</span> <span style="font-weight:400;color:#8b949e;" data-i18n="lbl_optional">(optional)</span></label>
+                    <input type="text" id="portfolioId" placeholder="z.B. 123456789" data-i18n-ph="ph_portfolio_id">
                 </div>
             </div>
 
             <!-- STEP 2 -->
             <div class="card">
-                <div class="card-title"><span class="step">2</span> Keywords &amp; Targeting</div>
+                <div class="card-title"><span class="step">2</span> <span data-i18n="step2_title">Keywords &amp; Targeting</span></div>
 
                 <!-- Generic Keywords -->
-                <div class="section-label">Generische Keywords</div>
+                <div class="section-label" data-i18n="sec_generic_kw">Generische Keywords</div>
                 <div class="field">
-                    <div class="label-row"><label>Keywords (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('genericKw')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="genericKw"></div>
+                    <div class="label-row"><label data-i18n="lbl_generic_kw">Keywords (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('genericKw')" data-i18n="btn_csv_import">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="genericKw"></div>
                     <textarea id="genericKw" rows="4" placeholder="langhantel&#10;langhantelstange&#10;hantelstange"></textarea>
                 </div>
                 <div class="field">
-                    <label>Keyword Allocation (pro Kampagne) <span class="tooltip-icon" data-tip="Anzahl Keywords pro Kampagne. Wenn du z.B. 50 Keywords und Allocation 10 hast, werden 5 Kampagnen mit je 10 Keywords erstellt.">?</span></label>
+                    <label><span data-i18n="lbl_kw_allocation">Keyword Allocation (pro Kampagne)</span> <span class="tooltip-icon" data-tip="Anzahl Keywords pro Kampagne. Wenn du z.B. 50 Keywords und Allocation 10 hast, werden 5 Kampagnen mit je 10 Keywords erstellt." data-i18n-tip="tip_kw_allocation">?</span></label>
                     <textarea id="genericAlloc" rows="1" placeholder="10"></textarea>
                 </div>
                 <div class="counter" id="genericCounter">
-                    <div class="counter-item">Keywords: <strong>0</strong></div>
-                    <div class="counter-item">Zugeordnet: <strong>0</strong></div>
-                    <div class="counter-item">Übrig: <strong>0</strong></div>
-                    <div class="counter-item">Kampagnen: <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_keywords">Keywords:</span> <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_allocated">Zugeordnet:</span> <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_remaining">Übrig:</span> <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_campaigns">Kampagnen:</span> <strong>0</strong></div>
                 </div>
 
                 <!-- Brand Keywords -->
-                <div class="section-label">Eigenmarken Keywords</div>
+                <div class="section-label" data-i18n="sec_brand_kw">Eigenmarken Keywords</div>
                 <div class="field">
-                    <div class="label-row"><label>Eigenmarken Keywords (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('brandKw')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="brandKw"></div>
+                    <div class="label-row"><label data-i18n="lbl_brand_kw">Eigenmarken Keywords (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('brandKw')" data-i18n="btn_csv_import">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="brandKw"></div>
                     <textarea id="brandKw" rows="3" placeholder="eigenmarke keyword"></textarea>
                 </div>
 
                 <!-- Competitor Keywords -->
-                <div class="section-label">Wettbewerber Keywords</div>
+                <div class="section-label" data-i18n="sec_comp_kw">Wettbewerber Keywords</div>
                 <div class="field">
-                    <div class="label-row"><label>Wettbewerber Keywords (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('compKw')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="compKw"></div>
+                    <div class="label-row"><label data-i18n="lbl_comp_kw">Wettbewerber Keywords (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('compKw')" data-i18n="btn_csv_import">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="compKw"></div>
                     <textarea id="compKw" rows="3" placeholder="wettbewerber keyword"></textarea>
                 </div>
                 <div class="field">
-                    <label>Wettbewerber Keyword Zuordnung (pro Kampagne)</label>
+                    <label data-i18n="lbl_comp_kw_alloc">Wettbewerber Keyword Zuordnung (pro Kampagne)</label>
                     <textarea id="compKwAlloc" rows="1" placeholder="10"></textarea>
                 </div>
                 <div class="counter" id="compKwCounter">
-                    <div class="counter-item">Keywords: <strong>0</strong></div>
-                    <div class="counter-item">Zugeordnet: <strong>0</strong></div>
-                    <div class="counter-item">Übrig: <strong>0</strong></div>
-                    <div class="counter-item">Kampagnen: <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_keywords">Keywords:</span> <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_allocated">Zugeordnet:</span> <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_remaining">Übrig:</span> <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_campaigns">Kampagnen:</span> <strong>0</strong></div>
                 </div>
 
                 <!-- Single Keywords -->
-                <div class="section-label">Einzelne Keywords</div>
+                <div class="section-label" data-i18n="sec_single_kw">Single Keyword-Kampagnen</div>
                 <div class="field">
-                    <div class="label-row"><label>Einzelne Keywords (eine pro Zeile) <span class="tooltip-icon" data-tip="Jedes Keyword wird als eigene Kampagne mit Exact Match angelegt — ideal für Top-Performer Keywords mit eigenem Budget.">?</span></label><button class="btn-import" onclick="triggerImport('singleKw')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="singleKw"></div>
+                    <div class="label-row"><label><span data-i18n="lbl_single_kw">Single Keywords (eine pro Zeile, jedes = eigene Kampagne)</span> <span class="tooltip-icon" data-tip="Jedes Keyword wird als eigene Kampagne mit Exact Match angelegt — ideal für Top-Performer Keywords mit eigenem Budget." data-i18n-tip="tip_single_kw">?</span></label><button class="btn-import" onclick="triggerImport('singleKw')" data-i18n="btn_csv_import">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="singleKw"></div>
                     <textarea id="singleKw" rows="3" placeholder="langhantelstange"></textarea>
                 </div>
 
                 <!-- Product Placement -->
-                <div class="section-label">Produktausrichtung</div>
+                <div class="section-label" data-i18n="sec_product_targeting">Produktausrichtung</div>
                 <div class="field">
-                    <div class="label-row"><label>Eigenmarken ASINs (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('brandAsins')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="brandAsins"></div>
+                    <div class="label-row"><label data-i18n="lbl_brand_asins">Eigenmarken ASINs (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('brandAsins')" data-i18n="btn_csv_import">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="brandAsins"></div>
                     <textarea id="brandAsins" rows="3" placeholder="B0XXXXXX"></textarea>
                 </div>
                 <div class="field">
-                    <div class="label-row"><label>Wettbewerber ASINs (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('compAsins')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="compAsins"></div>
+                    <div class="label-row"><label data-i18n="lbl_comp_asins">Wettbewerber ASINs (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('compAsins')" data-i18n="btn_csv_import">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="compAsins"></div>
                     <textarea id="compAsins" rows="3" placeholder="B0XXXXXX"></textarea>
                 </div>
                 <div class="field">
-                    <label>Wettbewerber ASIN Zuordnung (pro Kampagne)</label>
+                    <label data-i18n="lbl_comp_asin_alloc">Wettbewerber ASIN Zuordnung (pro Kampagne)</label>
                     <textarea id="compAsinAlloc" rows="1" placeholder="10"></textarea>
                 </div>
                 <div class="counter" id="compAsinCounter">
-                    <div class="counter-item">ASINs: <strong>0</strong></div>
-                    <div class="counter-item">Zugeordnet: <strong>0</strong></div>
-                    <div class="counter-item">Übrig: <strong>0</strong></div>
-                    <div class="counter-item">Kampagnen: <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_asins">ASINs:</span> <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_allocated">Zugeordnet:</span> <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_remaining">Übrig:</span> <strong>0</strong></div>
+                    <div class="counter-item"><span data-i18n="cnt_campaigns">Kampagnen:</span> <strong>0</strong></div>
                 </div>
             </div>
         </div>
@@ -350,258 +356,258 @@
         <div class="col-right">
             <!-- STEP 3 -->
             <div class="card">
-                <div class="card-title"><span class="step">3</span> Kampagnen-Einstellungen</div>
+                <div class="card-title"><span class="step">3</span> <span data-i18n="step3_title">Kampagnen-Einstellungen</span></div>
 
                 <div class="field">
-                    <label>Gebotsstrategie <span class="tooltip-icon" data-tip="'Nur senken': Amazon senkt Gebote bei geringer Conversion-Wahrscheinlichkeit. 'Erhöhen und senken': Amazon passt Gebote in beide Richtungen an. 'Fest': Gebote bleiben unverändert.">?</span></label>
+                    <label><span data-i18n="lbl_bidding_strategy">Gebotsstrategie</span> <span class="tooltip-icon" data-tip="'Nur senken': Amazon senkt Gebote bei geringer Conversion-Wahrscheinlichkeit. 'Erhöhen und senken': Amazon passt Gebote in beide Richtungen an. 'Fest': Gebote bleiben unverändert." data-i18n-tip="tip_bidding_strategy">?</span></label>
                     <select id="biddingStrategy">
-                        <option value="down">Dynamische Gebote &ndash; nur senken</option>
-                        <option value="updown">Dynamische Gebote &ndash; erhöhen und senken</option>
-                        <option value="fixed">Feste Gebote</option>
+                        <option value="down" data-i18n="opt_bid_down">Dynamische Gebote &ndash; nur senken</option>
+                        <option value="updown" data-i18n="opt_bid_updown">Dynamische Gebote &ndash; erhöhen und senken</option>
+                        <option value="fixed" data-i18n="opt_bid_fixed">Feste Gebote</option>
                     </select>
                 </div>
                 <div class="field-row">
                     <div class="field">
-                        <label>Tagesbudget</label>
+                        <label data-i18n="lbl_daily_budget">Tagesbudget</label>
                         <input type="number" id="dailyBudget" step="0.01" value="10.00">
                     </div>
                     <div class="field">
-                        <label>Standardgebot</label>
+                        <label data-i18n="lbl_default_bid">Standardgebot</label>
                         <input type="number" id="overallBid" step="0.01" value="0.50">
                     </div>
                 </div>
                 <div class="field-row">
                     <div class="field">
-                        <label>Kampagnen-Startdatum</label>
+                        <label data-i18n="lbl_start_date">Kampagnen-Startdatum</label>
                         <input type="date" id="startDate">
                     </div>
                     <div class="field">
-                        <label>Enddatum <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
+                        <label><span data-i18n="lbl_end_date">Enddatum</span> <span style="font-weight:400;color:#8b949e;" data-i18n="lbl_optional">(optional)</span></label>
                         <input type="date" id="endDate">
                     </div>
                 </div>
-                <div class="section-label">Placement-Anpassungen <span style="font-weight:400;color:var(--text-secondary);">(optional)</span> <span class="tooltip-icon" data-tip="Prozentuale Gebotserhöhung für bestimmte Platzierungen. Z.B. 50% bei Top of Search = dein Gebot wird um 50% erhöht, wenn die Anzeige ganz oben erscheint.">?</span></div>
+                <div class="section-label"><span data-i18n="sec_placement">Placement-Anpassungen</span> <span style="font-weight:400;color:var(--text-secondary);" data-i18n="lbl_optional">(optional)</span> <span class="tooltip-icon" data-tip="Prozentuale Gebotserhöhung für bestimmte Platzierungen. Z.B. 50% bei Top of Search = dein Gebot wird um 50% erhöht, wenn die Anzeige ganz oben erscheint." data-i18n-tip="tip_placement">?</span></div>
                 <div class="field-row">
                     <div class="field">
-                        <label>Top of Search (%)</label>
-                        <input type="number" id="placementTos" step="1" min="0" max="900" value="" placeholder="z.B. 50">
+                        <label data-i18n="lbl_tos_pct">Top of Search (%)</label>
+                        <input type="number" id="placementTos" step="1" min="0" max="900" value="" placeholder="z.B. 50" data-i18n-ph="ph_example_50">
                     </div>
                     <div class="field">
-                        <label>Product Pages (%)</label>
-                        <input type="number" id="placementPp" step="1" min="0" max="900" value="" placeholder="z.B. 25">
+                        <label data-i18n="lbl_pp_pct">Product Pages (%)</label>
+                        <input type="number" id="placementPp" step="1" min="0" max="900" value="" placeholder="z.B. 25" data-i18n-ph="ph_example_25">
                     </div>
                 </div>
 
                 <div class="field">
-                    <label>Negative Keywords (Exact)</label>
-                    <textarea id="negKwExact" rows="3" placeholder="ein Keyword pro Zeile"></textarea>
+                    <label data-i18n="lbl_neg_kw_exact">Negative Keywords (Exact)</label>
+                    <textarea id="negKwExact" rows="3" placeholder="ein Keyword pro Zeile" data-i18n-ph="ph_one_kw_per_line"></textarea>
                 </div>
                 <div class="field">
-                    <label>Negative Keywords (Phrase)</label>
-                    <textarea id="negKwPhrase" rows="3" placeholder="ein Keyword pro Zeile"></textarea>
+                    <label data-i18n="lbl_neg_kw_phrase">Negative Keywords (Phrase)</label>
+                    <textarea id="negKwPhrase" rows="3" placeholder="ein Keyword pro Zeile" data-i18n-ph="ph_one_kw_per_line"></textarea>
                 </div>
                 <div class="field">
-                    <label>Kampagnen Negative Keywords (Exact)</label>
-                    <textarea id="campNegKwExact" rows="3" placeholder="ein Keyword pro Zeile"></textarea>
+                    <label data-i18n="lbl_camp_neg_kw_exact">Kampagnen Negative Keywords (Exact)</label>
+                    <textarea id="campNegKwExact" rows="3" placeholder="ein Keyword pro Zeile" data-i18n-ph="ph_one_kw_per_line"></textarea>
                 </div>
                 <div class="field">
-                    <label>Kampagnen Negative Keywords (Phrase)</label>
-                    <textarea id="campNegKwPhrase" rows="3" placeholder="ein Keyword pro Zeile"></textarea>
+                    <label data-i18n="lbl_camp_neg_kw_phrase">Kampagnen Negative Keywords (Phrase)</label>
+                    <textarea id="campNegKwPhrase" rows="3" placeholder="ein Keyword pro Zeile" data-i18n-ph="ph_one_kw_per_line"></textarea>
                 </div>
                 <div class="field">
-                    <label>Negatives Produkt-Targeting (ASINs)</label>
+                    <label data-i18n="lbl_neg_prod_targeting">Negatives Produkt-Targeting (ASINs)</label>
                     <textarea id="negProdTargeting" rows="3" placeholder="B0XXXXXX"></textarea>
                 </div>
             </div>
 
             <!-- STEP 4 -->
             <div class="card">
-                <div class="card-title"><span class="step">4</span> Kampagnen-Vorlagen</div>
+                <div class="card-title"><span class="step">4</span> <span data-i18n="step4_title">Kampagnen-Vorlagen</span></div>
 
                 <!-- Auto Campaign -->
                 <div class="campaign-option" id="opt-auto">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-auto" checked>
-                        <span class="co-label">SP: Auto-Kampagne</span>
+                        <input type="checkbox" id="chk-auto">
+                        <span class="co-label" data-i18n="camp_auto">SP: Auto-Kampagne</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-auto" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-auto" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-auto" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-auto" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-auto" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-auto" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-auto" checked><label>Negative KW</label></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="cross-neg-auto" checked><label>Cross-Negation <span class="tooltip-icon" data-tip="Brand Keywords werden als Negative Phrase, generische Keywords als Negative Exact in die Auto-Kampagne eingefügt — verhindert Kannibalisierung.">?</span></label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-auto" checked><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="cross-neg-auto" checked><label><span data-i18n="lbl_cross_negation">Cross-Negation</span> <span class="tooltip-icon" data-tip="Brand Keywords werden als Negative Phrase, generische Keywords als Negative Exact in die Auto-Kampagne eingefügt — verhindert Kannibalisierung." data-i18n-tip="tip_cross_negation">?</span></label></div>
                     </div>
                     <div class="auto-sub" id="autoSubOptions">
-                        <div class="auto-sub-item"><input type="checkbox" id="auto-close" checked><span>Enge Übereinstimmung</span><input type="number" id="bid-auto-close" step="0.01" value="0.50"></div>
-                        <div class="auto-sub-item"><input type="checkbox" id="auto-loose" checked><span>Entfernte Übereinstimmung</span><input type="number" id="bid-auto-loose" step="0.01" value="0.50"></div>
-                        <div class="auto-sub-item"><input type="checkbox" id="auto-substitutes" checked><span>Ersatz</span><input type="number" id="bid-auto-substitutes" step="0.01" value="0.50"></div>
-                        <div class="auto-sub-item"><input type="checkbox" id="auto-complements" checked><span>Ergänzungen</span><input type="number" id="bid-auto-complements" step="0.01" value="0.50"></div>
+                        <div class="auto-sub-item"><input type="checkbox" id="auto-close"><span data-i18n="auto_close">Enge Übereinstimmung</span><input type="number" id="bid-auto-close" step="0.01" value="0.50"></div>
+                        <div class="auto-sub-item"><input type="checkbox" id="auto-loose"><span data-i18n="auto_loose">Entfernte Übereinstimmung</span><input type="number" id="bid-auto-loose" step="0.01" value="0.50"></div>
+                        <div class="auto-sub-item"><input type="checkbox" id="auto-substitutes"><span data-i18n="auto_substitutes">Ersatz</span><input type="number" id="bid-auto-substitutes" step="0.01" value="0.50"></div>
+                        <div class="auto-sub-item"><input type="checkbox" id="auto-complements"><span data-i18n="auto_complements">Ergänzungen</span><input type="number" id="bid-auto-complements" step="0.01" value="0.50"></div>
                     </div>
                 </div>
 
                 <!-- Generic Exact -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-generic-exact" checked>
-                        <span class="co-label">SP: Generic-Keyword (Exact)</span>
+                        <input type="checkbox" id="chk-generic-exact">
+                        <span class="co-label" data-i18n="camp_generic_exact">SP: Generic-Keyword (Exact)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-generic-exact" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-generic-exact" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-generic-exact" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-generic-exact" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-generic-exact" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-generic-exact" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-generic-exact"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-generic-exact"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- Generic Broad -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-generic-broad" checked>
-                        <span class="co-label">SP: Generic-Keyword (Broad)</span>
+                        <input type="checkbox" id="chk-generic-broad">
+                        <span class="co-label" data-i18n="camp_generic_broad">SP: Generic-Keyword (Broad)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-generic-broad" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-generic-broad" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-generic-broad" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-generic-broad" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-generic-broad" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-generic-broad" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-generic-broad"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-generic-broad"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- Brand Exact -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-brand-exact" checked>
-                        <span class="co-label">SP: Brand-Keyword (Exact)</span>
+                        <input type="checkbox" id="chk-brand-exact">
+                        <span class="co-label" data-i18n="camp_brand_exact">SP: Brand-Keyword (Exact)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-brand-exact" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-brand-exact" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-brand-exact" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-brand-exact" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-brand-exact" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-brand-exact" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-exact"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-exact"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- Brand Broad -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-brand-broad" checked>
-                        <span class="co-label">SP: Brand-Keyword (Broad)</span>
+                        <input type="checkbox" id="chk-brand-broad">
+                        <span class="co-label" data-i18n="camp_brand_broad">SP: Brand-Keyword (Broad)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-brand-broad" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-brand-broad" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-brand-broad" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-brand-broad" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-brand-broad" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-brand-broad" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-broad"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-broad"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- Brand Phrase -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-brand-phrase" checked>
-                        <span class="co-label">SP: Brand-Keyword (Phrase)</span>
+                        <input type="checkbox" id="chk-brand-phrase">
+                        <span class="co-label" data-i18n="camp_brand_phrase">SP: Brand-Keyword (Phrase)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-brand-phrase" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-brand-phrase" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-brand-phrase" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-brand-phrase" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-brand-phrase" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-brand-phrase" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-phrase"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-phrase"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- Competitor Exact -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-comp-exact" checked>
-                        <span class="co-label">SP: Competitor-Keyword (Exact)</span>
+                        <input type="checkbox" id="chk-comp-exact">
+                        <span class="co-label" data-i18n="camp_comp_exact">SP: Competitor-Keyword (Exact)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-comp-exact" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-comp-exact" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-comp-exact" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-comp-exact" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-comp-exact" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-comp-exact" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-comp-exact"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-comp-exact"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- Competitor Broad -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-comp-broad" checked>
-                        <span class="co-label">SP: Competitor-Keyword (Broad)</span>
+                        <input type="checkbox" id="chk-comp-broad">
+                        <span class="co-label" data-i18n="camp_comp_broad">SP: Competitor-Keyword (Broad)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-comp-broad" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-comp-broad" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-comp-broad" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-comp-broad" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-comp-broad" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-comp-broad" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-comp-broad"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-comp-broad"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- Product Targeting Competitor -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-pt-comp" checked>
-                        <span class="co-label">SP: Produktausrichtung (Competitor ASIN)</span>
+                        <input type="checkbox" id="chk-pt-comp">
+                        <span class="co-label" data-i18n="camp_pt_comp">SP: Produktausrichtung (Competitor ASIN)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-pt-comp" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-pt-comp" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-pt-comp" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-pt-comp" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-pt-comp" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-pt-comp" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-pt-comp"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-pt-comp"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- Product Targeting Brand -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-pt-brand" checked>
-                        <span class="co-label">SP: Produktausrichtung (Brand ASIN)</span>
+                        <input type="checkbox" id="chk-pt-brand">
+                        <span class="co-label" data-i18n="camp_pt_brand">SP: Produktausrichtung (Brand ASIN)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-pt-brand" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-pt-brand" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-pt-brand" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-pt-brand" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-pt-brand" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-pt-brand" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-pt-brand"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-pt-brand"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- Single Keyword -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-single" checked>
-                        <span class="co-label">SP: Einzelnes Keyword</span>
+                        <input type="checkbox" id="chk-single">
+                        <span class="co-label" data-i18n="camp_single">SP: Single Keyword-Kampagne</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-single" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-single" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-single" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-single" step="0.01" value="10.00"></div>
                         <div class="mini-field"><label>ToS %</label><input type="number" id="tos-single" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field"><label>PP %</label><input type="number" id="pp-single" step="1" min="0" max="900" placeholder=""></div>
-                        <div class="mini-field neg-check"><input type="checkbox" id="neg-single"><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="neg-single"><label data-i18n="lbl_neg_kw_short">Negative KW</label></div>
                     </div>
                 </div>
 
                 <!-- SD Section Header -->
-                <div class="section-label" style="margin-top:20px;">Sponsored Display</div>
+                <div class="section-label" style="margin-top:20px;" data-i18n="sec_sd">Sponsored Display</div>
 
                 <!-- SD Product Targeting - Competitor -->
                 <div class="campaign-option">
                     <div class="campaign-option-header">
                         <input type="checkbox" id="chk-sd-pt-comp">
-                        <span class="co-label">SD: Produktausrichtung (Competitor ASIN)</span>
+                        <span class="co-label" data-i18n="camp_sd_pt_comp">SD: Produktausrichtung (Competitor ASIN)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-sd-pt-comp" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-sd-pt-comp" step="0.01" value="1.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-sd-pt-comp" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-sd-pt-comp" step="0.01" value="1.00"></div>
                     </div>
                 </div>
 
@@ -609,11 +615,11 @@
                 <div class="campaign-option">
                     <div class="campaign-option-header">
                         <input type="checkbox" id="chk-sd-pt-brand">
-                        <span class="co-label">SD: Produktausrichtung (Brand ASIN)</span>
+                        <span class="co-label" data-i18n="camp_sd_pt_brand">SD: Produktausrichtung (Brand ASIN)</span>
                     </div>
                     <div class="campaign-option-fields">
-                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-sd-pt-brand" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-sd-pt-brand" step="0.01" value="1.00"></div>
+                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-sd-pt-brand" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-sd-pt-brand" step="0.01" value="1.00"></div>
                     </div>
                 </div>
             </div>
@@ -623,8 +629,8 @@
 
             <!-- Buttons -->
             <div class="btn-row">
-                <button class="btn btn-secondary" onclick="resetAll()">Zurücksetzen</button>
-                <button class="btn btn-primary" onclick="addToAccumulator()" title="Ctrl+Enter">Produkt hinzufügen +</button>
+                <button class="btn btn-secondary" onclick="resetAll()" data-i18n="btn_reset">Zurücksetzen</button>
+                <button class="btn btn-primary" onclick="addToAccumulator()" title="Ctrl+Enter" data-i18n="btn_add_product">Produkt hinzufügen +</button>
             </div>
         </div>
     </div>
@@ -633,8 +639,8 @@
     <div class="acc-products" id="accProducts"></div>
     <div class="accumulator-bar" style="margin-top:16px;">
         <span class="acc-count" id="accCount">0 Produkte im Bulk Sheet</span>
-        <button class="btn-sm" onclick="clearAccumulator()">Liste leeren</button>
-        <button class="btn btn-primary" onclick="downloadBulkSheet()" id="downloadBtn" disabled style="padding:8px 20px;font-size:13px;">Excel für Amazon herunterladen</button>
+        <button class="btn-sm" onclick="clearAccumulator()" data-i18n="btn_clear_list">Liste leeren</button>
+        <button class="btn btn-primary" onclick="downloadBulkSheet()" id="downloadBtn" disabled style="padding:8px 20px;font-size:13px;" data-i18n="btn_download">Excel für Amazon herunterladen</button>
     </div>
 
 </div>
@@ -659,6 +665,346 @@ function toggleTheme() {
     applyTheme(next);
 }
 initTheme();
+
+// --- UI Language Switcher ---
+let uiLang = localStorage.getItem('ppc_ui_lang') || 'de';
+
+const UI = {
+    de: {
+        nav_dashboard: 'Dashboard',
+        nav_help: 'Hilfe',
+        page_title: 'Kampagnen Ersteller',
+        page_sub: 'Amazon Sponsored Products Bulk Upload Sheet Generator',
+        step1_title: 'Beworbene Produkte',
+        step2_title: 'Keywords & Targeting',
+        step3_title: 'Kampagnen-Einstellungen',
+        step4_title: 'Kampagnen-Vorlagen',
+        toggle_vendor: 'Vendor: ASIN Listen',
+        toggle_seller: 'Seller: SKU Listen',
+        lbl_marketplace: 'Marketplace',
+        lbl_product_name: 'Produktname',
+        hint_product_name: '(wird für die Kampagnenbenennung verwendet)',
+        lbl_asins: 'ASINs (eine pro Zeile)',
+        lbl_skus: 'SKUs (eine pro Zeile)',
+        lbl_portfolio_id: 'Portfolio-ID',
+        lbl_optional: '(optional)',
+        sec_generic_kw: 'Generische Keywords',
+        lbl_generic_kw: 'Keywords (eine pro Zeile)',
+        lbl_kw_allocation: 'Keyword Allocation (pro Kampagne)',
+        sec_brand_kw: 'Eigenmarken Keywords',
+        lbl_brand_kw: 'Eigenmarken Keywords (eine pro Zeile)',
+        sec_comp_kw: 'Wettbewerber Keywords',
+        lbl_comp_kw: 'Wettbewerber Keywords (eine pro Zeile)',
+        lbl_comp_kw_alloc: 'Wettbewerber Keyword Zuordnung (pro Kampagne)',
+        sec_single_kw: 'Single Keyword-Kampagnen',
+        lbl_single_kw: 'Single Keywords (eine pro Zeile, jedes = eigene Kampagne)',
+        sec_product_targeting: 'Produktausrichtung',
+        lbl_brand_asins: 'Eigenmarken ASINs (eine pro Zeile)',
+        lbl_comp_asins: 'Wettbewerber ASINs (eine pro Zeile)',
+        lbl_comp_asin_alloc: 'Wettbewerber ASIN Zuordnung (pro Kampagne)',
+        lbl_bidding_strategy: 'Gebotsstrategie',
+        opt_bid_down: 'Dynamische Gebote \u2013 nur senken',
+        opt_bid_updown: 'Dynamische Gebote \u2013 erh\u00f6hen und senken',
+        opt_bid_fixed: 'Feste Gebote',
+        lbl_daily_budget: 'Tagesbudget',
+        lbl_default_bid: 'Standardgebot',
+        lbl_bid: 'Gebot',
+        lbl_start_date: 'Kampagnen-Startdatum',
+        lbl_end_date: 'Enddatum',
+        sec_placement: 'Placement-Anpassungen',
+        lbl_tos_pct: 'Top of Search (%)',
+        lbl_pp_pct: 'Product Pages (%)',
+        lbl_neg_kw_exact: 'Negative Keywords (Exact)',
+        lbl_neg_kw_phrase: 'Negative Keywords (Phrase)',
+        lbl_camp_neg_kw_exact: 'Kampagnen Negative Keywords (Exact)',
+        lbl_camp_neg_kw_phrase: 'Kampagnen Negative Keywords (Phrase)',
+        lbl_neg_prod_targeting: 'Negatives Produkt-Targeting (ASINs)',
+        lbl_neg_kw_short: 'Negative KW',
+        lbl_cross_negation: 'Cross-Negation',
+        camp_auto: 'SP: Auto-Kampagne',
+        camp_generic_exact: 'SP: Generic-Keyword (Exact)',
+        camp_generic_broad: 'SP: Generic-Keyword (Broad)',
+        camp_brand_exact: 'SP: Brand-Keyword (Exact)',
+        camp_brand_broad: 'SP: Brand-Keyword (Broad)',
+        camp_brand_phrase: 'SP: Brand-Keyword (Phrase)',
+        camp_comp_exact: 'SP: Competitor-Keyword (Exact)',
+        camp_comp_broad: 'SP: Competitor-Keyword (Broad)',
+        camp_pt_comp: 'SP: Produktausrichtung (Competitor ASIN)',
+        camp_pt_brand: 'SP: Produktausrichtung (Brand ASIN)',
+        camp_single: 'SP: Single Keyword-Kampagne',
+        sec_sd: 'Sponsored Display',
+        camp_sd_pt_comp: 'SD: Produktausrichtung (Competitor ASIN)',
+        camp_sd_pt_brand: 'SD: Produktausrichtung (Brand ASIN)',
+        auto_close: 'Enge \u00dcbereinstimmung',
+        auto_loose: 'Entfernte \u00dcbereinstimmung',
+        auto_substitutes: 'Ersatz',
+        auto_complements: 'Erg\u00e4nzungen',
+        cnt_keywords: 'Keywords:',
+        cnt_asins: 'ASINs:',
+        cnt_allocated: 'Zugeordnet:',
+        cnt_remaining: '\u00dcbrig:',
+        cnt_campaigns: 'Kampagnen:',
+        btn_csv_import: 'CSV/Excel Import',
+        btn_reset: 'Zur\u00fccksetzen',
+        btn_add_product: 'Produkt hinzuf\u00fcgen +',
+        btn_clear_list: 'Liste leeren',
+        btn_download: 'Excel f\u00fcr Amazon herunterladen',
+        btn_logout: 'Logout',
+        acc_products_in_bulk: 'Produkte im Bulk Sheet',
+        acc_product_singular: 'Produkt',
+        acc_campaigns: 'Kampagnen',
+        acc_added: 'hinzugef\u00fcgt!',
+        acc_clear_confirm_pre: 'Bulk Sheet mit ',
+        acc_clear_confirm_post: ' wirklich leeren?',
+        acc_no_products: 'Keine Produkte im Bulk Sheet. F\u00fcge zuerst Produkte hinzu.',
+        acc_success: 'Bulk Sheet erfolgreich erstellt',
+        acc_rows: 'Zeilen',
+        // Tooltips
+        tip_marketplace: 'Bestimmt die Sprache aller Spalten, Entit\u00e4ten und Match Types im Bulk Sheet.',
+        tip_kw_allocation: 'Anzahl Keywords pro Kampagne. Wenn du z.B. 50 Keywords und Allocation 10 hast, werden 5 Kampagnen mit je 10 Keywords erstellt.',
+        tip_single_kw: 'Jedes Keyword wird als eigene Kampagne mit Exact Match angelegt \u2014 ideal f\u00fcr Top-Performer Keywords mit eigenem Budget.',
+        tip_bidding_strategy: "'Nur senken': Amazon senkt Gebote bei geringer Conversion-Wahrscheinlichkeit. 'Erh\u00f6hen und senken': Amazon passt Gebote in beide Richtungen an. 'Fest': Gebote bleiben unver\u00e4ndert.",
+        tip_placement: 'Prozentuale Gebotserh\u00f6hung f\u00fcr bestimmte Platzierungen. Z.B. 50% bei Top of Search = dein Gebot wird um 50% erh\u00f6ht, wenn die Anzeige ganz oben erscheint.',
+        tip_cross_negation: 'Brand Keywords werden als Negative Phrase, generische Keywords als Negative Exact in die Auto-Kampagne eingef\u00fcgt \u2014 verhindert Kannibalisierung.',
+        // Placeholders
+        ph_product_name: 'z.B. Langhantel',
+        ph_portfolio_id: 'z.B. 123456789',
+        ph_example_50: 'z.B. 50',
+        ph_example_25: 'z.B. 25',
+        ph_one_kw_per_line: 'ein Keyword pro Zeile',
+        // Marketplace options
+        mp_de: 'Deutschland (DE)',
+        mp_en: 'USA / UK (EN)',
+        mp_fr: 'Frankreich (FR)',
+        mp_it: 'Italien (IT)',
+        mp_es: 'Spanien (ES)',
+        // Error messages
+        err_alloc_generic: 'Generische Keyword-Zuordnung ({0}) \u00fcbersteigt die Anzahl verf\u00fcgbarer Keywords ({1}).',
+        err_alloc_comp_kw: 'Wettbewerber Keyword-Zuordnung ({0}) \u00fcbersteigt die Anzahl verf\u00fcgbarer Keywords ({1}).',
+        err_alloc_comp_asin: 'Wettbewerber ASIN-Zuordnung ({0}) \u00fcbersteigt die Anzahl verf\u00fcgbarer ASINs ({1}).',
+        err_has_items_no_name: 'Das Produkt hat {0} aber keinen Namen.',
+        err_has_name_no_items: 'Produkt "{0}" hat keine {1}.',
+        err_no_input: 'Bitte Produktname und ASINs/SKUs eingeben.',
+        err_invalid_asin: 'Ung\u00fcltige ASIN "{0}" (muss 10 Zeichen lang sein und mit B0 beginnen).',
+        err_empty_sku: 'Leere SKU gefunden.',
+        err_invalid_brand_asin: 'Ung\u00fcltige Eigenmarken-ASIN: "{0}"',
+        err_invalid_comp_asin: 'Ung\u00fcltige Wettbewerber-ASIN: "{0}"',
+        err_invalid_neg_asin: 'Ung\u00fcltige Negative Targeting-ASIN: "{0}"',
+        err_no_campaigns: 'Keine Kampagnen ausgew\u00e4hlt oder keine Keywords/ASINs eingegeben.',
+        err_no_export_data: 'Keine Daten zum Exportieren.',
+        warn_dupes_removed: '{0} doppelte {1} entfernt.'
+    },
+    en: {
+        nav_dashboard: 'Dashboard',
+        nav_help: 'Help',
+        page_title: 'Campaign Creator',
+        page_sub: 'Amazon Sponsored Products Bulk Upload Sheet Generator',
+        step1_title: 'Products to Advertise',
+        step2_title: 'Keywords & Targeting',
+        step3_title: 'Campaign Settings',
+        step4_title: 'Campaign Templates',
+        toggle_vendor: 'Vendor: ASIN Lists',
+        toggle_seller: 'Seller: SKU Lists',
+        lbl_marketplace: 'Marketplace',
+        lbl_product_name: 'Product Name',
+        hint_product_name: '(used for campaign naming)',
+        lbl_asins: 'ASINs (one per line)',
+        lbl_skus: 'SKUs (one per line)',
+        lbl_portfolio_id: 'Portfolio ID',
+        lbl_optional: '(optional)',
+        sec_generic_kw: 'Generic Keywords',
+        lbl_generic_kw: 'Keywords (one per line)',
+        lbl_kw_allocation: 'Keyword Allocation (per campaign)',
+        sec_brand_kw: 'Brand Keywords',
+        lbl_brand_kw: 'Brand Keywords (one per line)',
+        sec_comp_kw: 'Competitor Keywords',
+        lbl_comp_kw: 'Competitor Keywords (one per line)',
+        lbl_comp_kw_alloc: 'Competitor Keyword Allocation (per campaign)',
+        sec_single_kw: 'Single Keyword Campaigns',
+        lbl_single_kw: 'Single Keywords (one per line, each = own campaign)',
+        sec_product_targeting: 'Product Targeting',
+        lbl_brand_asins: 'Brand ASINs (one per line)',
+        lbl_comp_asins: 'Competitor ASINs (one per line)',
+        lbl_comp_asin_alloc: 'Competitor ASIN Allocation (per campaign)',
+        lbl_bidding_strategy: 'Bidding Strategy',
+        opt_bid_down: 'Dynamic bids \u2013 down only',
+        opt_bid_updown: 'Dynamic bids \u2013 up and down',
+        opt_bid_fixed: 'Fixed bids',
+        lbl_daily_budget: 'Daily Budget',
+        lbl_default_bid: 'Default Bid',
+        lbl_bid: 'Bid',
+        lbl_start_date: 'Campaign Start Date',
+        lbl_end_date: 'End Date',
+        sec_placement: 'Placement Adjustments',
+        lbl_tos_pct: 'Top of Search (%)',
+        lbl_pp_pct: 'Product Pages (%)',
+        lbl_neg_kw_exact: 'Negative Keywords (Exact)',
+        lbl_neg_kw_phrase: 'Negative Keywords (Phrase)',
+        lbl_camp_neg_kw_exact: 'Campaign Negative Keywords (Exact)',
+        lbl_camp_neg_kw_phrase: 'Campaign Negative Keywords (Phrase)',
+        lbl_neg_prod_targeting: 'Negative Product Targeting (ASINs)',
+        lbl_neg_kw_short: 'Negative KW',
+        lbl_cross_negation: 'Cross-Negation',
+        camp_auto: 'SP: Auto Campaign',
+        camp_generic_exact: 'SP: Generic Keyword (Exact)',
+        camp_generic_broad: 'SP: Generic Keyword (Broad)',
+        camp_brand_exact: 'SP: Brand Keyword (Exact)',
+        camp_brand_broad: 'SP: Brand Keyword (Broad)',
+        camp_brand_phrase: 'SP: Brand Keyword (Phrase)',
+        camp_comp_exact: 'SP: Competitor Keyword (Exact)',
+        camp_comp_broad: 'SP: Competitor Keyword (Broad)',
+        camp_pt_comp: 'SP: Product Targeting (Competitor ASIN)',
+        camp_pt_brand: 'SP: Product Targeting (Brand ASIN)',
+        camp_single: 'SP: Single Keyword Campaign',
+        sec_sd: 'Sponsored Display',
+        camp_sd_pt_comp: 'SD: Product Targeting (Competitor ASIN)',
+        camp_sd_pt_brand: 'SD: Product Targeting (Brand ASIN)',
+        auto_close: 'Close Match',
+        auto_loose: 'Loose Match',
+        auto_substitutes: 'Substitutes',
+        auto_complements: 'Complements',
+        cnt_keywords: 'Keywords:',
+        cnt_asins: 'ASINs:',
+        cnt_allocated: 'Allocated:',
+        cnt_remaining: 'Remaining:',
+        cnt_campaigns: 'Campaigns:',
+        btn_csv_import: 'CSV/Excel Import',
+        btn_reset: 'Reset',
+        btn_add_product: 'Add Product +',
+        btn_clear_list: 'Clear List',
+        btn_download: 'Download Excel for Amazon',
+        btn_logout: 'Logout',
+        acc_products_in_bulk: 'Products in Bulk Sheet',
+        acc_product_singular: 'Product',
+        acc_campaigns: 'Campaigns',
+        acc_added: 'added!',
+        acc_clear_confirm_pre: 'Really clear Bulk Sheet with ',
+        acc_clear_confirm_post: '?',
+        acc_no_products: 'No products in Bulk Sheet. Add products first.',
+        acc_success: 'Bulk Sheet created successfully',
+        acc_rows: 'rows',
+        // Tooltips
+        tip_marketplace: 'Determines the language of all columns, entities, and match types in the Bulk Sheet.',
+        tip_kw_allocation: 'Number of keywords per campaign. E.g. 50 keywords with allocation 10 creates 5 campaigns with 10 keywords each.',
+        tip_single_kw: 'Each keyword creates its own Exact Match campaign \u2014 ideal for top-performer keywords with dedicated budget.',
+        tip_bidding_strategy: "'Down only': Amazon lowers bids when conversion is unlikely. 'Up and down': Amazon adjusts bids in both directions. 'Fixed': Bids remain unchanged.",
+        tip_placement: 'Percentage bid increase for specific placements. E.g. 50% for Top of Search = your bid is increased by 50% when the ad appears at the top.',
+        tip_cross_negation: 'Brand keywords are added as Negative Phrase, generic keywords as Negative Exact in the Auto campaign \u2014 prevents cannibalization.',
+        // Placeholders
+        ph_product_name: 'e.g. Barbell',
+        ph_portfolio_id: 'e.g. 123456789',
+        ph_example_50: 'e.g. 50',
+        ph_example_25: 'e.g. 25',
+        ph_one_kw_per_line: 'one keyword per line',
+        // Marketplace options
+        mp_de: 'Germany (DE)',
+        mp_en: 'USA / UK (EN)',
+        mp_fr: 'France (FR)',
+        mp_it: 'Italy (IT)',
+        mp_es: 'Spain (ES)',
+        // Error messages
+        err_alloc_generic: 'Generic keyword allocation ({0}) exceeds available keywords ({1}).',
+        err_alloc_comp_kw: 'Competitor keyword allocation ({0}) exceeds available keywords ({1}).',
+        err_alloc_comp_asin: 'Competitor ASIN allocation ({0}) exceeds available ASINs ({1}).',
+        err_has_items_no_name: 'Product has {0} but no name.',
+        err_has_name_no_items: 'Product "{0}" has no {1}.',
+        err_no_input: 'Please enter a product name and ASINs/SKUs.',
+        err_invalid_asin: 'Invalid ASIN "{0}" (must be 10 characters and start with B0).',
+        err_empty_sku: 'Empty SKU found.',
+        err_invalid_brand_asin: 'Invalid Brand ASIN: "{0}"',
+        err_invalid_comp_asin: 'Invalid Competitor ASIN: "{0}"',
+        err_invalid_neg_asin: 'Invalid Negative Targeting ASIN: "{0}"',
+        err_no_campaigns: 'No campaigns selected or no keywords/ASINs entered.',
+        err_no_export_data: 'No data to export.',
+        warn_dupes_removed: '{0} duplicate {1} removed.'
+    }
+};
+
+function applyUILang(newLang) {
+    uiLang = newLang || uiLang;
+    localStorage.setItem('ppc_ui_lang', uiLang);
+    const dict = UI[uiLang] || UI['de'];
+
+    // Update all data-i18n text content
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key] !== undefined) {
+            el.textContent = dict[key];
+        }
+    });
+
+    // Update all data-i18n-tip tooltip attributes
+    document.querySelectorAll('[data-i18n-tip]').forEach(el => {
+        const key = el.getAttribute('data-i18n-tip');
+        if (dict[key] !== undefined) {
+            el.setAttribute('data-tip', dict[key]);
+        }
+    });
+
+    // Update all data-i18n-ph placeholder attributes
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (dict[key] !== undefined) {
+            el.placeholder = dict[key];
+        }
+    });
+
+    // Update marketplace select options
+    const mpSel = document.getElementById('marketplaceSelect');
+    if (mpSel) {
+        const mpKeys = ['mp_de', 'mp_en', 'mp_fr', 'mp_it', 'mp_es'];
+        const opts = mpSel.querySelectorAll('option');
+        opts.forEach((opt, i) => {
+            if (dict[mpKeys[i]]) opt.textContent = dict[mpKeys[i]];
+        });
+    }
+
+    // Update toggle button highlights
+    document.getElementById('langOptDE').classList.toggle('active', uiLang === 'de');
+    document.getElementById('langOptEN').classList.toggle('active', uiLang === 'en');
+
+    // Sync the bulk sheet output language with UI lang when DE or EN
+    if (uiLang === 'en') {
+        lang = 'en';
+        document.getElementById('marketplaceSelect').value = 'en';
+    }
+
+    // Update the product list label based on mode
+    updateProductListLabel();
+
+    // Update accumulator UI text
+    updateAccumulatorUI();
+
+    // Update page title
+    document.title = (uiLang === 'en' ? 'Campaign Creator' : 'Kampagnen Ersteller') + ' - AdsMasters PPC Tools';
+}
+
+function toggleUILang() {
+    const newLang = uiLang === 'de' ? 'en' : 'de';
+    applyUILang(newLang);
+}
+
+function updateProductListLabel() {
+    const lbl = document.getElementById('productListLabel');
+    const dict = UI[uiLang] || UI['de'];
+    if (lbl) {
+        if (mode === 'vendor') {
+            lbl.textContent = dict.lbl_asins;
+        } else {
+            lbl.textContent = dict.lbl_skus;
+        }
+    }
+}
+
+// Initialize UI language on load
+(function() {
+    // Defer to after DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { applyUILang(uiLang); });
+    } else {
+        applyUILang(uiLang);
+    }
+})();
 
 // --- Keyboard Shortcuts ---
 document.addEventListener('keydown', function(e) {
@@ -923,8 +1269,7 @@ function setMode(m) {
     document.querySelectorAll('.toggle-btn').forEach((b, i) => {
         b.classList.toggle('active', (i === 0 && m === 'vendor') || (i === 1 && m === 'seller'));
     });
-    const lbl = document.getElementById('productListLabel');
-    if (lbl) lbl.textContent = m === 'vendor' ? 'ASINs (eine pro Zeile)' : 'SKUs (eine pro Zeile)';
+    updateProductListLabel();
     const ta = document.getElementById('productList');
     if (ta) ta.placeholder = m === 'vendor' ? 'B0XXXXXX\nB0YYYYYY' : 'SKU-001\nSKU-002';
 }
@@ -1094,7 +1439,7 @@ function resetAll() {
     document.getElementById('endDate').value = '';
     document.getElementById('placementTos').value = '';
     document.getElementById('placementPp').value = '';
-    document.querySelectorAll('.campaign-option input[type="checkbox"]').forEach(el => el.checked = true);
+    document.querySelectorAll('.campaign-option input[type="checkbox"]').forEach(el => el.checked = false);
     updateCounter('genericKw', 'genericAlloc', 'genericCounter');
     updateCounter('compKw', 'compKwAlloc', 'compKwCounter');
     updateCounter('compAsins', 'compAsinAlloc', 'compAsinCounter');
@@ -1204,14 +1549,15 @@ function generateRows() {
     const compAsinsCount = unique(getLines('compAsins')).length;
     const compAsinAllocVal = parseInt(getLines('compAsinAlloc')[0], 10) || 0;
 
+    const uiDict = UI[uiLang] || UI['de'];
     if (genericAllocVal > genericKwsCount && genericKwsCount > 0) {
-        errors.push('Generische Keyword-Zuordnung (' + genericAllocVal + ') übersteigt die Anzahl verfügbarer Keywords (' + genericKwsCount + ').');
+        errors.push(uiDict.err_alloc_generic.replace('{0}', genericAllocVal).replace('{1}', genericKwsCount));
     }
     if (compKwAllocVal > compKwsCount && compKwsCount > 0) {
-        errors.push('Wettbewerber Keyword-Zuordnung (' + compKwAllocVal + ') übersteigt die Anzahl verfügbarer Keywords (' + compKwsCount + ').');
+        errors.push(uiDict.err_alloc_comp_kw.replace('{0}', compKwAllocVal).replace('{1}', compKwsCount));
     }
     if (compAsinAllocVal > compAsinsCount && compAsinsCount > 0) {
-        errors.push('Wettbewerber ASIN-Zuordnung (' + compAsinAllocVal + ') übersteigt die Anzahl verfügbarer ASINs (' + compAsinsCount + ').');
+        errors.push(uiDict.err_alloc_comp_asin.replace('{0}', compAsinAllocVal).replace('{1}', compAsinsCount));
     }
 
     if (errors.length > 0) {
@@ -1226,13 +1572,13 @@ function generateRows() {
     const portfolioId = document.getElementById('portfolioId').value.trim();
 
     if (!productName && productItems.length > 0) {
-        errors.push('Das Produkt hat ' + (isVendor ? 'ASINs' : 'SKUs') + ' aber keinen Namen.');
+        errors.push(uiDict.err_has_items_no_name.replace('{0}', isVendor ? 'ASINs' : 'SKUs'));
     }
     if (productName && productItems.length === 0) {
-        errors.push('Produkt "' + productName + '" hat keine ' + (isVendor ? 'ASINs' : 'SKUs') + '.');
+        errors.push(uiDict.err_has_name_no_items.replace('{0}', productName).replace('{1}', isVendor ? 'ASINs' : 'SKUs'));
     }
     if (!productName && productItems.length === 0) {
-        errors.push('Bitte Produktname und ASINs/SKUs eingeben.');
+        errors.push(uiDict.err_no_input);
     }
 
     if (errors.length > 0) {
@@ -1245,13 +1591,13 @@ function generateRows() {
         const asinRegex = /^B0[A-Z0-9]{8}$/i;
         productItems.forEach(item => {
             if (!asinRegex.test(item)) {
-                errors.push('Ungültige ASIN "' + item + '" (muss 10 Zeichen lang sein und mit B0 beginnen).');
+                errors.push(uiDict.err_invalid_asin.replace('{0}', item));
             }
         });
     } else {
         productItems.forEach(item => {
             if (item.length === 0) {
-                errors.push('Leere SKU gefunden.');
+                errors.push(uiDict.err_empty_sku);
             }
         });
     }
@@ -1261,15 +1607,15 @@ function generateRows() {
         const asinRegex = /^B0[A-Z0-9]{8}$/i;
         const brandAsinCheck = getLines('brandAsins');
         brandAsinCheck.forEach(a => {
-            if (!asinRegex.test(a)) errors.push('Ungültige Eigenmarken-ASIN: "' + a + '"');
+            if (!asinRegex.test(a)) errors.push(uiDict.err_invalid_brand_asin.replace('{0}', a));
         });
         const compAsinCheck = getLines('compAsins');
         compAsinCheck.forEach(a => {
-            if (!asinRegex.test(a)) errors.push('Ungültige Wettbewerber-ASIN: "' + a + '"');
+            if (!asinRegex.test(a)) errors.push(uiDict.err_invalid_comp_asin.replace('{0}', a));
         });
         const negProdCheck = getLines('negProdTargeting');
         negProdCheck.forEach(a => {
-            if (!asinRegex.test(a)) errors.push('Ungültige Negative Targeting-ASIN: "' + a + '"');
+            if (!asinRegex.test(a)) errors.push(uiDict.err_invalid_neg_asin.replace('{0}', a));
         });
     }
 
@@ -1338,15 +1684,18 @@ function generateRows() {
     function uniqueWithWarn(arr, label) {
         const u = [...new Set(arr.map(s => s.toLowerCase()))];
         const dupes = arr.length - u.length;
-        if (dupes > 0) warnings.push(dupes + ' doppelte ' + label + ' entfernt.');
+        if (dupes > 0) warnings.push(uiDict.warn_dupes_removed.replace('{0}', dupes).replace('{1}', label));
         return u;
     }
-    const genericKws = uniqueWithWarn(getLines('genericKw'), 'Generische Keywords');
-    const brandKws = uniqueWithWarn(getLines('brandKw'), 'Eigenmarken Keywords');
-    const compKws = uniqueWithWarn(getLines('compKw'), 'Wettbewerber Keywords');
-    const singleKws = uniqueWithWarn(getLines('singleKw'), 'Einzelne Keywords');
-    const brandAsinsList = uniqueWithWarn(getLines('brandAsins'), 'Eigenmarken ASINs');
-    const compAsinsList = uniqueWithWarn(getLines('compAsins'), 'Wettbewerber ASINs');
+    const kwLabels = uiLang === 'en'
+        ? { generic: 'Generic Keywords', brand: 'Brand Keywords', comp: 'Competitor Keywords', single: 'Single Keywords', brandAsins: 'Brand ASINs', compAsins: 'Competitor ASINs' }
+        : { generic: 'Generische Keywords', brand: 'Eigenmarken Keywords', comp: 'Wettbewerber Keywords', single: 'Single Keywords', brandAsins: 'Eigenmarken ASINs', compAsins: 'Wettbewerber ASINs' };
+    const genericKws = uniqueWithWarn(getLines('genericKw'), kwLabels.generic);
+    const brandKws = uniqueWithWarn(getLines('brandKw'), kwLabels.brand);
+    const compKws = uniqueWithWarn(getLines('compKw'), kwLabels.comp);
+    const singleKws = uniqueWithWarn(getLines('singleKw'), kwLabels.single);
+    const brandAsinsList = uniqueWithWarn(getLines('brandAsins'), kwLabels.brandAsins);
+    const compAsinsList = uniqueWithWarn(getLines('compAsins'), kwLabels.compAsins);
 
     // Allocations
     const genericAllocNum = parseInt(getLines('genericAlloc')[0], 10) || 0;
@@ -1807,7 +2156,7 @@ function generateRows() {
     } // end single product block
 
     if (rows.length === 0) {
-        errors.push('Keine Kampagnen ausgewählt oder keine Keywords/ASINs eingegeben.');
+        errors.push(uiDict.err_no_campaigns);
         errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
         return null;
     }
@@ -1849,7 +2198,7 @@ function addToAccumulator() {
         updateAccumulatorUI();
 
         // Show success banner
-        showAccumulatorSuccess(result.productName + ' hinzugefügt!');
+        showAccumulatorSuccess(result.productName + ' ' + (UI[uiLang] || UI['de']).acc_added);
 
         // Clear product-specific fields (keep campaign settings)
         document.getElementById('productName').value = '';
@@ -1875,15 +2224,20 @@ function addToAccumulator() {
 
 function updateAccumulatorUI() {
     const count = window.accumulatedProducts.length;
-    document.getElementById('accCount').textContent = count + ' Produkt' + (count !== 1 ? 'e' : '') + ' im Bulk Sheet';
+    const dict = UI[uiLang] || UI['de'];
+    const prodLabel = uiLang === 'en'
+        ? count + ' ' + (count !== 1 ? 'Products' : 'Product') + ' in Bulk Sheet'
+        : count + ' ' + (count !== 1 ? 'Produkte' : 'Produkt') + ' im Bulk Sheet';
+    document.getElementById('accCount').textContent = prodLabel;
     document.getElementById('downloadBtn').disabled = count === 0;
 
+    const campLabel = dict.acc_campaigns;
     const container = document.getElementById('accProducts');
     container.innerHTML = '';
     window.accumulatedProducts.forEach((p, idx) => {
         const div = document.createElement('div');
         div.className = 'acc-product-item';
-        div.innerHTML = '<span>' + (idx + 1) + '. ' + escapeHtml(p.name) + ' (' + p.itemCount + ' ' + (mode === 'vendor' ? 'ASINs' : 'SKUs') + ', ' + p.campaignCount + ' Kampagnen)</span><button onclick="removeFromAccumulator(' + idx + ')">&times;</button>';
+        div.innerHTML = '<span>' + (idx + 1) + '. ' + escapeHtml(p.name) + ' (' + p.itemCount + ' ' + (mode === 'vendor' ? 'ASINs' : 'SKUs') + ', ' + p.campaignCount + ' ' + campLabel + ')</span><button onclick="removeFromAccumulator(' + idx + ')">&times;</button>';
         container.appendChild(div);
     });
 }
@@ -1902,7 +2256,7 @@ function removeFromAccumulator(idx) {
 }
 
 function downloadBulkSheet() {
-    if (window.accumulatedRows.length === 0) { alert('Keine Produkte im Bulk Sheet. Füge zuerst Produkte hinzu.'); return; }
+    if (window.accumulatedRows.length === 0) { alert((UI[uiLang] || UI['de']).acc_no_products); return; }
 
     // Use the headers from the first accumulated product
     const firstProduct = window.accumulatedProducts[0];
@@ -1947,7 +2301,7 @@ function downloadBulkSheet() {
     }
 
     if (!wb.SheetNames.length) {
-        alert('Keine Daten zum Exportieren.');
+        alert((UI[uiLang] || UI['de']).err_no_export_data);
         return;
     }
 
@@ -1955,13 +2309,15 @@ function downloadBulkSheet() {
     const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
     const fileName = 'Bulk-Upload ' + dateStr + '.xlsx';
     XLSX.writeFile(wb, fileName);
-    showSuccess('Bulk Sheet "' + fileName + '" erfolgreich erstellt (' + allRows.length + ' Zeilen).');
+    const dict = UI[uiLang] || UI['de'];
+    showSuccess(dict.acc_success + ' "' + fileName + '" (' + allRows.length + ' ' + dict.acc_rows + ').');
 }
 
 function clearAccumulator() {
     const count = window.accumulatedProducts.length;
     if (count === 0) return;
-    if (!confirm('Bulk Sheet mit ' + count + ' Produkt' + (count !== 1 ? 'en' : '') + ' wirklich leeren?')) return;
+    const dict = UI[uiLang] || UI['de'];
+    if (!confirm(dict.acc_clear_confirm_pre + count + ' ' + (count !== 1 ? (uiLang === 'en' ? 'Products' : 'Produkten') : dict.acc_product_singular) + dict.acc_clear_confirm_post)) return;
     window.accumulatedRows = [];
     window.accumulatedProducts = [];
     updateAccumulatorUI();
