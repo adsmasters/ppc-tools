@@ -907,6 +907,10 @@ function exportBulkSheet() {
     const newCampKeywords = selected.filter(r => !r.targetCampaign);
     const existingCampKeywords = selected.filter(r => r.targetCampaign);
 
+    // Column indices: 0=Product, 1=Entity, 2=Operation, 3=Campaign ID, 4=Ad Group ID,
+    // 9=Campaign Name, 10=Ad Group Name, 11=Start Date, 13=Targeting Type, 14=State,
+    // 15=Daily Budget, 18=Ad Group Default Bid, 19=Bid, 20=Keyword Text, 21=Match Type, 22=Bidding Strategy
+
     // New harvest campaign
     if (newCampKeywords.length > 0) {
         const campName = 'SP: Harvest Keywords (Exact)';
@@ -915,14 +919,14 @@ function exportBulkSheet() {
         // Campaign row
         const cr = emptyRow();
         cr[0] = BULK.product; cr[1] = BULK.campaign; cr[2] = BULK.create;
-        cr[9] = campName; cr[11] = startDate;
+        cr[3] = campName; cr[9] = campName; cr[11] = startDate;
         cr[13] = BULK.manual; cr[14] = BULK.enabled; cr[15] = budget; cr[22] = bidStrat;
         rows.push(cr);
 
         // Ad Group row
         const ar = emptyRow();
         ar[0] = BULK.product; ar[1] = BULK.adGroup; ar[2] = BULK.create;
-        ar[9] = campName; ar[10] = agName;
+        ar[3] = campName; ar[4] = agName; ar[9] = campName; ar[10] = agName;
         ar[14] = BULK.enabled; ar[18] = newCampKeywords[0].suggestedBid;
         rows.push(ar);
 
@@ -930,7 +934,7 @@ function exportBulkSheet() {
         newCampKeywords.forEach(kw => {
             const kr = emptyRow();
             kr[0] = BULK.product; kr[1] = BULK.keyword; kr[2] = BULK.create;
-            kr[9] = campName; kr[10] = agName;
+            kr[3] = campName; kr[4] = agName; kr[9] = campName; kr[10] = agName;
             kr[14] = BULK.enabled; kr[19] = kw.suggestedBid;
             kr[20] = kw.searchterm; kr[21] = matchTypeMap[kw.matchType] || BULK.exact;
             rows.push(kr);
@@ -951,7 +955,7 @@ function exportBulkSheet() {
         kws.forEach(kw => {
             const kr = emptyRow();
             kr[0] = BULK.product; kr[1] = BULK.keyword; kr[2] = BULK.create;
-            kr[9] = campName; kr[10] = agName;
+            kr[3] = campName; kr[4] = agName; kr[9] = campName; kr[10] = agName;
             kr[14] = BULK.enabled; kr[19] = kw.suggestedBid;
             kr[20] = kw.searchterm; kr[21] = matchTypeMap[kw.matchType] || BULK.exact;
             rows.push(kr);
@@ -966,7 +970,7 @@ function exportBulkSheet() {
             autoCampaigns.forEach(campName => {
                 const nr = emptyRow();
                 nr[0] = BULK.product; nr[1] = BULK.negKeyword; nr[2] = BULK.create;
-                nr[9] = campName;
+                nr[3] = campName;
                 nr[14] = BULK.enabled;
                 nr[20] = kw.searchterm; nr[21] = BULK.negExact;
                 rows.push(nr);
