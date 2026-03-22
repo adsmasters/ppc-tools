@@ -395,6 +395,15 @@ function handleFileUpload(file) {
                 if (p) parsedSheets.push(p);
             });
 
+            // Debug: log column detection per sheet
+            parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity, hasSearchTerm }, idx) => {
+                const headers = rows[headerIdx].map(c => String(c));
+                console.log('[Harvest] Sheet', idx, 'headers:', headers.slice(0, 30));
+                console.log('[Harvest] Sheet', idx, 'cm.sku:', cm.sku, 'cm.asin:', cm.asin, 'cm.entity:', cm.entity, 'hasEntity:', hasEntity);
+                if (cm.sku !== -1) console.log('[Harvest] Sheet', idx, 'SKU column found at index', cm.sku, '=', headers[cm.sku]);
+                else console.log('[Harvest] Sheet', idx, 'SKU column NOT FOUND! Headers:', headers.join(' | '));
+            });
+
             // Pass 1: Extract campaign structure, keywords, product ads, targeting type
             parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }) => {
                 if (!hasEntity) return;
