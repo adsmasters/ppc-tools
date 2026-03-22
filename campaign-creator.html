@@ -233,9 +233,12 @@
         <p class="page-sub" data-i18n="page_sub">Amazon Sponsored Products Bulk Upload Sheet Generator</p>
     </div>
 
-    <!-- Hidden preset elements (keep functionality but hide UI) -->
-    <div style="display:none;">
+    <!-- Vorlage Bar -->
+    <div class="preset-bar">
         <select id="presetSelect"><option value="">— Vorlage wählen —</option></select>
+        <button class="btn-sm" onclick="loadPreset()">Laden</button>
+        <button class="btn-sm" onclick="savePreset()">Speichern</button>
+        <button class="btn-sm danger" onclick="deletePreset()">Löschen</button>
         <input type="file" id="presetImportFile" class="import-input" accept=".json">
     </div>
 
