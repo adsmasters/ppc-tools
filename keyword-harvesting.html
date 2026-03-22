@@ -419,6 +419,10 @@ function handleFileUpload(file) {
                     const asin = cm.asin !== -1 ? String(r[cm.asin] || '').trim() : '';
                     const sku = cm.sku !== -1 ? String(r[cm.sku] || '').trim() : '';
                     if (sku && _pass1SkuCount < 3) { console.log('[Pass1] Found SKU:', sku, 'in campaign:', campName, 'entity:', entity); _pass1SkuCount++; }
+                    if (entity.includes('produktanzeige') && _pass1SkuCount < 3) {
+                        console.log('[Pass1] ProductAd row - entity:', entity, 'sku idx:', cm.sku, 'raw value:', r[cm.sku], 'row length:', r.length, 'row[21]:', r[21], 'campName:', campName);
+                        _pass1SkuCount++;
+                    }
 
                     // Collect existing keywords
                     if (kwText && (entity.includes('keyword') || entity.includes('mot-cl') || entity.includes('palabra') || entity.includes('parola'))) {
