@@ -1837,7 +1837,11 @@ function generateRows() {
             rows.push(r);
         }
 
+        const _negKwSeen = new Set();
         function addNegKeywordRow(campName, adGroupName, kwText, matchType) {
+            const key = campName + '|' + adGroupName + '|' + kwText.toLowerCase().trim() + '|' + matchType;
+            if (_negKwSeen.has(key)) return; // skip duplicate
+            _negKwSeen.add(key);
             const r = emptyRow();
             r[hProduct] = productLabel;
             r[hEntity] = ent.negKeyword;
