@@ -254,16 +254,8 @@
                     <button class="toggle-btn active" data-i18n="toggle_seller" onclick="setMode('seller')">Seller: SKU Listen</button>
                 </div>
 
-                <div class="field">
-                    <label><span data-i18n="lbl_marketplace">Marketplace</span> <span class="tooltip-icon" data-tip="Bestimmt die Sprache aller Spalten, Entitäten und Match Types im Bulk Sheet." data-i18n-tip="tip_marketplace">?</span></label>
-                    <select id="marketplaceSelect" onchange="setMarketplace(this.value)">
-                        <option value="de">Deutschland (DE)</option>
-                        <option value="en">USA / UK (EN)</option>
-                        <option value="fr">Frankreich (FR)</option>
-                        <option value="it">Italien (IT)</option>
-                        <option value="es">Spanien (ES)</option>
-                    </select>
-                </div>
+                <!-- Marketplace removed - all values are English for all marketplaces -->
+                <input type="hidden" id="marketplaceSelect" value="en">
 
                 <div class="field">
                     <label data-i18n="lbl_product_name">Produktname</label>
