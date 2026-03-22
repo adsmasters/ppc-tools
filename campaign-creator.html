@@ -241,14 +241,6 @@
         <input type="file" id="presetImportFile" class="import-input" accept=".json">
     </div>
 
-    <!-- Accumulator Bar -->
-    <div class="accumulator-bar">
-        <span class="acc-count" id="accCount">0 Produkte im Bulk Sheet</span>
-        <button class="btn-sm" onclick="downloadBulkSheet()" id="downloadBtn" disabled>Bulk Sheet herunterladen</button>
-        <button class="btn-sm danger" onclick="clearAccumulator()">Bulk Sheet leeren</button>
-    </div>
-    <div class="acc-products" id="accProducts"></div>
-
     <div class="layout">
         <!-- LEFT COLUMN -->
         <div class="col-left">
@@ -640,10 +632,19 @@
             <!-- Buttons -->
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="resetAll()">Zurücksetzen</button>
-                <button class="btn btn-primary" onclick="addToAccumulator()" title="Ctrl+Enter">Zum Bulk Sheet hinzufügen</button>
+                <button class="btn btn-primary" onclick="addToAccumulator()" title="Ctrl+Enter">Produkt hinzufügen +</button>
             </div>
         </div>
     </div>
+
+    <!-- Accumulator Bar - bottom -->
+    <div class="acc-products" id="accProducts"></div>
+    <div class="accumulator-bar" style="margin-top:16px;">
+        <span class="acc-count" id="accCount">0 Produkte im Bulk Sheet</span>
+        <button class="btn-sm" onclick="clearAccumulator()">Liste leeren</button>
+        <button class="btn btn-primary" onclick="downloadBulkSheet()" id="downloadBtn" disabled style="padding:8px 20px;font-size:13px;">Excel für Amazon herunterladen</button>
+    </div>
+
 </div>
 
 <script>
