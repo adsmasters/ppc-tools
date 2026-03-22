@@ -1282,7 +1282,7 @@ function setMarketplace(m) {
 // Marketplace translations for Amazon Bulk Sheet
 const T = {
     de: {
-        product: 'Gesponserte Produkte',
+        product: 'Sponsored Products',
         campaign: 'Kampagne', adGroup: 'Anzeigengruppe', productAd: 'Produktanzeige',
         keyword: 'Keyword', negKeyword: 'Negatives Keyword', negCampKeyword: 'Negatives Kampagnen-Keyword',
         prodTargeting: 'Produkt-Targeting', negProdTargeting: 'Negatives Produkt-Targeting',
@@ -2279,7 +2279,7 @@ function downloadBulkSheet() {
         });
     });
 
-    const spLabel = lang === 'de' ? 'Gesponserte Produkte' : 'Sponsored Products';
+    const spLabel = 'Sponsored Products';
     const sdLabel = 'Sponsored Display';
     const spData = dataRows.filter(r => r[0] !== sdLabel);
     const sdData = dataRows.filter(r => r[0] === sdLabel);
