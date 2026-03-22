@@ -247,8 +247,8 @@
                 <div class="card-title"><span class="step">1</span> <span data-i18n="step1_title">Beworbene Produkte</span></div>
 
                 <div class="toggle-group">
-                    <button class="toggle-btn active" data-i18n="toggle_vendor" onclick="setMode('vendor')">Vendor: ASIN Listen</button>
-                    <button class="toggle-btn" data-i18n="toggle_seller" onclick="setMode('seller')">Seller: SKU Listen</button>
+                    <button class="toggle-btn" data-i18n="toggle_vendor" onclick="setMode('vendor')">Vendor: ASIN Listen</button>
+                    <button class="toggle-btn active" data-i18n="toggle_seller" onclick="setMode('seller')">Seller: SKU Listen</button>
                 </div>
 
                 <div class="field">
@@ -268,7 +268,7 @@
                     <input type="text" id="productName" placeholder="z.B. Langhantel" data-i18n-ph="ph_product_name">
                 </div>
                 <div class="field">
-                    <label class="productListLabel" id="productListLabel" data-i18n="lbl_asins">ASINs (eine pro Zeile)</label>
+                    <label class="productListLabel" id="productListLabel" data-i18n="lbl_skus">SKUs (eine pro Zeile)</label>
                     <textarea id="productList" rows="4" placeholder="B0XXXXXX&#10;B0YYYYYY"></textarea>
                 </div>
                 <div class="field">
@@ -1261,7 +1261,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // --- State ---
-let mode = 'vendor'; // vendor or seller
+let mode = 'seller'; // vendor or seller
 let lang = 'de';
 
 function setMode(m) {
