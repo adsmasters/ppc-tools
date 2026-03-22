@@ -485,9 +485,9 @@ function handleFileUpload(file) {
                 name: c.name, asins: [...c.asins], skus: [...c.skus], adgroups: [...c.adgroups]
             }));
 
-            console.log('[Harvest] adGroupAsinMap entries:', Object.keys(adGroupAsinMap).length, adGroupAsinMap);
-            console.log('[Harvest] campMap ASINs:', Object.entries(campMap).map(([k,v]) => k + ': ' + [...v.asins].join(',')).filter(s => s.includes(',')));
-            console.log('[Harvest] strData sample productAsins:', strData.slice(0,5).map(r => r.searchterm + ' -> ' + (r.productAsins||[]).join(',')));
+            console.log('[Harvest] campMap SKUs:', Object.entries(campMap).map(([k,v]) => k + ' SKUs:[' + [...v.skus].join(',') + '] ASINs:[' + [...v.asins].join(',') + ']').filter(s => !s.includes('SKUs:[] ASINs:[]')));
+            console.log('[Harvest] bulkCampaigns with SKUs:', bulkCampaigns.filter(c => c.skus.length > 0).map(c => c.name + ': ' + c.skus.join(',')));
+            console.log('[Harvest] isVendor will be:', !bulkCampaigns.some(c => c.skus && c.skus.length > 0));
 
             finishUpload(file);
         };
@@ -985,6 +985,12 @@ function exportBulkSheet() {
         }
         return name || campName;
     }
+
+    // Debug
+    console.log('[Export] isVendor:', isVendor);
+    Object.entries(bySourceCampaign).forEach(([k, v]) => {
+        console.log('[Export] source:', k, 'SKUs:', [...v.skus], 'ASINs:', [...v.asins], 'keywords:', v.keywords.length, 'asinTargets:', v.asinTargets.length);
+    });
 
     // --- Create campaigns per product ---
     Object.entries(bySourceCampaign).forEach(([sourceCampName, data]) => {
