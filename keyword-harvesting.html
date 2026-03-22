@@ -898,7 +898,9 @@ function exportBulkSheet() {
 
     const rows = [];
 
-    // --- Row builders (identical logic to Campaign Creator) ---
+    const hPtExpr = headers[25];
+
+    // --- Row builders (identical to Campaign Creator) ---
     function addCampaignRow(campName) {
         const r = emptyRow();
         r[hProduct] = productLabel; r[hEntity] = 'Campaign'; r[hOp] = op;
@@ -934,6 +936,21 @@ function exportBulkSheet() {
         rows.push(r);
     }
 
+    function addProdTargetingRow(campName, agName, expr, bid) {
+        const r = emptyRow();
+        r[hProduct] = productLabel; r[hEntity] = 'Product Targeting'; r[hOp] = op;
+        r[hCampId] = campName; r[hAdGroupId] = agName;
+        r[hState] = state; r[hBid] = bid; r[hPtExpr] = expr;
+        rows.push(r);
+    }
+
+    // --- Detect Vendor vs Seller from bulk sheet data ---
+    // Seller = has SKUs in campaigns, Vendor = only ASINs
+    let isVendor = true;
+    for (const camp of bulkCampaigns) {
+        if (camp.skus && camp.skus.length > 0) { isVendor = false; break; }
+    }
+
     // --- Group keywords by source auto campaign (= by product) ---
     const bySourceCampaign = {};
     selected.forEach(kw => {
@@ -941,8 +958,13 @@ function exportBulkSheet() {
         strData.filter(r => r.searchterm.toLowerCase() === kw.searchterm.toLowerCase() && r.isAuto)
             .forEach(r => sources.add(r.campaign));
         const sourceCamp = sources.size > 0 ? [...sources][0] : 'Unknown';
-        if (!bySourceCampaign[sourceCamp]) bySourceCampaign[sourceCamp] = { keywords: [], asins: new Set(), skus: new Set() };
-        bySourceCampaign[sourceCamp].keywords.push(kw);
+        if (!bySourceCampaign[sourceCamp]) bySourceCampaign[sourceCamp] = { keywords: [], asinTargets: [], asins: new Set(), skus: new Set() };
+        // Separate: ASIN search terms → Product Targeting, text search terms → Keywords
+        if (kw.isAsin) {
+            bySourceCampaign[sourceCamp].asinTargets.push(kw);
+        } else {
+            bySourceCampaign[sourceCamp].keywords.push(kw);
+        }
         const campData = bulkCampaigns.find(c => c.name === sourceCamp);
         if (campData) {
             campData.asins.forEach(a => bySourceCampaign[sourceCamp].asins.add(a));
@@ -951,31 +973,64 @@ function exportBulkSheet() {
         if (kw.productAsins) kw.productAsins.forEach(a => bySourceCampaign[sourceCamp].asins.add(a));
     });
 
-    // --- Create one harvest campaign per product ---
+    // --- Extract clean product name from auto campaign name ---
+    function extractProductName(campName) {
+        // Remove common prefixes: "SP: Auto-Kampagne (Low Bid) - Steinreiniger" → "Steinreiniger"
+        // Also handles: "SP: Auto Campaign - Product", "SP: Auto-Kampagne - Product"
+        let name = campName;
+        // Remove everything before the last " - " separator
+        const dashIdx = name.lastIndexOf(' - ');
+        if (dashIdx !== -1) {
+            name = name.substring(dashIdx + 3).trim();
+        }
+        return name || campName;
+    }
+
+    // --- Create campaigns per product ---
     Object.entries(bySourceCampaign).forEach(([sourceCampName, data]) => {
-        // Extract product name from auto campaign name
-        let productName = sourceCampName.replace(/^.*?[-–]\s*/, '').trim() || sourceCampName;
-        const campName = 'SP: Harvest (Exact) - ' + productName;
-        const agName = 'EXACT';
-        const defaultBid = data.keywords.length > 0 ? data.keywords[0].suggestedBid : 0.50;
+        const productName = extractProductName(sourceCampName);
 
-        // Campaign
-        addCampaignRow(campName);
+        // Product Ad items for this product
+        const productSkus = [...data.skus];
+        const productAsins = [...data.asins];
 
-        // Ad Group
-        addAdGroupRow(campName, agName, defaultBid);
-
-        // Product Ads (SKUs preferred, fallback ASINs)
-        if (data.skus.size > 0) {
-            data.skus.forEach(sku => addProductAdRow(campName, agName, sku, ''));
-        } else if (data.asins.size > 0) {
-            data.asins.forEach(asin => addProductAdRow(campName, agName, '', asin));
+        function addProductAds(campName, agName) {
+            if (!isVendor && productSkus.length > 0) {
+                productSkus.forEach(sku => addProductAdRow(campName, agName, sku, ''));
+            } else if (productAsins.length > 0) {
+                productAsins.forEach(asin => addProductAdRow(campName, agName, '', asin));
+            }
         }
 
-        // Keywords
-        data.keywords.forEach(kw => {
-            addKeywordRow(campName, agName, kw.searchterm, matchTypeMap[kw.matchType] || 'Exact', kw.suggestedBid);
-        });
+        // --- Keyword Harvest Campaign (text search terms) ---
+        if (data.keywords.length > 0) {
+            const campName = 'SP: Harvest Keywords (Exact) - ' + productName;
+            const agName = 'EXACT';
+            const defaultBid = data.keywords[0].suggestedBid;
+
+            addCampaignRow(campName);
+            addAdGroupRow(campName, agName, defaultBid);
+            addProductAds(campName, agName);
+
+            data.keywords.forEach(kw => {
+                addKeywordRow(campName, agName, kw.searchterm, matchTypeMap[kw.matchType] || 'Exact', kw.suggestedBid);
+            });
+        }
+
+        // --- Product Targeting Harvest Campaign (ASIN search terms) ---
+        if (data.asinTargets.length > 0) {
+            const campName = 'SP: Harvest Product Targeting - ' + productName;
+            const agName = 'ASIN';
+            const defaultBid = data.asinTargets[0].suggestedBid;
+
+            addCampaignRow(campName);
+            addAdGroupRow(campName, agName, defaultBid);
+            addProductAds(campName, agName);
+
+            data.asinTargets.forEach(kw => {
+                addProdTargetingRow(campName, agName, 'asin="' + kw.searchterm.toUpperCase() + '"', kw.suggestedBid);
+            });
+        }
     });
 
     // Mark as harvested
