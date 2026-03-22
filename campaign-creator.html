@@ -155,6 +155,14 @@
         .preset-bar select { flex: 1; min-width: 150px; }
         .preset-bar .btn-sm { white-space: nowrap; }
 
+        .accumulator-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; }
+        .acc-count { font-size: 14px; font-weight: 600; flex: 1; }
+        .acc-products { margin-bottom: 20px; }
+        .acc-product-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 4px; font-size: 13px; }
+        .acc-product-item button { background: none; border: none; color: var(--error); cursor: pointer; font-size: 16px; font-weight: 700; padding: 0 4px; }
+        .acc-product-item button:hover { opacity: 0.7; }
+        .acc-success-banner { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: var(--success-bg); border: 1px solid var(--success); color: var(--success); padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; z-index: 300; animation: fadeOut 0.5s ease 2.5s forwards; }
+
         .preview-overlay { position: fixed; inset: 0; background: var(--overlay); z-index: 200; display: flex; align-items: center; justify-content: center; }
         .preview-modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; max-width: 95vw; max-height: 90vh; width: 1200px; display: flex; flex-direction: column; }
         .preview-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
@@ -233,6 +241,14 @@
         <input type="file" id="presetImportFile" class="import-input" accept=".json">
     </div>
 
+    <!-- Accumulator Bar -->
+    <div class="accumulator-bar">
+        <span class="acc-count" id="accCount">0 Produkte im Bulk Sheet</span>
+        <button class="btn-sm" onclick="downloadBulkSheet()" id="downloadBtn" disabled>Bulk Sheet herunterladen</button>
+        <button class="btn-sm danger" onclick="clearAccumulator()">Bulk Sheet leeren</button>
+    </div>
+    <div class="acc-products" id="accProducts"></div>
+
     <div class="layout">
         <!-- LEFT COLUMN -->
         <div class="col-left">
@@ -256,34 +272,18 @@
                     </select>
                 </div>
 
-                <div id="productBlocksContainer">
-                    <div class="product-block" data-product-index="0">
-                        <div class="product-block-header">
-                            <span>Produkt 1</span>
-                            <div class="product-block-actions">
-                                <button class="btn-sm" onclick="duplicateProduct(this)">Produkt duplizieren</button>
-                            </div>
-                        </div>
-                        <div class="field">
-                            <label>Produktname</label>
-                            <div class="field-hint">(wird für die Kampagnenbenennung verwendet)</div>
-                            <input type="text" class="productName" placeholder="z.B. Langhantel">
-                        </div>
-                        <div class="field">
-                            <label class="productListLabel">ASINs (eine pro Zeile)</label>
-                            <textarea class="productList" rows="4" placeholder="B0XXXXXX&#10;B0YYYYYY"></textarea>
-                        </div>
-                        <div class="field">
-                            <label>Portfolio-ID <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
-                            <input type="text" class="portfolioId" placeholder="z.B. 123456789">
-                        </div>
-                    </div>
+                <div class="field">
+                    <label>Produktname</label>
+                    <div class="field-hint">(wird für die Kampagnenbenennung verwendet)</div>
+                    <input type="text" id="productName" placeholder="z.B. Langhantel">
                 </div>
-                <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
-                    <button class="btn-add-product" onclick="addProduct()">+ Produkt hinzufügen</button>
-                    <button class="btn-import" onclick="document.getElementById('productImportFile').click()">Produkte importieren</button>
-                    <button class="btn-import" onclick="downloadProductTemplate()">Vorlage herunterladen</button>
-                    <input type="file" id="productImportFile" class="import-input" accept=".csv,.xlsx,.xls,.tsv">
+                <div class="field">
+                    <label class="productListLabel" id="productListLabel">ASINs (eine pro Zeile)</label>
+                    <textarea id="productList" rows="4" placeholder="B0XXXXXX&#10;B0YYYYYY"></textarea>
+                </div>
+                <div class="field">
+                    <label>Portfolio-ID <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
+                    <input type="text" id="portfolioId" placeholder="z.B. 123456789">
                 </div>
             </div>
 
@@ -640,7 +640,7 @@
             <!-- Buttons -->
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="resetAll()">Zurücksetzen</button>
-                <button class="btn btn-primary" onclick="generateExcel()" title="Ctrl+Enter">Bulk Sheet erstellen</button>
+                <button class="btn btn-primary" onclick="addToAccumulator()" title="Ctrl+Enter">Zum Bulk Sheet hinzufügen</button>
             </div>
         </div>
     </div>
@@ -669,7 +669,7 @@ initTheme();
 document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
-        generateExcel();
+        addToAccumulator();
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
@@ -754,66 +754,7 @@ document.addEventListener('change', function(e) {
     }
 });
 
-// --- Bulk Product Import ---
-document.getElementById('productImportFile').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-
-    function processProductRows(rows) {
-        if (rows.length === 0) return;
-        const container = document.getElementById('productBlocksContainer');
-        // Check if the first row is a header
-        const firstCell = String(rows[0][0] || '').toLowerCase();
-        const startIdx = (firstCell === 'produktname' || firstCell === 'product' || firstCell === 'name') ? 1 : 0;
-
-        for (let i = startIdx; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.length < 2) continue;
-            const name = String(row[0] || '').trim();
-            if (!name) continue;
-            const asins = row.slice(1).flatMap(v => String(v || '').split(/[,;]/).map(s => s.trim())).filter(Boolean);
-            if (asins.length === 0) continue;
-            const block = createProductBlock(name, asins.join('\n'));
-            container.appendChild(block);
-        }
-        renumberProducts();
-    }
-
-    if (file.name.match(/\.(xlsx|xls)$/i)) {
-        reader.onload = function(evt) {
-            const data = new Uint8Array(evt.target.result);
-            const wb = XLSX.read(data, { type: 'array' });
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-            processProductRows(rows);
-        };
-        reader.readAsArrayBuffer(file);
-    } else {
-        reader.onload = function(evt) {
-            const text = evt.target.result;
-            const sep = text.includes('\t') ? '\t' : ',';
-            const rows = text.split(/\r?\n/).filter(l => l.trim()).map(line => line.split(sep).map(v => v.trim().replace(/^["']|["']$/g, '')));
-            processProductRows(rows);
-        };
-        reader.readAsText(file);
-    }
-    e.target.value = '';
-});
-
-// --- Product Template Download ---
-function downloadProductTemplate() {
-    const wb = XLSX.utils.book_new();
-    const data = [
-        ['Produktname', 'ASIN 1', 'ASIN 2', 'ASIN 3', 'ASIN 4', 'ASIN 5'],
-        ['Langhantel', 'B0XXXXXXXXX', 'B0YYYYYYYYY', '', '', ''],
-        ['Kurzhantel', 'B0ZZZZZZZZZ', '', '', '', '']
-    ];
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-    XLSX.utils.book_append_sheet(wb, ws, 'Produkte');
-    XLSX.writeFile(wb, 'Produkt-Import-Vorlage.xlsx');
-}
+// --- Product Template Download (kept for reference but button removed) ---
 
 function appendToTextarea(textarea, values) {
     const existing = textarea.value.trim();
@@ -843,16 +784,12 @@ function refreshPresetDropdown() {
 
 function gatherFormState() {
     const state = { mode, lang };
-    // Products
-    const blocks = getProductBlocks();
-    state.products = [];
-    blocks.forEach(b => {
-        state.products.push({
-            name: b.querySelector('.productName').value,
-            list: b.querySelector('.productList').value,
-            portfolioId: b.querySelector('.portfolioId') ? b.querySelector('.portfolioId').value : ''
-        });
-    });
+    // Product (single product)
+    state.products = [{
+        name: document.getElementById('productName').value,
+        list: document.getElementById('productList').value,
+        portfolioId: document.getElementById('portfolioId').value
+    }];
     // Text fields
     const textIds = ['genericKw', 'genericAlloc', 'brandKw', 'compKw', 'compKwAlloc', 'singleKw', 'brandAsins', 'compAsins', 'compAsinAlloc', 'negKwExact', 'negKwPhrase', 'campNegKwExact', 'campNegKwPhrase', 'negProdTargeting'];
     state.texts = {};
@@ -880,16 +817,12 @@ function gatherFormState() {
 function applyFormState(state) {
     // Mode & Lang
     setMode(state.mode || 'vendor');
-    setLang(state.lang || 'de');
-    // Products
-    const container = document.getElementById('productBlocksContainer');
-    container.innerHTML = '';
-    productCounter = 0;
-    (state.products || [{ name: '', list: '' }]).forEach((p, i) => {
-        const block = createProductBlock(p.name, p.list, p.portfolioId || '');
-        container.appendChild(block);
-    });
-    renumberProducts();
+    setMarketplace(state.lang || 'de');
+    // Product (single - load first product from preset)
+    const p = (state.products || [{}])[0] || {};
+    document.getElementById('productName').value = p.name || '';
+    document.getElementById('productList').value = p.list || '';
+    document.getElementById('portfolioId').value = p.portfolioId || '';
     // Text fields
     if (state.texts) {
         Object.entries(state.texts).forEach(([id, val]) => {
@@ -995,12 +928,10 @@ function setMode(m) {
     document.querySelectorAll('.toggle-btn').forEach((b, i) => {
         b.classList.toggle('active', (i === 0 && m === 'vendor') || (i === 1 && m === 'seller'));
     });
-    document.querySelectorAll('.productListLabel').forEach(lbl => {
-        lbl.textContent = m === 'vendor' ? 'ASINs (eine pro Zeile)' : 'SKUs (eine pro Zeile)';
-    });
-    document.querySelectorAll('.productList').forEach(ta => {
-        ta.placeholder = m === 'vendor' ? 'B0XXXXXX\nB0YYYYYY' : 'SKU-001\nSKU-002';
-    });
+    const lbl = document.getElementById('productListLabel');
+    if (lbl) lbl.textContent = m === 'vendor' ? 'ASINs (eine pro Zeile)' : 'SKUs (eine pro Zeile)';
+    const ta = document.getElementById('productList');
+    if (ta) ta.placeholder = m === 'vendor' ? 'B0XXXXXX\nB0YYYYYY' : 'SKU-001\nSKU-002';
 }
 
 function setMarketplace(m) {
@@ -1097,87 +1028,14 @@ const T = {
     }
 };
 
-// --- Product block management ---
-let productCounter = 1;
-
-function getProductBlocks() {
-    return document.querySelectorAll('#productBlocksContainer .product-block');
-}
-
-function renumberProducts() {
-    const blocks = getProductBlocks();
-    blocks.forEach((block, idx) => {
-        block.querySelector('.product-block-header span').textContent = 'Produkt ' + (idx + 1);
-        // Show/hide remove button
-        const removeBtn = block.querySelector('.btn-remove');
-        if (removeBtn) {
-            removeBtn.style.display = blocks.length > 1 ? '' : 'none';
-        }
-    });
-}
-
-function createProductBlock(name, asins, portfolioId) {
-    productCounter++;
-    const block = document.createElement('div');
-    block.className = 'product-block';
-    block.dataset.productIndex = productCounter;
-    const labelText = mode === 'vendor' ? 'ASINs (eine pro Zeile)' : 'SKUs (eine pro Zeile)';
-    const placeholder = mode === 'vendor' ? 'B0XXXXXX\nB0YYYYYY' : 'SKU-001\nSKU-002';
-    block.innerHTML = `
-        <div class="product-block-header">
-            <span>Produkt</span>
-            <div class="product-block-actions">
-                <button class="btn-sm" onclick="duplicateProduct(this)">Produkt duplizieren</button>
-                <button class="btn-sm danger btn-remove" onclick="removeProduct(this)">&times; Entfernen</button>
-            </div>
-        </div>
-        <div class="field">
-            <label>Produktname</label>
-            <div class="field-hint">(wird für die Kampagnenbenennung verwendet)</div>
-            <input type="text" class="productName" placeholder="z.B. Langhantel" value="${escapeHtml(name || '')}">
-        </div>
-        <div class="field">
-            <label class="productListLabel">${labelText}</label>
-            <textarea class="productList" rows="4" placeholder="${placeholder}">${escapeHtml(asins || '')}</textarea>
-        </div>
-        <div class="field">
-            <label>Portfolio-ID <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
-            <input type="text" class="portfolioId" placeholder="z.B. 123456789" value="${escapeHtml(portfolioId || '')}">
-        </div>
-    `;
-    return block;
-}
+// --- Accumulator ---
+window.accumulatedRows = [];
+window.accumulatedProducts = [];
 
 function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
-}
-
-function addProduct() {
-    const container = document.getElementById('productBlocksContainer');
-    const block = createProductBlock('', '');
-    container.appendChild(block);
-    renumberProducts();
-}
-
-function duplicateProduct(btn) {
-    const block = btn.closest('.product-block');
-    const name = block.querySelector('.productName').value;
-    const asins = block.querySelector('.productList').value;
-    const portfolioId = block.querySelector('.portfolioId') ? block.querySelector('.portfolioId').value : '';
-    const container = document.getElementById('productBlocksContainer');
-    const newBlock = createProductBlock(name, asins, portfolioId);
-    block.after(newBlock);
-    renumberProducts();
-}
-
-function removeProduct(btn) {
-    const block = btn.closest('.product-block');
-    const blocks = getProductBlocks();
-    if (blocks.length <= 1) return;
-    block.remove();
-    renumberProducts();
 }
 
 // --- Set default start date ---
@@ -1223,18 +1081,10 @@ function updateCounter(kwId, allocId, counterId) {
 
 // --- Reset ---
 function resetAll() {
-    // Reset product blocks to a single empty one
-    const container = document.getElementById('productBlocksContainer');
-    container.innerHTML = '';
-    productCounter = 0;
-    const block = createProductBlock('', '');
-    container.appendChild(block);
-    // Remove the remove button from single block
-    const removeBtn = block.querySelector('.btn-remove');
-    if (removeBtn) removeBtn.style.display = 'none';
-    renumberProducts();
-
-    document.querySelectorAll('#productBlocksContainer input[type="text"], #productBlocksContainer textarea').forEach(el => el.value = '');
+    // Reset product fields
+    document.getElementById('productName').value = '';
+    document.getElementById('productList').value = '';
+    document.getElementById('portfolioId').value = '';
     document.querySelectorAll('input[type="number"]').forEach(el => {
         if (el.id.startsWith('bid')) el.value = '0.50';
         else if (el.id.startsWith('budget')) el.value = '10.00';
@@ -1342,29 +1192,17 @@ function finishProgress(bar) {
     setTimeout(() => { bar.style.display = 'none'; bar.style.width = '0%'; }, 400);
 }
 
-function generateExcel() {
-    const progressBar = showProgress();
-    try { _generateExcelInner(progressBar); } catch(e) { console.error(e); } finally { finishProgress(progressBar); }
-}
-function _generateExcelInner(progressBar) {
-    // Clear previous errors
+// generateRows: returns { rows, warnings, errors, productName, itemCount, campaignCount } or null on error
+function generateRows() {
     const errorContainer = document.getElementById('errorContainer');
     errorContainer.innerHTML = '';
     const errors = [];
 
+    const isVendor = mode === 'vendor';
+
     // Allocation validation
     const genericKwsCount = unique(getLines('genericKw')).length;
     const genericAllocVal = parseInt(getLines('genericAlloc')[0], 10) || 0;
-    if (genericAllocVal > 0 && genericAllocVal > genericKwsCount && genericKwsCount > 0) {
-        // This is fine - allocation per campaign > total means 1 campaign with all keywords
-    }
-    // Check if allocation sum exceeds total keywords
-    // Generic: if allocation is set, number of campaigns = ceil(total/alloc), total allocated = total
-    // The error case is when generic exact + generic broad are both checked and total allocation > keywords
-    // Actually the request says: "If Generic Keyword Allocation sums to more than total generic keywords"
-    // This means the allocation number per campaign * number of checked generic campaign types > total keywords
-    // But re-reading: it's about the allocation value itself being larger than keywords available
-    // Let me interpret: allocation per campaign should not exceed total keywords available
 
     const compKwsCount = unique(getLines('compKw')).length;
     const compKwAllocVal = parseInt(getLines('compKwAlloc')[0], 10) || 0;
@@ -1383,54 +1221,43 @@ function _generateExcelInner(progressBar) {
 
     if (errors.length > 0) {
         errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
-        return;
+        return null;
     }
 
-    // Gather all product blocks
-    const productBlocks = getProductBlocks();
-    const allProducts = [];
-    for (const block of productBlocks) {
-        const name = block.querySelector('.productName').value.trim();
-        const listText = block.querySelector('.productList').value;
-        const items = listText.split('\n').map(s => s.trim()).filter(Boolean);
-        const blockPortfolioId = block.querySelector('.portfolioId') ? block.querySelector('.portfolioId').value.trim() : '';
-        if (name && items.length > 0) {
-            allProducts.push({ name, items, portfolioId: blockPortfolioId });
-        } else if (name && items.length === 0) {
-            errors.push('Produkt "' + name + '" hat keine ' + (isVendor ? 'ASINs' : 'SKUs') + '.');
-        } else if (!name && items.length > 0) {
-            errors.push('Ein Produkt hat ' + (isVendor ? 'ASINs' : 'SKUs') + ' aber keinen Namen.');
-        }
+    // Gather single product
+    const productName = document.getElementById('productName').value.trim();
+    const listText = document.getElementById('productList').value;
+    const productItems = listText.split('\n').map(s => s.trim()).filter(Boolean);
+    const portfolioId = document.getElementById('portfolioId').value.trim();
+
+    if (!productName && productItems.length > 0) {
+        errors.push('Das Produkt hat ' + (isVendor ? 'ASINs' : 'SKUs') + ' aber keinen Namen.');
+    }
+    if (productName && productItems.length === 0) {
+        errors.push('Produkt "' + productName + '" hat keine ' + (isVendor ? 'ASINs' : 'SKUs') + '.');
+    }
+    if (!productName && productItems.length === 0) {
+        errors.push('Bitte Produktname und ASINs/SKUs eingeben.');
     }
 
     if (errors.length > 0) {
         errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
-        return;
-    }
-
-    if (allProducts.length === 0) {
-        errors.push('Bitte mindestens ein Produkt mit Namen und ASINs/SKUs eingeben.');
-        errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
-        return;
+        return null;
     }
 
     // ASIN/SKU validation
     if (isVendor) {
         const asinRegex = /^B0[A-Z0-9]{8}$/i;
-        allProducts.forEach(p => {
-            p.items.forEach(item => {
-                if (!asinRegex.test(item)) {
-                    errors.push('Ungültige ASIN "' + item + '" bei Produkt "' + p.name + '" (muss 10 Zeichen lang sein und mit B0 beginnen).');
-                }
-            });
+        productItems.forEach(item => {
+            if (!asinRegex.test(item)) {
+                errors.push('Ungültige ASIN "' + item + '" (muss 10 Zeichen lang sein und mit B0 beginnen).');
+            }
         });
     } else {
-        allProducts.forEach(p => {
-            p.items.forEach(item => {
-                if (item.length === 0) {
-                    errors.push('Leere SKU bei Produkt "' + p.name + '" gefunden.');
-                }
-            });
+        productItems.forEach(item => {
+            if (item.length === 0) {
+                errors.push('Leere SKU gefunden.');
+            }
         });
     }
 
@@ -1453,10 +1280,8 @@ function _generateExcelInner(progressBar) {
 
     if (errors.length > 0) {
         errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
-        return;
+        return null;
     }
-
-    const isVendor = mode === 'vendor';
     const t = T[lang] || T['de'];
     const isDE = lang === 'de';
 
@@ -1575,12 +1400,8 @@ function _generateExcelInner(progressBar) {
 
     const rows = [];
 
-    // Iterate over ALL product blocks
-    allProducts.forEach(productData => {
-        const productName = productData.name;
-        const productItems = productData.items; // ASINs or SKUs for this product
-        const portfolioId = productData.portfolioId || '';
-
+    // Single product
+    {
         let productLabel = t.product;
 
         // --- Campaign Row builder ---
@@ -1988,129 +1809,116 @@ function _generateExcelInner(progressBar) {
                 });
             });
         }
-    }); // end allProducts (product blocks) loop
+    } // end single product block
 
     if (rows.length === 0) {
         errors.push('Keine Kampagnen ausgewählt oder keine Keywords/ASINs eingegeben.');
         errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
-        return;
+        return null;
     }
 
-    // Campaign duplicate check
-    const campNames = [];
+    // Count campaigns
+    const campNames = new Set();
     const entCampName = t.campaign;
     rows.forEach(r => {
-        if (r[headers[1]] === entCampName && r[headers[9]]) campNames.push(r[headers[9]]);
+        if (r[headers[1]] === entCampName && r[headers[9]]) campNames.add(r[headers[9]]);
     });
-    const campCounts = {};
-    campNames.forEach(n => campCounts[n] = (campCounts[n] || 0) + 1);
-    const dupes = Object.entries(campCounts).filter(([, c]) => c > 1);
-    if (dupes.length > 0) {
-        dupes.forEach(([name, count]) => {
-            warnings.push('Kampagnenname "' + name + '" kommt ' + count + 'x vor.');
-        });
-    }
 
     // Show warnings (non-blocking)
     if (warnings.length > 0) {
         errorContainer.innerHTML = warnings.map(w => '<div class="warn-msg">' + w + '</div>').join('');
     }
 
-    // Show preview modal
-    showPreview(rows, headers, isDE, t);
+    return { rows, warnings, headers, isDE, t, productName, itemCount: productItems.length, campaignCount: campNames.size };
 }
 
-function showPreview(rows, headers, isDE, t) {
-    // Calculate summary stats
-    const campaigns = new Set();
-    const adGroups = new Set();
-    let kwCount = 0, ptCount = 0;
-    const entCamp = t.campaign;
-    const entAG = t.adGroup;
-    const entKw = t.keyword;
-    const entPT = t.prodTargeting;
-    const hEntity = headers[1];
-    const hCampName = headers[9];
-    const hAdGroupName = headers[10];
+// addToAccumulator: validate, generate rows, store, update UI
+function addToAccumulator() {
+    const progressBar = showProgress();
+    try {
+        const result = generateRows();
+        if (!result) { finishProgress(progressBar); return; }
 
-    rows.forEach(r => {
-        if (r[hEntity] === entCamp) campaigns.add(r[hCampName]);
-        if (r[hEntity] === entAG) adGroups.add(r[hCampName] + '|' + r[hAdGroupName]);
-        if (r[hEntity] === entKw) kwCount++;
-        if (r[hEntity] === entPT) ptCount++;
-    });
+        // Push rows to accumulator
+        window.accumulatedRows.push(...result.rows);
 
-    // Visible columns (skip empty ones)
-    const visibleCols = headers.filter(h => rows.some(r => r[h] !== '' && r[h] !== undefined));
+        // Store product info
+        window.accumulatedProducts.push({
+            name: result.productName,
+            itemCount: result.itemCount,
+            campaignCount: result.campaignCount,
+            rowCount: result.rows.length
+        });
 
-    // Build table rows (first 50)
-    const previewRows = rows.slice(0, 50);
-    const tableHead = visibleCols.map(h => '<th>' + h + '</th>').join('');
-    const tableBody = previewRows.map(r =>
-        '<tr>' + visibleCols.map(h => '<td>' + (r[h] !== undefined && r[h] !== '' ? r[h] : '') + '</td>').join('') + '</tr>'
-    ).join('');
+        // Update accumulator UI
+        updateAccumulatorUI();
 
-    const overlay = document.createElement('div');
-    overlay.className = 'preview-overlay';
-    overlay.innerHTML = `
-        <div class="preview-modal">
-            <div class="preview-header">
-                <h3>Bulk Sheet Vorschau</h3>
-                <button class="btn-sm" onclick="closePreview()" style="font-size:18px;padding:4px 10px;">&times;</button>
-            </div>
-            <div class="preview-summary">
-                <div class="stat">Kampagnen: <strong>${campaigns.size}</strong></div>
-                <div class="stat">Anzeigengruppen: <strong>${adGroups.size}</strong></div>
-                <div class="stat">Keywords: <strong>${kwCount}</strong></div>
-                <div class="stat">Produkt-Targeting: <strong>${ptCount}</strong></div>
-                <div class="stat">Zeilen gesamt: <strong>${rows.length}</strong></div>
-            </div>
-            <div class="preview-body">
-                <table class="preview-table">
-                    <thead><tr>${tableHead}</tr></thead>
-                    <tbody>${tableBody}</tbody>
-                </table>
-            </div>
-            <div class="preview-footer">
-                <div class="info">${rows.length > 50 ? 'Vorschau zeigt 50 von ' + rows.length + ' Zeilen' : 'Alle ' + rows.length + ' Zeilen angezeigt'}</div>
-                <div style="display:flex;gap:10px;">
-                    <button class="btn btn-secondary" onclick="closePreview()">Abbrechen</button>
-                    <button class="btn btn-primary" id="btnDownload">Herunterladen</button>
-                </div>
-            </div>
-        </div>
-    `;
+        // Show success banner
+        showAccumulatorSuccess(result.productName + ' hinzugefügt!');
 
-    document.body.appendChild(overlay);
+        // Clear product-specific fields (keep campaign settings)
+        document.getElementById('productName').value = '';
+        document.getElementById('productList').value = '';
+        document.getElementById('portfolioId').value = '';
+        // Clear keyword textareas
+        ['genericKw', 'genericAlloc', 'brandKw', 'compKw', 'compKwAlloc', 'singleKw'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        // Clear ASIN textareas
+        ['brandAsins', 'compAsins', 'compAsinAlloc'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        // Update counters
+        updateCounter('genericKw', 'genericAlloc', 'genericCounter');
+        updateCounter('compKw', 'compKwAlloc', 'compKwCounter');
+        updateCounter('compAsins', 'compAsinAlloc', 'compAsinCounter');
 
-    // Close on overlay click
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) closePreview();
-    });
+        // Clear errors
+        document.getElementById('errorContainer').innerHTML = '';
+    } catch(e) { console.error(e); } finally { finishProgress(progressBar); }
+}
 
-    // Close on Escape
-    document.addEventListener('keydown', function escHandler(e) {
-        if (e.key === 'Escape') { closePreview(); document.removeEventListener('keydown', escHandler); }
-    });
+function updateAccumulatorUI() {
+    const count = window.accumulatedProducts.length;
+    document.getElementById('accCount').textContent = count + ' Produkt' + (count !== 1 ? 'e' : '') + ' im Bulk Sheet';
+    document.getElementById('downloadBtn').disabled = count === 0;
 
-    // Download handler
-    document.getElementById('btnDownload').addEventListener('click', function() {
-        downloadExcel(rows, headers, isDE, t);
-        closePreview();
+    const container = document.getElementById('accProducts');
+    container.innerHTML = '';
+    window.accumulatedProducts.forEach((p, idx) => {
+        const div = document.createElement('div');
+        div.className = 'acc-product-item';
+        div.innerHTML = '<span>' + (idx + 1) + '. ' + escapeHtml(p.name) + ' (' + p.itemCount + ' ' + (mode === 'vendor' ? 'ASINs' : 'SKUs') + ', ' + p.campaignCount + ' Kampagnen)</span><button onclick="removeFromAccumulator(' + idx + ')">&times;</button>';
+        container.appendChild(div);
     });
 }
 
-function closePreview() {
-    const overlay = document.querySelector('.preview-overlay');
-    if (overlay) overlay.remove();
+function removeFromAccumulator(idx) {
+    if (idx < 0 || idx >= window.accumulatedProducts.length) return;
+    // Calculate how many rows to remove
+    let startRow = 0;
+    for (let i = 0; i < idx; i++) {
+        startRow += window.accumulatedProducts[i].rowCount;
+    }
+    const removeCount = window.accumulatedProducts[idx].rowCount;
+    window.accumulatedRows.splice(startRow, removeCount);
+    window.accumulatedProducts.splice(idx, 1);
+    updateAccumulatorUI();
 }
 
-function downloadExcel(rows, headers, isDE, t) {
+function downloadBulkSheet() {
+    if (window.accumulatedRows.length === 0) return;
+
+    // Use current lang for headers
+    const t = T[lang] || T['de'];
+    const headers = t.headers;
+    const isDE = lang === 'de';
     const hProduct = headers[0];
     const sdLabel = 'Sponsored Display';
 
-    const spRows = rows.filter(r => r[hProduct] !== sdLabel);
-    const sdRows = rows.filter(r => r[hProduct] === sdLabel);
+    const allRows = window.accumulatedRows;
+    const spRows = allRows.filter(r => r[hProduct] !== sdLabel);
+    const sdRows = allRows.filter(r => r[hProduct] === sdLabel);
 
     const wb = XLSX.utils.book_new();
 
@@ -2132,8 +1940,27 @@ function downloadExcel(rows, headers, isDE, t) {
     const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
     const fileName = 'Bulk-Upload ' + dateStr + '.xlsx';
     XLSX.writeFile(wb, fileName);
-    showSuccess('Bulk Sheet "' + fileName + '" erfolgreich erstellt (' + rows.length + ' Zeilen).');
+    showSuccess('Bulk Sheet "' + fileName + '" erfolgreich erstellt (' + allRows.length + ' Zeilen).');
 }
+
+function clearAccumulator() {
+    const count = window.accumulatedProducts.length;
+    if (count === 0) return;
+    if (!confirm('Bulk Sheet mit ' + count + ' Produkt' + (count !== 1 ? 'en' : '') + ' wirklich leeren?')) return;
+    window.accumulatedRows = [];
+    window.accumulatedProducts = [];
+    updateAccumulatorUI();
+}
+
+function showAccumulatorSuccess(msg) {
+    const banner = document.createElement('div');
+    banner.className = 'acc-success-banner';
+    banner.textContent = msg;
+    document.body.appendChild(banner);
+    setTimeout(() => { if (banner.parentNode) banner.remove(); }, 3500);
+}
+
+// Preview and download functions replaced by accumulator pattern
 
 function showSuccess(msg) {
     const container = document.getElementById('errorContainer');
