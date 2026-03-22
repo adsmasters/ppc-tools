@@ -254,17 +254,7 @@
     <!-- STEP 4: Export -->
     <div class="card hidden" id="stepExport">
         <div class="card-title"><span class="step">4</span> Bulk Sheet erstellen</div>
-        <div class="field-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
-            <div class="field">
-                <label>Marketplace</label>
-                <select id="exportMarketplace">
-                    <option value="de">Deutschland (DE)</option>
-                    <option value="en">USA / UK (EN)</option>
-                    <option value="fr">Frankreich (FR)</option>
-                    <option value="it">Italien (IT)</option>
-                    <option value="es">Spanien (ES)</option>
-                </select>
-            </div>
+        <div class="field-row" style="grid-template-columns:1fr 1fr 1fr;">
             <div class="field">
                 <label>Standard Match Type</label>
                 <select id="defaultMatchType" onchange="applyDefaultMatchType()">
@@ -880,12 +870,19 @@ function markAsHarvested(keywords) {
 }
 
 // --- Marketplace Translations ---
-const T = {
-    de: { campaign: 'Kampagne', adGroup: 'Anzeigengruppe', productAd: 'Produktanzeige', keyword: 'Keyword', create: 'Erstellen', enabled: 'Aktiviert', auto: 'Automatisch', manual: 'Manuell', product: 'Gesponserte Produkte', exact: 'Genau Passend', broad: 'Weitgehend', phrase: 'Wortgruppe', bidDown: 'Dynamische Gebote \u2013 nur senken', bidUpDown: 'Dynamische Gebote \u2013 erhöhen und senken', bidFixed: 'Feste Gebote', headers: ['Produkt','Entität','Operation','Kampagnen-ID','Anzeigengruppen-ID','Portfolio-ID','Anzeigen-ID','Keyword-ID','Produkt-Targeting-ID','Kampagnenname','Name der Anzeigengruppe','Startdatum','Enddatum','Targeting-Typ','Zustand','Tagesbudget','SKU','ASIN','Standardgebot für die Anzeigengruppe','Gebot','Keyword-Text','Übereinstimmungstyp','Gebotsstrategie','Platzierung','Prozentsatz','Ausdruck für Produkt-Targeting'], sheet: 'Keyword Harvesting' },
-    en: { campaign: 'Campaign', adGroup: 'Ad Group', productAd: 'Product Ad', keyword: 'Keyword', create: 'Create', enabled: 'Enabled', auto: 'Auto', manual: 'Manual', product: 'Sponsored Products', exact: 'Exact', broad: 'Broad', phrase: 'Phrase', bidDown: 'Dynamic bids - down only', bidUpDown: 'Dynamic bids - up and down', bidFixed: 'Fixed bids', headers: ['Product','Entity','Operation','Campaign ID','Ad Group ID','Portfolio ID','Ad ID','Keyword ID','Product Targeting ID','Campaign Name','Ad Group Name','Start Date','End Date','Targeting Type','State','Daily Budget','SKU','ASIN','Ad Group Default Bid','Bid','Keyword Text','Match Type','Bidding Strategy','Placement','Percentage','Product Targeting Expression'], sheet: 'Keyword Harvesting' },
-    fr: { campaign: 'Campagne', adGroup: 'Groupe d\'annonces', productAd: 'Annonce produit', keyword: 'Mot-clé', create: 'Créer', enabled: 'Activé', auto: 'Automatique', manual: 'Manuel', product: 'Produits sponsorisés', exact: 'Expression exacte', broad: 'Requête large', phrase: 'Expression', bidDown: 'Enchères dynamiques - à la baisse uniquement', bidUpDown: 'Enchères dynamiques - à la hausse et à la baisse', bidFixed: 'Enchères fixes', headers: ['Produit','Entité','Opération','ID de la campagne','ID du groupe d\'annonces','ID du portefeuille','ID de l\'annonce','ID du mot-clé','ID du ciblage de produit','Nom de la campagne','Nom du groupe d\'annonces','Date de début','Date de fin','Type de ciblage','État','Budget quotidien','SKU','ASIN','Enchère par défaut du groupe d\'annonces','Enchère','Texte du mot-clé','Type de correspondance','Stratégie d\'enchères','Emplacement','Pourcentage','Expression de ciblage de produit'], sheet: 'Keyword Harvesting' },
-    it: { campaign: 'Campagna', adGroup: 'Gruppo di annunci', productAd: 'Annuncio prodotto', keyword: 'Parola chiave', create: 'Crea', enabled: 'Abilitato', auto: 'Automatico', manual: 'Manuale', product: 'Prodotti sponsorizzati', exact: 'Corrispondenza esatta', broad: 'Corrispondenza generica', phrase: 'Corrispondenza a frase', bidDown: 'Offerte dinamiche - solo al ribasso', bidUpDown: 'Offerte dinamiche - al rialzo e al ribasso', bidFixed: 'Offerte fisse', headers: ['Prodotto','Entità','Operazione','ID campagna','ID gruppo di annunci','ID portafoglio','ID annuncio','ID parola chiave','ID targeting di prodotto','Nome campagna','Nome gruppo di annunci','Data di inizio','Data di fine','Tipo di targeting','Stato','Budget giornaliero','SKU','ASIN','Offerta predefinita del gruppo di annunci','Offerta','Testo parola chiave','Tipo di corrispondenza','Strategia di offerta','Posizionamento','Percentuale','Espressione di targeting di prodotto'], sheet: 'Keyword Harvesting' },
-    es: { campaign: 'Campaña', adGroup: 'Grupo de anuncios', productAd: 'Anuncio de producto', keyword: 'Palabra clave', create: 'Crear', enabled: 'Habilitado', auto: 'Automático', manual: 'Manual', product: 'Productos patrocinados', exact: 'Coincidencia exacta', broad: 'Coincidencia amplia', phrase: 'Coincidencia de frase', bidDown: 'Pujas dinámicas - solo a la baja', bidUpDown: 'Pujas dinámicas - al alza y a la baja', bidFixed: 'Pujas fijas', headers: ['Producto','Entidad','Operación','ID de campaña','ID de grupo de anuncios','ID de portafolio','ID de anuncio','ID de palabra clave','ID de segmentación de producto','Nombre de la campaña','Nombre del grupo de anuncios','Fecha de inicio','Fecha de fin','Tipo de segmentación','Estado','Presupuesto diario','SKU','ASIN','Puja predeterminada del grupo de anuncios','Puja','Texto de palabra clave','Tipo de coincidencia','Estrategia de pujas','Ubicación','Porcentaje','Expresión de segmentación de producto'], sheet: 'Keyword Harvesting' }
+// --- Bulk Sheet Config (identical to Campaign Creator - ALL ENGLISH values) ---
+const BULK_HEADERS = ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'];
+const BULK = {
+    product: 'Sponsored Products',
+    campaign: 'Campaign', adGroup: 'Ad Group', productAd: 'Product Ad',
+    keyword: 'Keyword', negKeyword: 'Negative keyword',
+    create: 'Create', manual: 'Manual', enabled: 'Enabled',
+    exact: 'Exact', broad: 'Broad', phrase: 'Phrase',
+    negExact: 'negativeExact', negPhrase: 'negativePhrase',
+    bidDown: 'Dynamic bids - down only',
+    bidUpDown: 'Dynamic bids - up and down',
+    bidFixed: 'Fixed bids',
+    sheetName: 'Sponsored Products Campaigns'
 };
 
 // --- Export Bulk Sheet ---
@@ -893,18 +890,16 @@ function exportBulkSheet() {
     const selected = harvestData.filter(r => selectedTerms.has(r.searchterm.toLowerCase()));
     if (selected.length === 0) { document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Keywords ausgewählt.</div>'; return; }
 
-    const mp = document.getElementById('exportMarketplace').value;
-    const t = T[mp] || T['de'];
-    const h = t.headers;
+    const h = BULK_HEADERS;
     const budget = parseFloat(document.getElementById('defaultBudget').value) || 10;
     const bidStratVal = document.getElementById('biddingStrategy').value;
-    const bidStrat = { down: t.bidDown, updown: t.bidUpDown, fixed: t.bidFixed }[bidStratVal];
-    const matchTypeMap = { exact: t.exact, broad: t.broad, phrase: t.phrase };
+    const bidStrat = { down: BULK.bidDown, updown: BULK.bidUpDown, fixed: BULK.bidFixed }[bidStratVal];
+    const matchTypeMap = { exact: BULK.exact, broad: BULK.broad, phrase: BULK.phrase };
 
     const today = new Date();
     const startDate = today.toISOString().slice(0, 10).replace(/-/g, '');
 
-    function emptyRow() { const r = {}; h.forEach(c => r[c] = ''); return r; }
+    function emptyRow() { return new Array(h.length).fill(''); }
 
     const rows = [];
 
@@ -912,32 +907,32 @@ function exportBulkSheet() {
     const newCampKeywords = selected.filter(r => !r.targetCampaign);
     const existingCampKeywords = selected.filter(r => r.targetCampaign);
 
-    // New harvest campaigns: group by unique search terms, create one campaign
+    // New harvest campaign
     if (newCampKeywords.length > 0) {
         const campName = 'SP: Harvest Keywords (Exact)';
         const agName = 'HARVEST';
 
         // Campaign row
         const cr = emptyRow();
-        cr[h[0]] = t.product; cr[h[1]] = t.campaign; cr[h[2]] = t.create;
-        cr[h[3]] = campName; cr[h[9]] = campName; cr[h[11]] = startDate;
-        cr[h[13]] = t.manual; cr[h[14]] = t.enabled; cr[h[15]] = budget; cr[h[22]] = bidStrat;
+        cr[0] = BULK.product; cr[1] = BULK.campaign; cr[2] = BULK.create;
+        cr[9] = campName; cr[11] = startDate;
+        cr[13] = BULK.manual; cr[14] = BULK.enabled; cr[15] = budget; cr[22] = bidStrat;
         rows.push(cr);
 
         // Ad Group row
         const ar = emptyRow();
-        ar[h[0]] = t.product; ar[h[1]] = t.adGroup; ar[h[2]] = t.create;
-        ar[h[3]] = campName; ar[h[4]] = agName; ar[h[10]] = agName;
-        ar[h[14]] = t.enabled; ar[h[18]] = newCampKeywords[0].suggestedBid;
+        ar[0] = BULK.product; ar[1] = BULK.adGroup; ar[2] = BULK.create;
+        ar[9] = campName; ar[10] = agName;
+        ar[14] = BULK.enabled; ar[18] = newCampKeywords[0].suggestedBid;
         rows.push(ar);
 
         // Keyword rows
         newCampKeywords.forEach(kw => {
             const kr = emptyRow();
-            kr[h[0]] = t.product; kr[h[1]] = t.keyword; kr[h[2]] = t.create;
-            kr[h[3]] = campName; kr[h[4]] = agName;
-            kr[h[14]] = t.enabled; kr[h[19]] = kw.suggestedBid;
-            kr[h[20]] = kw.searchterm; kr[h[21]] = matchTypeMap[kw.matchType] || t.exact;
+            kr[0] = BULK.product; kr[1] = BULK.keyword; kr[2] = BULK.create;
+            kr[9] = campName; kr[10] = agName;
+            kr[14] = BULK.enabled; kr[19] = kw.suggestedBid;
+            kr[20] = kw.searchterm; kr[21] = matchTypeMap[kw.matchType] || BULK.exact;
             rows.push(kr);
         });
     }
@@ -951,32 +946,29 @@ function exportBulkSheet() {
 
     Object.entries(byCampaign).forEach(([campName, kws]) => {
         const camp = bulkCampaigns.find(c => c.name === campName);
-        const agName = camp && camp.adgroups.size > 0 ? [...camp.adgroups][0] : 'HARVEST';
+        const agName = camp && camp.adgroups.length > 0 ? camp.adgroups[0] : 'HARVEST';
 
         kws.forEach(kw => {
             const kr = emptyRow();
-            kr[h[0]] = t.product; kr[h[1]] = t.keyword; kr[h[2]] = t.create;
-            kr[h[3]] = campName; kr[h[4]] = agName;
-            kr[h[14]] = t.enabled; kr[h[19]] = kw.suggestedBid;
-            kr[h[20]] = kw.searchterm; kr[h[21]] = matchTypeMap[kw.matchType] || t.exact;
+            kr[0] = BULK.product; kr[1] = BULK.keyword; kr[2] = BULK.create;
+            kr[9] = campName; kr[10] = agName;
+            kr[14] = BULK.enabled; kr[19] = kw.suggestedBid;
+            kr[20] = kw.searchterm; kr[21] = matchTypeMap[kw.matchType] || BULK.exact;
             rows.push(kr);
         });
     });
 
-    // Auto-Negatives: add harvested keywords as Negative Exact to their source auto campaigns
+    // Auto-Negatives: add harvested keywords as Negative Exact to source auto campaigns
     if (document.getElementById('addAutoNegatives').checked) {
-        const negEntity = mp === 'de' ? 'Negatives Kampagnen-Keyword' : mp === 'fr' ? 'Mot-clé négatif de campagne' : mp === 'it' ? 'Parola chiave negativa della campagna' : mp === 'es' ? 'Palabra clave negativa de campaña' : 'Campaign Negative Keyword';
-        const negExact = mp === 'de' ? 'Negativ Genau Passend' : mp === 'fr' ? 'Expression exacte - négatif' : mp === 'it' ? 'Corrispondenza esatta negativa' : mp === 'es' ? 'Coincidencia exacta negativa' : 'Negative Exact';
-
         selected.forEach(kw => {
-            // Find auto campaigns this search term appeared in
             const autoCampaigns = new Set();
             strData.filter(r => r.searchterm.toLowerCase() === kw.searchterm.toLowerCase() && r.isAuto).forEach(r => autoCampaigns.add(r.campaign));
             autoCampaigns.forEach(campName => {
                 const nr = emptyRow();
-                nr[h[0]] = t.product; nr[h[1]] = negEntity; nr[h[2]] = t.create;
-                nr[h[3]] = campName; nr[h[14]] = t.enabled;
-                nr[h[20]] = kw.searchterm; nr[h[21]] = negExact;
+                nr[0] = BULK.product; nr[1] = BULK.negKeyword; nr[2] = BULK.create;
+                nr[9] = campName;
+                nr[14] = BULK.enabled;
+                nr[20] = kw.searchterm; nr[21] = BULK.negExact;
                 rows.push(nr);
             });
         });
@@ -986,11 +978,11 @@ function exportBulkSheet() {
     markAsHarvested(selected.map(r => r.searchterm));
 
     // Build Excel
-    const wsData = [h, ...rows.map(r => h.map(c => r[c] || ''))];
+    const wsData = [h, ...rows];
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = h.map(() => ({ wch: 20 }));
-    XLSX.utils.book_append_sheet(wb, ws, t.sheet);
+    XLSX.utils.book_append_sheet(wb, ws, BULK.sheetName);
 
     const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
     const fileName = 'Harvest-Bulk-Upload ' + dateStr + '.xlsx';
