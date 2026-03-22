@@ -1888,20 +1888,17 @@ function generateRows() {
         }
 
         // Add ad-group level negative keywords only (for keyword campaigns)
-        function addAdGroupNegKeywords(campName, adGroupName) {
-            negKwExactList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
-            negKwPhraseList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
+        // Merged: all negative keywords from both fields, deduplicated
+        function addAllNegKeywords(campName, adGroupName) {
+            const allExact = [...new Set([...negKwExactList, ...campNegKwExactList])];
+            const allPhrase = [...new Set([...negKwPhraseList, ...campNegKwPhraseList])];
+            allExact.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
+            allPhrase.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
         }
 
-        // Add ad-group level negative product targeting only (for ASIN/product targeting campaigns)
+        // Add ad-group level negative product targeting only
         function addAdGroupNegProdTargeting(campName, adGroupName) {
             negProdTargetList.forEach(asin => addNegProdTargetingRow(campName, adGroupName, asin));
-        }
-
-        // Add campaign level negative keywords (for keyword campaigns only)
-        function addCampaignNegatives(campName, adGroupName) {
-            campNegKwExactList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
-            campNegKwPhraseList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
         }
 
         // ========== AUTO CAMPAIGN ==========
@@ -1975,8 +1972,7 @@ function generateRows() {
                 });
 
                 if (useNeg) {
-                    addAdGroupNegKeywords(campName, adGroupName);
-                    addCampaignNegatives(campName, adGroupName);
+                    addAllNegKeywords(campName, adGroupName);
                 }
             });
         }
@@ -2073,8 +2069,7 @@ function generateRows() {
                 addKeywordRow(campName, adGroupName, kw, mt.exact, bid);
 
                 if (useNeg) {
-                    addAdGroupNegKeywords(campName, adGroupName);
-                    addCampaignNegatives(campName, adGroupName);
+                    addAllNegKeywords(campName, adGroupName);
                 }
             });
         }
