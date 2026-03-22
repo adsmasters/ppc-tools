@@ -227,17 +227,9 @@
         <p class="page-sub">Amazon Sponsored Products Bulk Upload Sheet Generator</p>
     </div>
 
-    <!-- Preset Bar -->
-    <div class="preset-bar">
-        <div style="display:flex;align-items:center;gap:6px;flex:1;">
-            <select id="presetSelect"><option value="">— Vorlage wählen —</option></select>
-            <span class="info-icon" onclick="event.stopPropagation();this.querySelector('.info-popup').classList.toggle('active')" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#30363d;color:#8b949e;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">i<div class="info-popup" style="display:none;position:absolute;top:28px;left:0;background:#1c2333;border:1px solid #484f58;border-radius:10px;padding:18px 20px;width:320px;z-index:200;box-shadow:0 12px 32px rgba(0,0,0,0.6);font-size:13px;line-height:1.7;color:#c9d1d9;font-weight:400;"><div style="font-weight:700;color:#e6edf3;margin-bottom:10px;font-size:14px;border-bottom:1px solid #30363d;padding-bottom:8px;">Vorlagen</div>Speichere deine Kampagnen-Einstellungen als Vorlage und lade sie jederzeit wieder. So musst du Budget, Gebote, Negative Keywords etc. nicht jedes Mal neu eingeben.<br><br><b>Speichern</b> — Aktuelle Einstellungen als Vorlage sichern<br><b>Laden</b> — Gespeicherte Vorlage in alle Felder laden<br><b>Löschen</b> — Vorlage entfernen<br><b>Export/Import</b> — Vorlagen als JSON-Datei teilen</div></span>
-        </div>
-        <button class="btn-sm" onclick="loadPreset()">Laden</button>
-        <button class="btn-sm" onclick="savePreset()" title="Ctrl+S">Speichern</button>
-        <button class="btn-sm danger" onclick="deletePreset()">Löschen</button>
-        <button class="btn-sm" onclick="exportPresets()">Export</button>
-        <button class="btn-sm" onclick="document.getElementById('presetImportFile').click()">Import</button>
+    <!-- Hidden preset elements (keep functionality but hide UI) -->
+    <div style="display:none;">
+        <select id="presetSelect"><option value="">— Vorlage wählen —</option></select>
         <input type="file" id="presetImportFile" class="import-input" accept=".json">
     </div>
 
