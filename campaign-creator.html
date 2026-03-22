@@ -1907,33 +1907,53 @@ function removeFromAccumulator(idx) {
 }
 
 function downloadBulkSheet() {
-    if (window.accumulatedRows.length === 0) return;
+    if (window.accumulatedRows.length === 0) { alert('Keine Produkte im Bulk Sheet. Füge zuerst Produkte hinzu.'); return; }
 
-    // Use current lang for headers
+    // Use the headers from the first accumulated product
+    const firstProduct = window.accumulatedProducts[0];
     const t = T[lang] || T['de'];
     const headers = t.headers;
-    const isDE = lang === 'de';
-    const hProduct = headers[0];
-    const sdLabel = 'Sponsored Display';
 
     const allRows = window.accumulatedRows;
-    const spRows = allRows.filter(r => r[hProduct] !== sdLabel);
-    const sdRows = allRows.filter(r => r[hProduct] === sdLabel);
+
+    // Convert row objects to arrays based on headers
+    const dataRows = allRows.map(r => {
+        return headers.map(h => {
+            if (r[h] !== undefined && r[h] !== null) return r[h];
+            // Try matching by stripping special chars (handle umlaut differences)
+            for (const key of Object.keys(r)) {
+                if (key.replace(/[^a-zA-Z]/g, '').toLowerCase() === h.replace(/[^a-zA-Z]/g, '').toLowerCase()) {
+                    return r[key];
+                }
+            }
+            return '';
+        });
+    });
+
+    const spLabel = lang === 'de' ? 'Gesponserte Produkte' : 'Sponsored Products';
+    const sdLabel = 'Sponsored Display';
+    const spData = dataRows.filter(r => r[0] !== sdLabel);
+    const sdData = dataRows.filter(r => r[0] === sdLabel);
 
     const wb = XLSX.utils.book_new();
 
-    if (spRows.length > 0) {
-        const spData = [headers, ...spRows.map(r => headers.map(h => r[h] !== undefined ? r[h] : ''))];
-        const spSheet = XLSX.utils.aoa_to_sheet(spData);
-        spSheet['!cols'] = headers.map(() => ({ wch: 20 }));
-        XLSX.utils.book_append_sheet(wb, spSheet, t.sheetSP);
+    if (spData.length > 0) {
+        const sheetData = [headers, ...spData];
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = headers.map(() => ({ wch: 20 }));
+        XLSX.utils.book_append_sheet(wb, ws, t.sheetSP);
     }
 
-    if (sdRows.length > 0) {
-        const sdData = [headers, ...sdRows.map(r => headers.map(h => r[h] !== undefined ? r[h] : ''))];
-        const sdSheet = XLSX.utils.aoa_to_sheet(sdData);
-        sdSheet['!cols'] = headers.map(() => ({ wch: 20 }));
-        XLSX.utils.book_append_sheet(wb, sdSheet, t.sheetSD);
+    if (sdData.length > 0) {
+        const sheetData = [headers, ...sdData];
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = headers.map(() => ({ wch: 20 }));
+        XLSX.utils.book_append_sheet(wb, ws, t.sheetSD);
+    }
+
+    if (!wb.SheetNames.length) {
+        alert('Keine Daten zum Exportieren.');
+        return;
     }
 
     const today = new Date();
