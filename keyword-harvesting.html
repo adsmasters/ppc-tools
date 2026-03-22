@@ -276,9 +276,6 @@
                 </select>
             </div>
         </div>
-        <div style="margin-top:10px;">
-            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="addAutoNegatives" checked style="width:15px;height:15px;accent-color:var(--accent);"> Geerntete Keywords als Negative Exact in Auto-Kampagnen einfügen <span class="tooltip-icon" data-tip="Verhindert doppeltes Bieten: Die geernteten Keywords werden als Negative Exact in den Auto-Kampagnen hinterlegt, aus denen sie stammen.">?</span></label>
-        </div>
         <div class="btn-row">
             <div style="font-size:12px;color:var(--text-secondary);flex:1;" id="selectedCount">0 Keywords ausgewählt</div>
             <button class="btn btn-primary" onclick="exportBulkSheet()">Harvest Bulk Sheet erstellen</button>
@@ -908,13 +905,40 @@ function exportBulkSheet() {
     const existingCampKeywords = selected.filter(r => r.targetCampaign);
 
     // Column indices: 0=Product, 1=Entity, 2=Operation, 3=Campaign ID, 4=Ad Group ID,
+    // 5=Portfolio ID, 6=Ad ID, 7=Keyword ID, 8=Product Targeting ID,
     // 9=Campaign Name, 10=Ad Group Name, 11=Start Date, 13=Targeting Type, 14=State,
-    // 15=Daily Budget, 18=Ad Group Default Bid, 19=Bid, 20=Keyword Text, 21=Match Type, 22=Bidding Strategy
+    // 15=Daily Budget, 16=SKU, 17=ASIN, 18=Ad Group Default Bid, 19=Bid,
+    // 20=Keyword Text, 21=Match Type, 22=Bidding Strategy
 
-    // New harvest campaign
-    if (newCampKeywords.length > 0) {
-        const campName = 'SP: Harvest Keywords (Exact)';
-        const agName = 'HARVEST';
+    // Group keywords by source campaign (= by product)
+    const bySourceCampaign = {};
+    selected.forEach(kw => {
+        // Find which auto campaigns this search term came from
+        const sources = new Set();
+        strData.filter(r => r.searchterm.toLowerCase() === kw.searchterm.toLowerCase() && r.isAuto)
+            .forEach(r => sources.add(r.campaign));
+        // Group by first source campaign (each auto campaign = one product)
+        const sourceCamp = sources.size > 0 ? [...sources][0] : 'Unknown';
+        if (!bySourceCampaign[sourceCamp]) bySourceCampaign[sourceCamp] = { keywords: [], asins: new Set(), skus: new Set() };
+        bySourceCampaign[sourceCamp].keywords.push(kw);
+        // Collect product ASINs/SKUs from campaign map
+        const campData = bulkCampaigns.find(c => c.name === sourceCamp);
+        if (campData) {
+            campData.asins.forEach(a => bySourceCampaign[sourceCamp].asins.add(a));
+            campData.skus.forEach(s => bySourceCampaign[sourceCamp].skus.add(s));
+        }
+        // Also from the aggregated productAsins
+        if (kw.productAsins) kw.productAsins.forEach(a => bySourceCampaign[sourceCamp].asins.add(a));
+    });
+
+    // Create one harvest campaign per product/source campaign
+    Object.entries(bySourceCampaign).forEach(([sourceCampName, data]) => {
+        // Derive product name from source campaign name
+        // e.g. "SP: Auto-Kampagne - Steinreiniger" -> "Steinreiniger"
+        let productLabel = sourceCampName.replace(/^.*?[-–]\s*/, '').trim() || sourceCampName;
+        const campName = 'SP: Harvest (Exact) - ' + productLabel;
+        const agName = 'EXACT';
+        const defaultBid = data.keywords.length > 0 ? data.keywords[0].suggestedBid : 0.50;
 
         // Campaign row
         const cr = emptyRow();
@@ -927,56 +951,38 @@ function exportBulkSheet() {
         const ar = emptyRow();
         ar[0] = BULK.product; ar[1] = BULK.adGroup; ar[2] = BULK.create;
         ar[3] = campName; ar[4] = agName; ar[9] = campName; ar[10] = agName;
-        ar[14] = BULK.enabled; ar[18] = newCampKeywords[0].suggestedBid;
+        ar[14] = BULK.enabled; ar[18] = defaultBid;
         rows.push(ar);
 
-        // Keyword rows
-        newCampKeywords.forEach(kw => {
-            const kr = emptyRow();
-            kr[0] = BULK.product; kr[1] = BULK.keyword; kr[2] = BULK.create;
-            kr[3] = campName; kr[4] = agName; kr[9] = campName; kr[10] = agName;
-            kr[14] = BULK.enabled; kr[19] = kw.suggestedBid;
-            kr[20] = kw.searchterm; kr[21] = matchTypeMap[kw.matchType] || BULK.exact;
-            rows.push(kr);
-        });
-    }
-
-    // Existing campaigns: add keywords to them
-    const byCampaign = {};
-    existingCampKeywords.forEach(kw => {
-        if (!byCampaign[kw.targetCampaign]) byCampaign[kw.targetCampaign] = [];
-        byCampaign[kw.targetCampaign].push(kw);
-    });
-
-    Object.entries(byCampaign).forEach(([campName, kws]) => {
-        const camp = bulkCampaigns.find(c => c.name === campName);
-        const agName = camp && camp.adgroups.length > 0 ? camp.adgroups[0] : 'HARVEST';
-
-        kws.forEach(kw => {
-            const kr = emptyRow();
-            kr[0] = BULK.product; kr[1] = BULK.keyword; kr[2] = BULK.create;
-            kr[3] = campName; kr[4] = agName; kr[9] = campName; kr[10] = agName;
-            kr[14] = BULK.enabled; kr[19] = kw.suggestedBid;
-            kr[20] = kw.searchterm; kr[21] = matchTypeMap[kw.matchType] || BULK.exact;
-            rows.push(kr);
-        });
-    });
-
-    // Auto-Negatives: add harvested keywords as Negative Exact to source auto campaigns
-    if (document.getElementById('addAutoNegatives').checked) {
-        selected.forEach(kw => {
-            const autoCampaigns = new Set();
-            strData.filter(r => r.searchterm.toLowerCase() === kw.searchterm.toLowerCase() && r.isAuto).forEach(r => autoCampaigns.add(r.campaign));
-            autoCampaigns.forEach(campName => {
-                const nr = emptyRow();
-                nr[0] = BULK.product; nr[1] = BULK.negKeyword; nr[2] = BULK.create;
-                nr[3] = campName;
-                nr[14] = BULK.enabled;
-                nr[20] = kw.searchterm; nr[21] = BULK.negExact;
-                rows.push(nr);
+        // Product Ad rows (SKUs first, fallback to ASINs)
+        if (data.skus.size > 0) {
+            data.skus.forEach(sku => {
+                const pr = emptyRow();
+                pr[0] = BULK.product; pr[1] = BULK.productAd; pr[2] = BULK.create;
+                pr[3] = campName; pr[4] = agName; pr[9] = campName; pr[10] = agName;
+                pr[14] = BULK.enabled; pr[16] = sku;
+                rows.push(pr);
             });
+        } else if (data.asins.size > 0) {
+            data.asins.forEach(asin => {
+                const pr = emptyRow();
+                pr[0] = BULK.product; pr[1] = BULK.productAd; pr[2] = BULK.create;
+                pr[3] = campName; pr[4] = agName; pr[9] = campName; pr[10] = agName;
+                pr[14] = BULK.enabled; pr[17] = asin;
+                rows.push(pr);
+            });
+        }
+
+        // Keyword rows
+        data.keywords.forEach(kw => {
+            const kr = emptyRow();
+            kr[0] = BULK.product; kr[1] = BULK.keyword; kr[2] = BULK.create;
+            kr[3] = campName; kr[4] = agName; kr[9] = campName; kr[10] = agName;
+            kr[14] = BULK.enabled; kr[19] = kw.suggestedBid;
+            kr[20] = kw.searchterm; kr[21] = matchTypeMap[kw.matchType] || BULK.exact;
+            rows.push(kr);
         });
-    }
+    });
 
     // Mark as harvested in localStorage
     markAsHarvested(selected.map(r => r.searchterm));
