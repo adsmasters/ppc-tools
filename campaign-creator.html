@@ -222,8 +222,8 @@
     <!-- Preset Bar -->
     <div class="preset-bar">
         <div style="display:flex;align-items:center;gap:6px;flex:1;">
-            <select id="presetSelect"><option value="">— Preset wählen —</option></select>
-            <span class="info-icon" onclick="event.stopPropagation();this.querySelector('.info-popup').classList.toggle('active')" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#30363d;color:#8b949e;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">i<div class="info-popup" style="display:none;position:absolute;top:28px;left:0;background:#1c2333;border:1px solid #484f58;border-radius:10px;padding:18px 20px;width:320px;z-index:200;box-shadow:0 12px 32px rgba(0,0,0,0.6);font-size:13px;line-height:1.7;color:#c9d1d9;font-weight:400;"><div style="font-weight:700;color:#e6edf3;margin-bottom:10px;font-size:14px;border-bottom:1px solid #30363d;padding-bottom:8px;">Presets</div>Speichere deine Kampagnen-Einstellungen als Preset und lade sie jederzeit wieder. So musst du Budget, Gebote, Negative Keywords etc. nicht jedes Mal neu eingeben.<br><br><b>Speichern</b> — Aktuelle Einstellungen als Preset sichern<br><b>Laden</b> — Gespeichertes Preset in alle Felder laden<br><b>Löschen</b> — Preset entfernen<br><b>Export/Import</b> — Presets als JSON-Datei teilen</div></span>
+            <select id="presetSelect"><option value="">— Vorlage wählen —</option></select>
+            <span class="info-icon" onclick="event.stopPropagation();this.querySelector('.info-popup').classList.toggle('active')" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#30363d;color:#8b949e;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">i<div class="info-popup" style="display:none;position:absolute;top:28px;left:0;background:#1c2333;border:1px solid #484f58;border-radius:10px;padding:18px 20px;width:320px;z-index:200;box-shadow:0 12px 32px rgba(0,0,0,0.6);font-size:13px;line-height:1.7;color:#c9d1d9;font-weight:400;"><div style="font-weight:700;color:#e6edf3;margin-bottom:10px;font-size:14px;border-bottom:1px solid #30363d;padding-bottom:8px;">Vorlagen</div>Speichere deine Kampagnen-Einstellungen als Vorlage und lade sie jederzeit wieder. So musst du Budget, Gebote, Negative Keywords etc. nicht jedes Mal neu eingeben.<br><br><b>Speichern</b> — Aktuelle Einstellungen als Vorlage sichern<br><b>Laden</b> — Gespeicherte Vorlage in alle Felder laden<br><b>Löschen</b> — Vorlage entfernen<br><b>Export/Import</b> — Vorlagen als JSON-Datei teilen</div></span>
         </div>
         <button class="btn-sm" onclick="loadPreset()">Laden</button>
         <button class="btn-sm" onclick="savePreset()" title="Ctrl+S">Speichern</button>
@@ -272,6 +272,10 @@
                         <div class="field">
                             <label class="productListLabel">ASINs (eine pro Zeile)</label>
                             <textarea class="productList" rows="4" placeholder="B0XXXXXX&#10;B0YYYYYY"></textarea>
+                        </div>
+                        <div class="field">
+                            <label>Portfolio-ID <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
+                            <input type="text" class="portfolioId" placeholder="z.B. 123456789">
                         </div>
                     </div>
                 </div>
@@ -382,10 +386,6 @@
                         <input type="number" id="overallBid" step="0.01" value="0.50">
                     </div>
                 </div>
-                <div class="field">
-                    <label>Portfolio-ID <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
-                    <input type="text" id="portfolioId" placeholder="z.B. 123456789">
-                </div>
                 <div class="field-row">
                     <div class="field">
                         <label>Kampagnen-Startdatum</label>
@@ -443,6 +443,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-auto" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-auto" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-auto" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-auto" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-auto" checked><label>Negative KW</label></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="cross-neg-auto" checked><label>Cross-Negation <span class="tooltip-icon" data-tip="Brand Keywords werden als Negative Phrase, generische Keywords als Negative Exact in die Auto-Kampagne eingefügt — verhindert Kannibalisierung.">?</span></label></div>
                     </div>
@@ -463,6 +465,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-generic-exact" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-generic-exact" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-generic-exact" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-generic-exact" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-generic-exact"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -476,6 +480,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-generic-broad" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-generic-broad" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-generic-broad" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-generic-broad" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-generic-broad"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -489,6 +495,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-brand-exact" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-brand-exact" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-brand-exact" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-brand-exact" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-exact"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -502,6 +510,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-brand-broad" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-brand-broad" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-brand-broad" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-brand-broad" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-broad"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -515,6 +525,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-brand-phrase" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-brand-phrase" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-brand-phrase" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-brand-phrase" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-brand-phrase"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -528,6 +540,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-comp-exact" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-comp-exact" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-comp-exact" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-comp-exact" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-comp-exact"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -541,6 +555,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-comp-broad" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-comp-broad" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-comp-broad" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-comp-broad" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-comp-broad"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -554,6 +570,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-pt-comp" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-pt-comp" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-pt-comp" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-pt-comp" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-pt-comp"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -567,6 +585,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-pt-brand" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-pt-brand" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-pt-brand" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-pt-brand" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-pt-brand"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -580,6 +600,8 @@
                     <div class="campaign-option-fields">
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-single" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-single" step="0.01" value="10.00"></div>
+                        <div class="mini-field"><label>ToS %</label><input type="number" id="tos-single" step="1" min="0" max="900" placeholder=""></div>
+                        <div class="mini-field"><label>PP %</label><input type="number" id="pp-single" step="1" min="0" max="900" placeholder=""></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-single"><label>Negative KW</label></div>
                     </div>
                 </div>
@@ -810,7 +832,7 @@ function getPresets() {
 function refreshPresetDropdown() {
     const sel = document.getElementById('presetSelect');
     const presets = getPresets();
-    sel.innerHTML = '<option value="">— Preset wählen —</option>';
+    sel.innerHTML = '<option value="">— Vorlage wählen —</option>';
     Object.keys(presets).sort().forEach(name => {
         const opt = document.createElement('option');
         opt.value = name;
@@ -827,7 +849,8 @@ function gatherFormState() {
     blocks.forEach(b => {
         state.products.push({
             name: b.querySelector('.productName').value,
-            list: b.querySelector('.productList').value
+            list: b.querySelector('.productList').value,
+            portfolioId: b.querySelector('.portfolioId') ? b.querySelector('.portfolioId').value : ''
         });
     });
     // Text fields
@@ -838,7 +861,6 @@ function gatherFormState() {
     state.biddingStrategy = document.getElementById('biddingStrategy').value;
     state.dailyBudget = document.getElementById('dailyBudget').value;
     state.overallBid = document.getElementById('overallBid').value;
-    state.portfolioId = document.getElementById('portfolioId').value;
     state.placementTos = document.getElementById('placementTos').value;
     state.placementPp = document.getElementById('placementPp').value;
     // Campaign options
@@ -864,7 +886,7 @@ function applyFormState(state) {
     container.innerHTML = '';
     productCounter = 0;
     (state.products || [{ name: '', list: '' }]).forEach((p, i) => {
-        const block = createProductBlock(p.name, p.list);
+        const block = createProductBlock(p.name, p.list, p.portfolioId || '');
         container.appendChild(block);
     });
     renumberProducts();
@@ -879,7 +901,6 @@ function applyFormState(state) {
     if (state.biddingStrategy) document.getElementById('biddingStrategy').value = state.biddingStrategy;
     if (state.dailyBudget) document.getElementById('dailyBudget').value = state.dailyBudget;
     if (state.overallBid) document.getElementById('overallBid').value = state.overallBid;
-    document.getElementById('portfolioId').value = state.portfolioId || '';
     document.getElementById('placementTos').value = state.placementTos || '';
     document.getElementById('placementPp').value = state.placementPp || '';
     // Checkboxes
@@ -903,7 +924,7 @@ function applyFormState(state) {
 }
 
 function savePreset() {
-    const name = prompt('Preset-Name eingeben:');
+    const name = prompt('Vorlagen-Name eingeben:');
     if (!name || !name.trim()) return;
     const presets = getPresets();
     presets[name.trim()] = gatherFormState();
@@ -923,7 +944,7 @@ function loadPreset() {
 function deletePreset() {
     const name = document.getElementById('presetSelect').value;
     if (!name) return;
-    if (!confirm('Preset "' + name + '" wirklich löschen?')) return;
+    if (!confirm('Vorlage "' + name + '" wirklich löschen?')) return;
     const presets = getPresets();
     delete presets[name];
     localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
@@ -957,7 +978,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.setItem(PRESET_KEY, JSON.stringify(merged));
                 refreshPresetDropdown();
                 const count = Object.keys(imported).length;
-                showSuccess(count + ' Preset(s) importiert.');
+                showSuccess(count + ' Vorlage(n) importiert.');
             } catch { /* invalid JSON */ }
         };
         reader.readAsText(file);
@@ -1095,7 +1116,7 @@ function renumberProducts() {
     });
 }
 
-function createProductBlock(name, asins) {
+function createProductBlock(name, asins, portfolioId) {
     productCounter++;
     const block = document.createElement('div');
     block.className = 'product-block';
@@ -1119,6 +1140,10 @@ function createProductBlock(name, asins) {
             <label class="productListLabel">${labelText}</label>
             <textarea class="productList" rows="4" placeholder="${placeholder}">${escapeHtml(asins || '')}</textarea>
         </div>
+        <div class="field">
+            <label>Portfolio-ID <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
+            <input type="text" class="portfolioId" placeholder="z.B. 123456789" value="${escapeHtml(portfolioId || '')}">
+        </div>
     `;
     return block;
 }
@@ -1140,8 +1165,9 @@ function duplicateProduct(btn) {
     const block = btn.closest('.product-block');
     const name = block.querySelector('.productName').value;
     const asins = block.querySelector('.productList').value;
+    const portfolioId = block.querySelector('.portfolioId') ? block.querySelector('.portfolioId').value : '';
     const container = document.getElementById('productBlocksContainer');
-    const newBlock = createProductBlock(name, asins);
+    const newBlock = createProductBlock(name, asins, portfolioId);
     block.after(newBlock);
     renumberProducts();
 }
@@ -1212,6 +1238,7 @@ function resetAll() {
     document.querySelectorAll('input[type="number"]').forEach(el => {
         if (el.id.startsWith('bid')) el.value = '0.50';
         else if (el.id.startsWith('budget')) el.value = '10.00';
+        else if (el.id.startsWith('tos-') || el.id.startsWith('pp-')) el.value = '';
     });
     document.getElementById('dailyBudget').value = '10.00';
     document.getElementById('overallBid').value = '0.50';
@@ -1220,7 +1247,6 @@ function resetAll() {
     const d = new Date();
     document.getElementById('startDate').value = d.toISOString().slice(0, 10);
     document.getElementById('endDate').value = '';
-    document.getElementById('portfolioId').value = '';
     document.getElementById('placementTos').value = '';
     document.getElementById('placementPp').value = '';
     document.querySelectorAll('.campaign-option input[type="checkbox"]').forEach(el => el.checked = true);
@@ -1367,8 +1393,9 @@ function _generateExcelInner(progressBar) {
         const name = block.querySelector('.productName').value.trim();
         const listText = block.querySelector('.productList').value;
         const items = listText.split('\n').map(s => s.trim()).filter(Boolean);
+        const blockPortfolioId = block.querySelector('.portfolioId') ? block.querySelector('.portfolioId').value.trim() : '';
         if (name && items.length > 0) {
-            allProducts.push({ name, items });
+            allProducts.push({ name, items, portfolioId: blockPortfolioId });
         } else if (name && items.length === 0) {
             errors.push('Produkt "' + name + '" hat keine ' + (isVendor ? 'ASINs' : 'SKUs') + '.');
         } else if (!name && items.length > 0) {
@@ -1437,7 +1464,6 @@ function _generateExcelInner(progressBar) {
     const startDate = startDateRaw.replace(/-/g, '');
     const endDateRaw = document.getElementById('endDate').value;
     const endDate = endDateRaw ? endDateRaw.replace(/-/g, '') : '';
-    const portfolioId = document.getElementById('portfolioId').value.trim();
     const placementTos = document.getElementById('placementTos').value;
     const placementPp = document.getElementById('placementPp').value;
 
@@ -1553,11 +1579,12 @@ function _generateExcelInner(progressBar) {
     allProducts.forEach(productData => {
         const productName = productData.name;
         const productItems = productData.items; // ASINs or SKUs for this product
+        const portfolioId = productData.portfolioId || '';
 
         let productLabel = t.product;
 
         // --- Campaign Row builder ---
-        function addCampaignRow(campName, targetType, budget, bidStrat) {
+        function addCampaignRow(campName, targetType, budget, bidStrat, campTos, campPp) {
             const r = emptyRow();
             r[hProduct] = productLabel;
             r[hEntity] = ent.campaign;
@@ -1573,25 +1600,25 @@ function _generateExcelInner(progressBar) {
             r[hBiddingStrat] = bidStrat;
             rows.push(r);
 
-            // Placement adjustments
-            if (placementTos) {
+            // Placement adjustments (per-campaign)
+            const tosVal = campTos || placementTos;
+            const ppVal = campPp || placementPp;
+            if (tosVal && parseFloat(tosVal) > 0) {
                 const pr = emptyRow();
                 pr[hProduct] = productLabel;
                 pr[hEntity] = t.biddingAdj;
-                pr[hOp] = op;
                 pr[hCampId] = campName;
                 pr[hPlacement] = t.placeTos;
-                pr[hPercentage] = placementTos;
+                pr[hPercentage] = tosVal;
                 rows.push(pr);
             }
-            if (placementPp) {
+            if (ppVal && parseFloat(ppVal) > 0) {
                 const pr = emptyRow();
                 pr[hProduct] = productLabel;
                 pr[hEntity] = t.biddingAdj;
-                pr[hOp] = op;
                 pr[hCampId] = campName;
                 pr[hPlacement] = t.placePp;
-                pr[hPercentage] = placementPp;
+                pr[hPercentage] = ppVal;
                 rows.push(pr);
             }
         }
@@ -1716,7 +1743,9 @@ function _generateExcelInner(progressBar) {
             const campName = cn.auto + ' - ' + productName;
             const adGroupName = 'ALL';
 
-            addCampaignRow(campName, targetAuto, budget, biddingStrategy);
+            const tosAuto = document.getElementById('tos-auto').value;
+            const ppAuto = document.getElementById('pp-auto').value;
+            addCampaignRow(campName, targetAuto, budget, biddingStrategy, tosAuto, ppAuto);
             addAdGroupRow(campName, adGroupName, bid);
             addProductAdRows(campName, adGroupName);
 
@@ -1760,11 +1789,13 @@ function _generateExcelInner(progressBar) {
         }
 
         // ========== KEYWORD CAMPAIGNS ==========
-        function buildKeywordCampaigns(kwList, allocNum, campNameBase, matchType, matchTypeLabel, chkId, bidId, budgetId, negId) {
+        function buildKeywordCampaigns(kwList, allocNum, campNameBase, matchType, matchTypeLabel, chkId, bidId, budgetId, negId, tosId, ppId) {
             if (!document.getElementById(chkId).checked || kwList.length === 0) return;
             const bid = parseFloat(document.getElementById(bidId).value) || 0.50;
             const budget = parseFloat(document.getElementById(budgetId).value) || 10.00;
             const useNeg = document.getElementById(negId).checked;
+            const campTos = tosId ? document.getElementById(tosId).value : '';
+            const campPp = ppId ? document.getElementById(ppId).value : '';
 
             const chunks = splitIntoChunks(kwList, allocNum);
             const totalChunks = chunks.length;
@@ -1774,7 +1805,7 @@ function _generateExcelInner(progressBar) {
                 const campName = campNameBase + splitLabel + ' - ' + productName;
                 const adGroupName = matchTypeLabel;
 
-                addCampaignRow(campName, targetManual, budget, biddingStrategy);
+                addCampaignRow(campName, targetManual, budget, biddingStrategy, campTos, campPp);
                 addAdGroupRow(campName, adGroupName, bid);
                 addProductAdRows(campName, adGroupName);
 
@@ -1790,25 +1821,25 @@ function _generateExcelInner(progressBar) {
         }
 
         // Generic Exact
-        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericExact, mt.exact, 'EXACT', 'chk-generic-exact', 'bid-generic-exact', 'budget-generic-exact', 'neg-generic-exact');
+        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericExact, mt.exact, 'EXACT', 'chk-generic-exact', 'bid-generic-exact', 'budget-generic-exact', 'neg-generic-exact', 'tos-generic-exact', 'pp-generic-exact');
 
         // Generic Broad
-        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericBroad, mt.broad, 'BROAD', 'chk-generic-broad', 'bid-generic-broad', 'budget-generic-broad', 'neg-generic-broad');
+        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericBroad, mt.broad, 'BROAD', 'chk-generic-broad', 'bid-generic-broad', 'budget-generic-broad', 'neg-generic-broad', 'tos-generic-broad', 'pp-generic-broad');
 
         // Brand Exact
-        buildKeywordCampaigns(brandKws, 0, cn.brandExact, mt.exact, 'EXACT', 'chk-brand-exact', 'bid-brand-exact', 'budget-brand-exact', 'neg-brand-exact');
+        buildKeywordCampaigns(brandKws, 0, cn.brandExact, mt.exact, 'EXACT', 'chk-brand-exact', 'bid-brand-exact', 'budget-brand-exact', 'neg-brand-exact', 'tos-brand-exact', 'pp-brand-exact');
 
         // Brand Broad
-        buildKeywordCampaigns(brandKws, 0, cn.brandBroad, mt.broad, 'BROAD', 'chk-brand-broad', 'bid-brand-broad', 'budget-brand-broad', 'neg-brand-broad');
+        buildKeywordCampaigns(brandKws, 0, cn.brandBroad, mt.broad, 'BROAD', 'chk-brand-broad', 'bid-brand-broad', 'budget-brand-broad', 'neg-brand-broad', 'tos-brand-broad', 'pp-brand-broad');
 
         // Brand Phrase
-        buildKeywordCampaigns(brandKws, 0, cn.brandPhrase, mt.phrase, 'PHRASE', 'chk-brand-phrase', 'bid-brand-phrase', 'budget-brand-phrase', 'neg-brand-phrase');
+        buildKeywordCampaigns(brandKws, 0, cn.brandPhrase, mt.phrase, 'PHRASE', 'chk-brand-phrase', 'bid-brand-phrase', 'budget-brand-phrase', 'neg-brand-phrase', 'tos-brand-phrase', 'pp-brand-phrase');
 
         // Competitor Exact
-        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compExact, mt.exact, 'EXACT', 'chk-comp-exact', 'bid-comp-exact', 'budget-comp-exact', 'neg-comp-exact');
+        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compExact, mt.exact, 'EXACT', 'chk-comp-exact', 'bid-comp-exact', 'budget-comp-exact', 'neg-comp-exact', 'tos-comp-exact', 'pp-comp-exact');
 
         // Competitor Broad
-        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compBroad, mt.broad, 'BROAD', 'chk-comp-broad', 'bid-comp-broad', 'budget-comp-broad', 'neg-comp-broad');
+        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compBroad, mt.broad, 'BROAD', 'chk-comp-broad', 'bid-comp-broad', 'budget-comp-broad', 'neg-comp-broad', 'tos-comp-broad', 'pp-comp-broad');
 
         // ========== PRODUCT TARGETING - BRAND ==========
         if (document.getElementById('chk-pt-brand').checked && brandAsinsList.length > 0) {
@@ -1817,8 +1848,10 @@ function _generateExcelInner(progressBar) {
             const useNeg = document.getElementById('neg-pt-brand').checked;
             const campName = cn.ptBrand + ' - ' + productName;
             const adGroupName = 'ASIN';
+            const tosPtBrand = document.getElementById('tos-pt-brand').value;
+            const ppPtBrand = document.getElementById('pp-pt-brand').value;
 
-            addCampaignRow(campName, targetManual, budget, biddingStrategy);
+            addCampaignRow(campName, targetManual, budget, biddingStrategy, tosPtBrand, ppPtBrand);
             addAdGroupRow(campName, adGroupName, bid);
             addProductAdRows(campName, adGroupName);
 
@@ -1836,6 +1869,8 @@ function _generateExcelInner(progressBar) {
             const bid = parseFloat(document.getElementById('bid-pt-comp').value) || 0.50;
             const budget = parseFloat(document.getElementById('budget-pt-comp').value) || 10.00;
             const useNeg = document.getElementById('neg-pt-comp').checked;
+            const tosPtComp = document.getElementById('tos-pt-comp').value;
+            const ppPtComp = document.getElementById('pp-pt-comp').value;
 
             const chunks = splitIntoChunks(compAsinsList, compAsinAllocNum);
             const totalChunks = chunks.length;
@@ -1845,7 +1880,7 @@ function _generateExcelInner(progressBar) {
                 const campName = cn.ptComp + splitLabel + ' - ' + productName;
                 const adGroupName = 'ASIN';
 
-                addCampaignRow(campName, targetManual, budget, biddingStrategy);
+                addCampaignRow(campName, targetManual, budget, biddingStrategy, tosPtComp, ppPtComp);
                 addAdGroupRow(campName, adGroupName, bid);
                 addProductAdRows(campName, adGroupName);
 
@@ -1864,12 +1899,14 @@ function _generateExcelInner(progressBar) {
             const bid = parseFloat(document.getElementById('bid-single').value) || 0.50;
             const budget = parseFloat(document.getElementById('budget-single').value) || 10.00;
             const useNeg = document.getElementById('neg-single').checked;
+            const tosSingle = document.getElementById('tos-single').value;
+            const ppSingle = document.getElementById('pp-single').value;
 
             singleKws.forEach(kw => {
                 const campName = 'SP: KW "' + kw + '" - ' + productName;
                 const adGroupName = 'EXACT';
 
-                addCampaignRow(campName, targetManual, budget, biddingStrategy);
+                addCampaignRow(campName, targetManual, budget, biddingStrategy, tosSingle, ppSingle);
                 addAdGroupRow(campName, adGroupName, bid);
                 addProductAdRows(campName, adGroupName);
                 addKeywordRow(campName, adGroupName, kw, mt.exact, bid);
