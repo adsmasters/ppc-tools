@@ -409,6 +409,7 @@ function handleFileUpload(file) {
             const campIdToName = {};
             parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }) => {
                 if (!hasEntity) return;
+                console.log('[Pass1a] cm.campaignId:', cm.campaignId, 'cm.campaign:', cm.campaign);
                 for (let i = headerIdx + 1; i < rows.length; i++) {
                     const r = rows[i];
                     if (!r || r.length < 3) continue;
@@ -420,6 +421,7 @@ function handleFileUpload(file) {
                     }
                 }
             });
+            console.log('[Pass1a] campIdToName entries:', Object.keys(campIdToName).length, Object.entries(campIdToName).slice(0, 5));
 
             // Pass 1b: Extract campaign structure, keywords, product ads, targeting type
             parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }) => {
