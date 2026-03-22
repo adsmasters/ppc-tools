@@ -309,7 +309,8 @@ document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_th
 
 // --- State ---
 let strData = [];           // Search term report rows
-let bulkKeywords = new Set(); // Existing manual keywords (lowercase)
+let bulkKeywords = new Set(); // Existing manual keywords + product targets (lowercase)
+let adGroupAsinMap = {};    // Campaign|AdGroup -> Set<ASIN> from Product Ad rows
 let bulkCampaigns = [];     // Existing campaigns from bulk sheet {name, asins, adgroups}
 let harvestData = [];       // Filtered harvest candidates
 let selectedTerms = new Set();
@@ -334,8 +335,8 @@ const COL = {
     matchtype: ['match type', 'übereinstimmungstyp'],
     keyword: ['keyword text', 'keyword-text', 'texte du mot-clé', 'keyword'],
     entity: ['entity', 'entität', 'entité', 'entidad', 'entità'],
-    asin: ['asin'],
-    sku: ['sku'],
+    asin: ['asin', 'asin (informativ)', 'asin (informational)'],
+    sku: ['sku', 'sku (informativ)', 'sku (informational)'],
     state: ['state', 'zustand', 'état', 'estado', 'stato']
 };
 
@@ -376,14 +377,14 @@ function handleFileUpload(file) {
             // Parse ALL sheets
             strData = [];
             bulkKeywords.clear();
+            adGroupAsinMap = {};
             bulkCampaigns = [];
             const campMap = {};
 
-            wb.SheetNames.forEach(sheetName => {
+            // Helper: parse a single sheet and return { headers, cm, rows, headerIdx }
+            function parseSheet(sheetName) {
                 const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
-                if (rows.length < 2) return;
-
-                // Find header row
+                if (rows.length < 2) return null;
                 let headerIdx = 0;
                 for (let i = 0; i < Math.min(rows.length, 10); i++) {
                     const row = rows[i].map(c => String(c).toLowerCase().trim());
@@ -393,86 +394,113 @@ function handleFileUpload(file) {
                         headerIdx = i; break;
                     }
                 }
-
                 const headers = rows[headerIdx].map(c => String(c));
                 const cm = {};
                 for (const key of Object.keys(COL)) cm[key] = findCol(headers, key);
-
-                // Currency detection
                 headers.forEach(h => { for (const [sym, code] of Object.entries(CURRENCY_MAP)) { if (h.includes(sym)) detectedCurrency = code; } });
+                return { rows, cm, headerIdx, hasSearchTerm: cm.searchterm !== -1, hasEntity: cm.entity !== -1 };
+            }
 
-                // Determine sheet type: Search Term sheet vs Campaign/Keyword sheet
-                const hasSearchTerm = cm.searchterm !== -1;
-                const hasEntity = cm.entity !== -1;
+            // Pre-parse all sheets
+            const parsedSheets = [];
+            wb.SheetNames.forEach(sheetName => {
+                const p = parseSheet(sheetName);
+                if (p) parsedSheets.push(p);
+            });
 
+            // Pass 1: Extract campaign structure, keywords, product ads, targeting type
+            parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }) => {
+                if (!hasEntity) return;
                 for (let i = headerIdx + 1; i < rows.length; i++) {
                     const r = rows[i];
                     if (!r || r.length < 3) continue;
-
                     const campName = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
                     const adgroupName = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
                     const entity = cm.entity !== -1 ? String(r[cm.entity] || '').toLowerCase().trim() : '';
+                    const kwText = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim().toLowerCase() : '';
+                    const asin = cm.asin !== -1 ? String(r[cm.asin] || '').trim() : '';
+                    const sku = cm.sku !== -1 ? String(r[cm.sku] || '').trim() : '';
 
-                    // Extract search terms (from Search Term sheet)
-                    if (hasSearchTerm) {
-                        const st = String(r[cm.searchterm] || '').trim();
-                        if (st) {
-                            const impressions = parseNum(r[cm.impressions]);
-                            const clicks = parseNum(r[cm.clicks]);
-                            const spend = parseNum(r[cm.spend]);
-                            const sales = cm.sales !== -1 ? parseNum(r[cm.sales]) : 0;
-                            const orders = cm.orders !== -1 ? parseNum(r[cm.orders]) : 0;
-                            // Auto detection: check campaign map first, fallback to targeting column
-                            let isAuto = false;
-                            if (campMap[campName] && campMap[campName].isAuto) {
-                                isAuto = true;
-                            } else {
-                                const targeting = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase() : '';
-                                isAuto = targeting.includes('auto') || targeting.includes('automatisch') || targeting.includes('automatique') || targeting.includes('automático');
-                            }
-
-                            strData.push({
-                                searchterm: st, campaign: campName, adgroup: adgroupName,
-                                impressions, clicks, spend, sales, orders, isAuto,
-                                cpc: clicks > 0 ? spend / clicks : 0,
-                                acos: sales > 0 ? (spend / sales * 100) : (spend > 0 ? Infinity : 0),
-                                roas: spend > 0 ? sales / spend : 0,
-                                ctr: impressions > 0 ? (clicks / impressions * 100) : 0,
-                                isAsin: /^B0[A-Z0-9]{8}$/i.test(st)
-                            });
-                        }
+                    // Collect existing keywords
+                    if (kwText && (entity.includes('keyword') || entity.includes('mot-cl') || entity.includes('palabra') || entity.includes('parola'))) {
+                        if (!entity.includes('negat')) bulkKeywords.add(kwText);
                     }
-
-                    // Extract keywords and campaign structure (from Campaign sheet)
-                    if (hasEntity) {
-                        const kwText = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim().toLowerCase() : '';
-                        const asin = cm.asin !== -1 ? String(r[cm.asin] || '').trim() : '';
-                        const sku = cm.sku !== -1 ? String(r[cm.sku] || '').trim() : '';
-
-                        if (kwText && (entity.includes('keyword') || entity.includes('mot-cl') || entity.includes('palabra') || entity.includes('parola'))) {
-                            if (!entity.includes('negat')) bulkKeywords.add(kwText);
-                        }
-
-                        if (campName) {
-                            if (!campMap[campName]) campMap[campName] = { name: campName, asins: new Set(), skus: new Set(), adgroups: new Set(), isAuto: false };
-                            if (asin) campMap[campName].asins.add(asin);
-                            if (sku) campMap[campName].skus.add(sku);
-                            if (adgroupName) campMap[campName].adgroups.add(adgroupName);
-                            // Detect auto targeting from Targeting-Typ column on Campaign entity rows
-                            if (entity.includes('kampagne') || entity.includes('campaign') || entity.includes('campagne') || entity.includes('campaña')) {
-                                const tType = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase().trim() : '';
-                                if (tType.includes('auto') || tType.includes('automatisch') || tType.includes('automatique') || tType.includes('automático')) {
-                                    campMap[campName].isAuto = true;
-                                }
+                    // Collect Product Targeting ASINs
+                    if (entity.includes('product targeting') || entity.includes('produkt-targeting') || entity.includes('ciblage') || entity.includes('segmentación')) {
+                        if (kwText) bulkKeywords.add(kwText);
+                        if (asin) bulkKeywords.add(asin.toLowerCase());
+                    }
+                    // Map ASINs to AdGroups from any entity row that has ASIN + AdGroup
+                    if (asin && campName && adgroupName) {
+                        const agKey = campName + '|' + adgroupName;
+                        if (!adGroupAsinMap[agKey]) adGroupAsinMap[agKey] = new Set();
+                        adGroupAsinMap[agKey].add(asin.toUpperCase());
+                    }
+                    // Build campaign map
+                    if (campName) {
+                        if (!campMap[campName]) campMap[campName] = { name: campName, asins: new Set(), skus: new Set(), adgroups: new Set(), isAuto: false };
+                        if (asin) campMap[campName].asins.add(asin);
+                        if (sku) campMap[campName].skus.add(sku);
+                        if (adgroupName) campMap[campName].adgroups.add(adgroupName);
+                        if (entity.includes('kampagne') || entity.includes('campaign') || entity.includes('campagne') || entity.includes('campaña')) {
+                            const tType = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase().trim() : '';
+                            if (tType.includes('auto') || tType.includes('automatisch') || tType.includes('automatique') || tType.includes('automático')) {
+                                campMap[campName].isAuto = true;
                             }
                         }
                     }
                 }
             });
 
+            // Pass 2: Extract search terms (now campMap and adGroupAsinMap are complete)
+            parsedSheets.forEach(({ rows, cm, headerIdx, hasSearchTerm }) => {
+                if (!hasSearchTerm) return;
+                for (let i = headerIdx + 1; i < rows.length; i++) {
+                    const r = rows[i];
+                    if (!r || r.length < 3) continue;
+                    const campName = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
+                    const adgroupName = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
+                    const st = String(r[cm.searchterm] || '').trim();
+                    if (!st) continue;
+
+                    const impressions = parseNum(r[cm.impressions]);
+                    const clicks = parseNum(r[cm.clicks]);
+                    const spend = parseNum(r[cm.spend]);
+                    const sales = cm.sales !== -1 ? parseNum(r[cm.sales]) : 0;
+                    const orders = cm.orders !== -1 ? parseNum(r[cm.orders]) : 0;
+
+                    let isAuto = false;
+                    if (campMap[campName] && campMap[campName].isAuto) {
+                        isAuto = true;
+                    } else {
+                        const targeting = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase() : '';
+                        isAuto = targeting.includes('auto') || targeting.includes('automatisch') || targeting.includes('automatique') || targeting.includes('automático');
+                    }
+
+                    // Lookup product ASINs: AdGroup level first, fallback to Campaign level
+                    const agKey = campName + '|' + adgroupName;
+                    const productAsins = adGroupAsinMap[agKey] ? [...adGroupAsinMap[agKey]] : (campMap[campName] && campMap[campName].asins.size > 0 ? [...campMap[campName].asins] : []);
+
+                    strData.push({
+                        searchterm: st, campaign: campName, adgroup: adgroupName,
+                        impressions, clicks, spend, sales, orders, isAuto,
+                        cpc: clicks > 0 ? spend / clicks : 0,
+                        acos: sales > 0 ? (spend / sales * 100) : (spend > 0 ? Infinity : 0),
+                        roas: spend > 0 ? sales / spend : 0,
+                        ctr: impressions > 0 ? (clicks / impressions * 100) : 0,
+                        isAsin: /^B0[A-Z0-9]{8}$/i.test(st),
+                        productAsins: productAsins
+                    });
+                }
+            });
+
             bulkCampaigns = Object.values(campMap).map(c => ({
                 name: c.name, asins: [...c.asins], skus: [...c.skus], adgroups: [...c.adgroups]
             }));
+
+            console.log('[Harvest] adGroupAsinMap entries:', Object.keys(adGroupAsinMap).length, adGroupAsinMap);
+            console.log('[Harvest] campMap ASINs:', Object.entries(campMap).map(([k,v]) => k + ': ' + [...v.asins].join(',')).filter(s => s.includes(',')));
+            console.log('[Harvest] strData sample productAsins:', strData.slice(0,5).map(r => r.searchterm + ' -> ' + (r.productAsins||[]).join(',')));
 
             finishUpload(file);
         };
@@ -545,7 +573,7 @@ function finishUpload(file) {
 
     const harvestCamps = bulkCampaigns.filter(c => c.name.toLowerCase().includes('harvest'));
     const info = [strData.length + ' Suchbegriffe'];
-    if (bulkKeywords.size > 0) info.push(bulkKeywords.size + ' bestehende Keywords');
+    if (bulkKeywords.size > 0) info.push(bulkKeywords.size + ' bestehende Keywords/Targets');
     if (bulkCampaigns.length > 0) info.push(bulkCampaigns.length + ' Kampagnen');
     if (harvestCamps.length > 0) info.push(harvestCamps.length + ' Harvest-Kampagnen');
 
@@ -564,6 +592,7 @@ function finishUpload(file) {
 function clearUpload() {
     strData = [];
     bulkKeywords.clear();
+    adGroupAsinMap = {};
     bulkCampaigns = [];
     document.getElementById('fileInfoContainer').innerHTML = '';
     document.getElementById('uploadMsg').innerHTML = '';
@@ -598,17 +627,19 @@ function getFilteredData() {
     strData.forEach(row => {
         if (autoOnly && !row.isAuto) return;
         const key = row.searchterm.toLowerCase();
-        if (!aggMap[key]) aggMap[key] = { searchterm: row.searchterm, impressions: 0, clicks: 0, spend: 0, sales: 0, orders: 0, campaigns: new Set(), isAsin: row.isAsin };
+        if (!aggMap[key]) aggMap[key] = { searchterm: row.searchterm, impressions: 0, clicks: 0, spend: 0, sales: 0, orders: 0, campaigns: new Set(), isAsin: row.isAsin, productAsins: new Set(), sourceCampaigns: new Set() };
         aggMap[key].impressions += row.impressions;
         aggMap[key].clicks += row.clicks;
         aggMap[key].spend += row.spend;
         aggMap[key].sales += row.sales;
         aggMap[key].orders += row.orders;
         aggMap[key].campaigns.add(row.campaign);
+        aggMap[key].sourceCampaigns.add(row.campaign);
+        if (row.productAsins) row.productAsins.forEach(a => aggMap[key].productAsins.add(a));
     });
 
     return Object.values(aggMap).filter(r => {
-        // Must not already exist as keyword
+        // Must not already exist as keyword or product target in manual campaigns
         if (bulkKeywords.has(r.searchterm.toLowerCase())) return false;
         // Profitability filters
         if (r.orders < minOrders) return false;
@@ -627,6 +658,8 @@ function getFilteredData() {
         roas: r.spend > 0 ? r.sales / r.spend : 0,
         ctr: r.impressions > 0 ? (r.clicks / r.impressions * 100) : 0,
         campaignCount: r.campaigns.size,
+        productAsins: [...r.productAsins],
+        sourceCampaigns: [...r.sourceCampaigns],
         suggestedBid: r.clicks > 0 ? Math.round((r.spend / r.clicks) * 100) / 100 : 0.50,
         matchType: 'exact',
         targetCampaign: ''
@@ -636,7 +669,7 @@ function getFilteredData() {
 function updateLiveCounter() {
     if (strData.length === 0) return;
     const data = getFilteredData();
-    document.getElementById('liveCounter').textContent = data.length + ' profitable Suchbegriffe gefunden (von ' + strData.length + ' gesamt), ' + bulkKeywords.size + ' bereits als Keywords vorhanden';
+    document.getElementById('liveCounter').textContent = data.length + ' profitable Suchbegriffe gefunden (von ' + strData.length + ' gesamt), ' + bulkKeywords.size + ' bereits als Keywords/Targets vorhanden';
 }
 
 // --- Analysis ---
@@ -736,6 +769,7 @@ function renderTable() {
     const cols = [
         { id: 'select', label: '' },
         { id: 'searchterm', label: 'Suchbegriff', sort: true },
+        { id: 'productAsins', label: 'Produkt / Quell-Kampagne' },
         { id: 'orders', label: 'Bestellungen', sort: true, num: true },
         { id: 'sales', label: 'Umsatz', sort: true, num: true },
         { id: 'spend', label: 'Spend', sort: true, num: true },
@@ -772,7 +806,17 @@ function renderTable() {
         const bidInput = `<input type="number" value="${row.suggestedBid.toFixed(2)}" step="0.01" min="0.02" onchange="harvestData[${globalIdx}].suggestedBid=parseFloat(this.value)||0.50">`;
         const campSelect = `<select onchange="harvestData[${globalIdx}].targetCampaign=this.value" style="max-width:160px;">${campOptions}</select>`;
 
-        return `<tr${cls}><td><input type="checkbox" ${checked} onchange="toggleSelect('${escapeHtml(key)}',this.checked)"></td><td>${escapeHtml(row.searchterm)}${asinBadge}${harvestedBadge}${multiCampBadge}</td><td class="num">${row.orders}</td><td class="num">${formatCurrency(row.sales)}</td><td class="num">${formatCurrency(row.spend)}</td><td class="num" style="color:${acosColor};font-weight:600">${row.acos.toFixed(1)}%</td><td class="num">${row.clicks.toLocaleString('de-DE')}</td><td class="num">${formatCurrency(row.cpc)}</td><td>${mtSelect}</td><td>${bidInput}</td><td>${campSelect}</td></tr>`;
+        let productCol = '';
+        if (row.productAsins && row.productAsins.length > 0) {
+            productCol = row.productAsins.map(a => '<span style="font-size:11px;font-family:monospace;font-weight:600;">' + escapeHtml(a) + '</span>').join(', ');
+        }
+        if (row.sourceCampaigns && row.sourceCampaigns.length > 0) {
+            const campLabel = row.sourceCampaigns.map(c => '<span style="font-size:10px;color:var(--text-secondary);">' + escapeHtml(c) + '</span>').join('<br>');
+            productCol = productCol ? productCol + '<br>' + campLabel : campLabel;
+        }
+        if (!productCol) productCol = '<span style="color:var(--text-secondary);font-size:11px;">—</span>';
+
+        return `<tr${cls}><td><input type="checkbox" ${checked} onchange="toggleSelect('${escapeHtml(key)}',this.checked)"></td><td>${escapeHtml(row.searchterm)}${asinBadge}${harvestedBadge}${multiCampBadge}</td><td style="white-space:normal;max-width:140px;">${productCol}</td><td class="num">${row.orders}</td><td class="num">${formatCurrency(row.sales)}</td><td class="num">${formatCurrency(row.spend)}</td><td class="num" style="color:${acosColor};font-weight:600">${row.acos.toFixed(1)}%</td><td class="num">${row.clicks.toLocaleString('de-DE')}</td><td class="num">${formatCurrency(row.cpc)}</td><td>${mtSelect}</td><td>${bidInput}</td><td>${campSelect}</td></tr>`;
     }).join('');
 
     document.getElementById('tableCount').textContent = totalFiltered + ' von ' + harvestData.length + ' Einträgen';
@@ -959,8 +1003,8 @@ function exportBulkSheet() {
 // --- Analysis Export ---
 function exportAnalysis() {
     if (harvestData.length === 0) return;
-    const headers = ['Suchbegriff', 'Typ', 'Bestellungen', 'Umsatz', 'Spend', 'ACoS %', 'ROAS', 'Klicks', 'CPC', 'CTR %', 'Kampagnen'];
-    const rows = harvestData.map(r => [r.searchterm, r.isAsin ? 'ASIN' : 'Keyword', r.orders, r.sales, r.spend, r.acos.toFixed(1), r.roas.toFixed(2), r.clicks, r.cpc.toFixed(2), r.ctr.toFixed(2), r.campaignCount]);
+    const headers = ['Suchbegriff', 'Typ', 'Produkt (ASIN)', 'Bestellungen', 'Umsatz', 'Spend', 'ACoS %', 'ROAS', 'Klicks', 'CPC', 'CTR %', 'Kampagnen'];
+    const rows = harvestData.map(r => [r.searchterm, r.isAsin ? 'ASIN' : 'Keyword', (r.productAsins || []).join(', '), r.orders, r.sales, r.spend, r.acos.toFixed(1), r.roas.toFixed(2), r.clicks, r.cpc.toFixed(2), r.ctr.toFixed(2), r.campaignCount]);
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws['!cols'] = headers.map(() => ({ wch: 16 }));
