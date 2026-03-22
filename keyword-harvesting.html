@@ -945,10 +945,19 @@ function exportBulkSheet() {
     }
 
     // --- Detect Vendor vs Seller from bulk sheet data ---
-    // Seller = has SKUs in campaigns, Vendor = only ASINs
+    // Seller accounts have SKUs in their campaigns, Vendor accounts only have ASINs
     let isVendor = true;
     for (const camp of bulkCampaigns) {
         if (camp.skus && camp.skus.length > 0) { isVendor = false; break; }
+    }
+
+    // --- Extract clean product name from auto campaign name ---
+    function extractProductName(campName) {
+        // "SP: Auto-Kampagne (Low Bid) - Steinreiniger" → "Steinreiniger"
+        let name = campName;
+        const dashIdx = name.lastIndexOf(' - ');
+        if (dashIdx !== -1) name = name.substring(dashIdx + 3).trim();
+        return name || campName;
     }
 
     // --- Group keywords by source auto campaign (= by product) ---
@@ -958,55 +967,68 @@ function exportBulkSheet() {
         strData.filter(r => r.searchterm.toLowerCase() === kw.searchterm.toLowerCase() && r.isAuto)
             .forEach(r => sources.add(r.campaign));
         const sourceCamp = sources.size > 0 ? [...sources][0] : 'Unknown';
-        if (!bySourceCampaign[sourceCamp]) bySourceCampaign[sourceCamp] = { keywords: [], asinTargets: [], asins: new Set(), skus: new Set() };
-        // Separate: ASIN search terms → Product Targeting, text search terms → Keywords
+        if (!bySourceCampaign[sourceCamp]) bySourceCampaign[sourceCamp] = { keywords: [], asinTargets: [], productItems: [] };
         if (kw.isAsin) {
             bySourceCampaign[sourceCamp].asinTargets.push(kw);
         } else {
             bySourceCampaign[sourceCamp].keywords.push(kw);
         }
-        const campData = bulkCampaigns.find(c => c.name === sourceCamp);
-        if (campData) {
-            campData.asins.forEach(a => bySourceCampaign[sourceCamp].asins.add(a));
-            campData.skus.forEach(s => bySourceCampaign[sourceCamp].skus.add(s));
-        }
-        if (kw.productAsins) kw.productAsins.forEach(a => bySourceCampaign[sourceCamp].asins.add(a));
     });
 
-    // --- Extract clean product name from auto campaign name ---
-    function extractProductName(campName) {
-        // Remove common prefixes: "SP: Auto-Kampagne (Low Bid) - Steinreiniger" → "Steinreiniger"
-        // Also handles: "SP: Auto Campaign - Product", "SP: Auto-Kampagne - Product"
-        let name = campName;
-        // Remove everything before the last " - " separator
-        const dashIdx = name.lastIndexOf(' - ');
-        if (dashIdx !== -1) {
-            name = name.substring(dashIdx + 3).trim();
+    // --- Collect product items (SKUs/ASINs) for each source campaign ---
+    // Same logic as Campaign Creator: productItems = list of SKUs (Seller) or ASINs (Vendor)
+    Object.keys(bySourceCampaign).forEach(sourceCamp => {
+        const items = new Set();
+        // 1. Direct match from bulkCampaigns
+        const camp = bulkCampaigns.find(c => c.name === sourceCamp);
+        if (camp) {
+            if (!isVendor) { camp.skus.forEach(s => items.add(s)); }
+            else { camp.asins.forEach(a => items.add(a)); }
         }
-        return name || campName;
-    }
+        // 2. If no items found, search ALL campaigns with same product name
+        if (items.size === 0) {
+            const productName = extractProductName(sourceCamp).toLowerCase();
+            bulkCampaigns.forEach(c => {
+                if (c.name.toLowerCase().includes(productName)) {
+                    if (!isVendor) { c.skus.forEach(s => items.add(s)); }
+                    else { c.asins.forEach(a => items.add(a)); }
+                }
+            });
+        }
+        // 3. If still no items, try adGroupAsinMap for this campaign
+        if (items.size === 0) {
+            Object.entries(adGroupAsinMap).forEach(([key, asins]) => {
+                if (key.startsWith(sourceCamp + '|')) {
+                    asins.forEach(a => items.add(a));
+                }
+            });
+        }
+        bySourceCampaign[sourceCamp].productItems = [...items];
+    });
 
-    // Debug
     console.log('[Export] isVendor:', isVendor);
     Object.entries(bySourceCampaign).forEach(([k, v]) => {
-        console.log('[Export] source:', k, 'SKUs:', [...v.skus], 'ASINs:', [...v.asins], 'keywords:', v.keywords.length, 'asinTargets:', v.asinTargets.length);
+        console.log('[Export] source:', k, 'productItems:', v.productItems, 'keywords:', v.keywords.length, 'asinTargets:', v.asinTargets.length);
     });
+
+    // --- addProductAdRows: identical to Campaign Creator ---
+    function addProductAdRows(campName, agName, productItems) {
+        productItems.forEach(productId => {
+            const r = emptyRow();
+            r[hProduct] = productLabel; r[hEntity] = 'Product Ad'; r[hOp] = op;
+            r[hCampId] = campName; r[hAdGroupId] = agName; r[hState] = state;
+            if (isVendor) {
+                r[hAsin] = productId;
+            } else {
+                r[hSku] = productId;
+            }
+            rows.push(r);
+        });
+    }
 
     // --- Create campaigns per product ---
     Object.entries(bySourceCampaign).forEach(([sourceCampName, data]) => {
         const productName = extractProductName(sourceCampName);
-
-        // Product Ad items for this product
-        const productSkus = [...data.skus];
-        const productAsins = [...data.asins];
-
-        function addProductAds(campName, agName) {
-            if (!isVendor && productSkus.length > 0) {
-                productSkus.forEach(sku => addProductAdRow(campName, agName, sku, ''));
-            } else if (productAsins.length > 0) {
-                productAsins.forEach(asin => addProductAdRow(campName, agName, '', asin));
-            }
-        }
 
         // --- Keyword Harvest Campaign (text search terms) ---
         if (data.keywords.length > 0) {
@@ -1016,7 +1038,7 @@ function exportBulkSheet() {
 
             addCampaignRow(campName);
             addAdGroupRow(campName, agName, defaultBid);
-            addProductAds(campName, agName);
+            addProductAdRows(campName, agName, data.productItems);
 
             data.keywords.forEach(kw => {
                 addKeywordRow(campName, agName, kw.searchterm, matchTypeMap[kw.matchType] || 'Exact', kw.suggestedBid);
@@ -1031,7 +1053,7 @@ function exportBulkSheet() {
 
             addCampaignRow(campName);
             addAdGroupRow(campName, agName, defaultBid);
-            addProductAds(campName, agName);
+            addProductAdRows(campName, agName, data.productItems);
 
             data.asinTargets.forEach(kw => {
                 addProdTargetingRow(campName, agName, 'asin="' + kw.searchterm.toUpperCase() + '"', kw.suggestedBid);
