@@ -422,8 +422,14 @@ function handleFileUpload(file) {
                             const spend = parseNum(r[cm.spend]);
                             const sales = cm.sales !== -1 ? parseNum(r[cm.sales]) : 0;
                             const orders = cm.orders !== -1 ? parseNum(r[cm.orders]) : 0;
-                            const targeting = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase() : '';
-                            const isAuto = targeting.includes('auto') || targeting.includes('automatisch') || targeting.includes('automatique') || targeting.includes('automático');
+                            // Auto detection: check campaign map first, fallback to targeting column
+                            let isAuto = false;
+                            if (campMap[campName] && campMap[campName].isAuto) {
+                                isAuto = true;
+                            } else {
+                                const targeting = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase() : '';
+                                isAuto = targeting.includes('auto') || targeting.includes('automatisch') || targeting.includes('automatique') || targeting.includes('automático');
+                            }
 
                             strData.push({
                                 searchterm: st, campaign: campName, adgroup: adgroupName,
@@ -448,10 +454,17 @@ function handleFileUpload(file) {
                         }
 
                         if (campName) {
-                            if (!campMap[campName]) campMap[campName] = { name: campName, asins: new Set(), skus: new Set(), adgroups: new Set() };
+                            if (!campMap[campName]) campMap[campName] = { name: campName, asins: new Set(), skus: new Set(), adgroups: new Set(), isAuto: false };
                             if (asin) campMap[campName].asins.add(asin);
                             if (sku) campMap[campName].skus.add(sku);
                             if (adgroupName) campMap[campName].adgroups.add(adgroupName);
+                            // Detect auto targeting from Targeting-Typ column on Campaign entity rows
+                            if (entity.includes('kampagne') || entity.includes('campaign') || entity.includes('campagne') || entity.includes('campaña')) {
+                                const tType = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase().trim() : '';
+                                if (tType.includes('auto') || tType.includes('automatisch') || tType.includes('automatique') || tType.includes('automático')) {
+                                    campMap[campName].isAuto = true;
+                                }
+                            }
                         }
                     }
                 }
