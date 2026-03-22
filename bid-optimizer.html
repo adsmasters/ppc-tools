@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bid Optimizer - AdsMasters PPC Tools</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-hover: #1c2129;
+            --border: #30363d; --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #f85149; --error-bg: #f8514911;
+            --warn: #d29922; --warn-bg: #d2992211;
+            --success: #3fb950; --success-bg: #3fb95011;
+            --bid-up: #3fb950; --bid-down: #f85149; --bid-same: #8b949e;
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff; --bg-secondary: #f6f8fa; --bg-hover: #eef1f5;
+            --border: #d0d7de; --text-primary: #1f2328; --text-secondary: #656d76;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #cf222e; --error-bg: #cf222e11;
+            --warn: #9a6700; --warn-bg: #9a670011;
+            --success: #1a7f37; --success-bg: #1a7f3711;
+            --bid-up: #1a7f37; --bid-down: #cf222e; --bid-same: #656d76;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar-left { display: flex; align-items: center; gap: 32px; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-nav { display: flex; gap: 16px; }
+        .topbar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+        .topbar-nav a:hover { color: var(--text-primary); }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title .step { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+        .field { margin-bottom: 14px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
+        .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; white-space: normal; max-width: 300px; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary)); }
+        .upload-zone .icon { font-size: 28px; margin-bottom: 6px; }
+        .upload-zone .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone .hint { font-size: 12px; color: var(--text-secondary); }
+        .upload-zone input { display: none; }
+        .file-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; margin-top: 12px; font-size: 13px; }
+        .file-info .name { flex: 1; font-weight: 600; }
+        .file-info .meta { color: var(--text-secondary); }
+        .file-info .remove { color: var(--error); cursor: pointer; font-weight: 700; }
+        .btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-sm { padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .btn-sm:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .stat-value { font-size: 22px; font-weight: 700; }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warn { color: var(--warn); }
+        .stat-value.danger { color: var(--error); }
+
+        /* ACoS Target Grid */
+        .acos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .acos-target { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+        .acos-target .type-label { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+        .acos-target .type-count { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; }
+        .acos-target input { width: 80px; padding: 6px 8px; font-size: 12px; }
+
+        /* Results table */
+        .results-container { overflow-x: auto; max-height: 70vh; }
+        .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; z-index: 2; }
+        .results-table th:hover { color: var(--text-primary); }
+        .results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .results-table tr:hover td { background: var(--bg-hover); }
+        .results-table tr.selected td { background: var(--success-bg); }
+        .results-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .results-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+        .results-table input[type="number"] { width: 70px; padding: 4px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); text-align: right; }
+
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+        .table-controls .left { display: flex; gap: 10px; align-items: center; }
+        .table-controls .right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .search-input { width: 200px; padding: 6px 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 12px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+
+        .bid-change { font-weight: 700; font-size: 11px; }
+        .bid-up { color: var(--bid-up); }
+        .bid-down { color: var(--bid-down); }
+        .bid-same { color: var(--bid-same); }
+
+        .error-msg { color: var(--error); font-size: 13px; padding: 8px 12px; border: 1px solid var(--error); border-radius: 6px; margin-bottom: 6px; background: var(--error-bg); }
+        .success-msg { color: var(--success); font-size: 13px; padding: 8px 12px; border: 1px solid var(--success); border-radius: 6px; margin-bottom: 6px; background: var(--success-bg); animation: fadeOut 0.5s ease 3s forwards; }
+        .warn-msg { color: var(--warn); font-size: 13px; padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; margin-bottom: 6px; background: var(--warn-bg); }
+        @keyframes fadeOut { to { opacity: 0; } }
+        .msg-container { margin-bottom: 16px; }
+        .hidden { display: none; }
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 12px; }
+        .pagination button { padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .pagination button:hover { color: var(--text-primary); }
+        .pagination button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+        .pagination .page-info { font-size: 12px; color: var(--text-secondary); }
+
+        .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .comparison-box { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+        .comparison-box .box-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .comparison-box .box-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+        .comparison-box .box-row .label { color: var(--text-secondary); }
+        .comparison-box .box-row .value { font-weight: 600; }
+        .comparison-box .box-row .value.up { color: var(--bid-up); }
+        .comparison-box .box-row .value.down { color: var(--bid-down); }
+        .comparison-box.after { border-color: var(--accent); }
+        .budget-warnings { margin-bottom: 16px; }
+
+        .filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+        .filter-row select { width: auto; min-width: 140px; padding: 6px 10px; font-size: 12px; }
+
+        @media (max-width: 900px) { .field-row { grid-template-columns: 1fr 1fr; } .acos-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } .field-row { grid-template-columns: 1fr; } .acos-grid { grid-template-columns: 1fr; } .btn-row { flex-direction: column; } .btn-row .btn { width: 100%; text-align: center; } }
+    </style>
+</head>
+<body>
+<script>
+    if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('ppc_theme') || 'dark');
+</script>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <nav class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="campaign-creator.html">Kampagnen Ersteller</a>
+            <a href="help.html">Hilfe</a>
+        </nav>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9790;</button>
+        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <h1 class="page-title">Bid Optimizer</h1>
+        <p class="page-sub">Optimiere Gebote basierend auf ACoS-Zielen — Keywords und Product Targeting</p>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="card" id="stepUpload">
+        <div class="card-title"><span class="step">1</span> Bulk Sheet hochladen</div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="icon">&#128203;</div>
+            <div class="label">Bulk Sheet mit Performance-Daten</div>
+            <div class="hint">Excel/CSV mit Kampagnen, Keywords, Geboten, Spend, Sales, Orders</div>
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.tsv">
+        </div>
+        <div id="fileInfoContainer"></div>
+        <div class="msg-container" id="uploadMsg"></div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="card hidden" id="stepTargets">
+        <div class="card-title"><span class="step">2</span> ACoS-Ziele definieren</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Setze für jeden Kampagnentyp ein individuelles ACoS-Ziel. Das Tool berechnet daraus die optimalen Gebote.</p>
+
+        <div class="acos-grid" id="acosGrid"></div>
+
+        <div class="field-row">
+            <div class="field">
+                <label>Min. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird unter diesen Wert gesenkt.">?</span></label>
+                <input type="number" id="minBid" value="0.05" step="0.01" min="0.02">
+            </div>
+            <div class="field">
+                <label>Max. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird über diesen Wert erhöht.">?</span></label>
+                <input type="number" id="maxBid" value="5.00" step="0.1" min="0.10">
+            </div>
+            <div class="field">
+                <label>Keywords ohne Sales <span class="tooltip-icon" data-tip="Wie sollen Keywords ohne Bestellungen behandelt werden?">?</span></label>
+                <select id="noSalesAction">
+                    <option value="reduce30">Gebot um 30% senken</option>
+                    <option value="reduce50">Gebot um 50% senken</option>
+                    <option value="reduce20">Gebot um 20% senken</option>
+                    <option value="keep">Gebot beibehalten</option>
+                    <option value="min">Auf Min. Gebot setzen</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="btn-row" style="justify-content:flex-start;">
+            <button class="btn btn-primary" onclick="optimizeBids()">Gebote berechnen</button>
+        </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="card hidden" id="stepResults">
+        <div class="card-title"><span class="step">3</span> Optimierungsvorschläge</div>
+        <div class="stats-row" id="statsRow"></div>
+
+        <div class="comparison-grid" id="comparisonGrid"></div>
+
+        <div class="budget-warnings" id="budgetWarnings"></div>
+
+        <div class="filter-row">
+            <select id="filterType" onchange="currentPage=1;renderTable()">
+                <option value="">Alle Typen</option>
+            </select>
+            <select id="filterDirection" onchange="currentPage=1;renderTable()">
+                <option value="">Alle Änderungen</option>
+                <option value="up">Nur Erhöhungen</option>
+                <option value="down">Nur Senkungen</option>
+                <option value="same">Keine Änderung</option>
+            </select>
+            <select id="filterCampaign" onchange="currentPage=1;renderTable()">
+                <option value="">Alle Kampagnen</option>
+            </select>
+        </div>
+
+        <div class="table-controls">
+            <div class="left">
+                <input type="text" class="search-input" id="searchInput" placeholder="Keyword filtern..." oninput="currentPage=1;renderTable()">
+                <span style="font-size:12px;color:var(--text-secondary);" id="tableCount"></span>
+            </div>
+            <div class="right">
+                <button class="btn-sm" onclick="selectAll()">Alle</button>
+                <button class="btn-sm" onclick="deselectAll()">Keine</button>
+                <button class="btn-sm" onclick="selectFiltered()">Gefilterte</button>
+                <button class="btn-sm" onclick="selectOnlyChanges()">Nur Änderungen</button>
+                <button class="btn-sm" onclick="exportAnalysis()">Analyse exportieren</button>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <table class="results-table" id="resultsTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+        <div class="msg-container" id="resultMsg" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="card hidden" id="stepExport">
+        <div class="card-title"><span class="step">4</span> Optimiertes Bulk Sheet erstellen</div>
+        <div class="field-row" style="grid-template-columns:1fr 1fr;">
+            <div class="field">
+                <label>Marketplace</label>
+                <select id="exportMarketplace">
+                    <option value="de">Deutschland (DE)</option>
+                    <option value="en">USA / UK (EN)</option>
+                    <option value="fr">Frankreich (FR)</option>
+                    <option value="it">Italien (IT)</option>
+                    <option value="es">Spanien (ES)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" onclick="exportBulkSheet()" style="width:100%;">Optimiertes Bulk Sheet erstellen</button>
+            </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);" id="selectedCount">0 Anpassungen ausgewählt</div>
+    </div>
+</div>
+
+<script>
+// --- Theme ---
+function toggleTheme() {
+    const c = document.documentElement.getAttribute('data-theme') || 'dark';
+    const n = c === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('ppc_theme', n);
+    document.documentElement.setAttribute('data-theme', n);
+    document.getElementById('themeToggle').innerHTML = n === 'dark' ? '&#9788;' : '&#9790;';
+}
+document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'dark') === 'dark' ? '&#9788;' : '&#9790;';
+
+// --- State ---
+let rawItems = [];
+let optimizedItems = [];
+let selectedItems = new Set();
+let campaignTypes = {};
+let campaignBudgets = {};
+let sortCol = 'changePct';
+let sortDir = 'desc';
+let currentPage = 1;
+const PAGE_SIZE = 100;
+let detectedCurrency = 'EUR';
+const CURRENCY_MAP = { '€': 'EUR', '$': 'USD', '£': 'GBP' };
+
+function formatCurrency(v) { return v.toLocaleString('de-DE', { style: 'currency', currency: detectedCurrency }); }
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function parseNum(v) { if (v == null || v === '') return 0; return parseFloat(String(v).replace(/[^0-9.,\-]/g, '').replace(',', '.')) || 0; }
+
+// --- Column detection ---
+const COL = {
+    campaign: ['campaign name', 'kampagnenname', 'nom de la campagne', 'nombre de la campaña', 'nome campagna'],
+    budget: ['daily budget', 'tagesbudget', 'budget quotidien', 'presupuesto diario', 'budget giornaliero'],
+    adgroup: ['ad group name', 'name der anzeigengruppe', 'ad group'],
+    entity: ['entity', 'entität', 'entité', 'entidad', 'entità'],
+    keyword: ['keyword text', 'keyword-text', 'texte du mot-clé', 'keyword'],
+    matchtype: ['match type', 'übereinstimmungstyp'],
+    bid: ['bid', 'gebot', 'enchère', 'offerta', 'puja'],
+    impressions: ['impressions', 'impressionen'],
+    clicks: ['clicks', 'klicks', 'clics'],
+    spend: ['spend', 'ausgaben', 'cost', 'dépenses'],
+    sales: ['7 day total sales', 'total sales', 'sales', 'umsatz'],
+    orders: ['7 day total orders', 'total orders', 'orders', 'bestellungen'],
+    targeting: ['targeting type', 'targeting-typ', 'type de ciblage'],
+    ptExpr: ['product targeting expression', 'ausdruck für produkt-targeting'],
+    state: ['state', 'zustand', 'état']
+};
+
+function findCol(headers, key) {
+    const aliases = COL[key] || [];
+    const lower = headers.map(h => h.toLowerCase().trim());
+    for (const a of aliases) { const i = lower.indexOf(a); if (i !== -1) return i; }
+    for (const a of aliases) { const i = lower.findIndex(h => h.includes(a)); if (i !== -1) return i; }
+    return -1;
+}
+
+// --- Detect campaign type ---
+function detectType(campName) {
+    const l = campName.toLowerCase();
+    if (l.includes('auto')) return 'Auto';
+    if (l.includes('brand') || l.includes('eigenmarke')) return 'Brand';
+    if (l.includes('competitor') || l.includes('wettbewerb')) return 'Competitor';
+    if (l.includes('product targeting') || l.includes('produktausrichtung') || l.includes('pt:') || l.includes('pt ')) return 'Product Targeting';
+    if (l.includes('harvest')) return 'Harvest';
+    if (l.includes('single') || l.includes('kw "')) return 'Single Keyword';
+    if (l.includes('generic') || l.includes('generisch')) return 'Generic';
+    if (l.includes('sd:') || l.includes('sponsored display')) return 'Sponsored Display';
+    return 'Sonstige';
+}
+
+// --- Upload ---
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleUpload(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleUpload(e.target.files[0]); });
+
+function handleUpload(file) {
+    const msgEl = document.getElementById('uploadMsg');
+    msgEl.innerHTML = '';
+
+    function processSheet(rows) {
+        if (rows.length < 2) return;
+        let headerIdx = 0;
+        for (let i = 0; i < Math.min(rows.length, 10); i++) {
+            const row = rows[i].map(c => String(c).toLowerCase().trim());
+            if (row.some(c => COL.entity.some(a => c.includes(a))) || row.some(c => COL.keyword.some(a => c.includes(a)))) { headerIdx = i; break; }
+        }
+        const headers = rows[headerIdx].map(c => String(c));
+        const cm = {};
+        for (const key of Object.keys(COL)) cm[key] = findCol(headers, key);
+
+        headers.forEach(h => { for (const [sym, code] of Object.entries(CURRENCY_MAP)) { if (h.includes(sym)) detectedCurrency = code; } });
+
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+            const r = rows[i];
+            if (!r || r.length < 3) continue;
+            const entity = cm.entity !== -1 ? String(r[cm.entity] || '').toLowerCase().trim() : '';
+            const campaign = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
+
+            // Extract campaign budgets
+            const isCampaignRow = entity.includes('kampagne') || entity.includes('campaign') || entity.includes('campagne') || entity.includes('campaña') || entity.includes('campagna');
+            if (isCampaignRow && campaign && cm.budget !== -1) {
+                const budgetVal = parseNum(r[cm.budget]);
+                if (budgetVal > 0) campaignBudgets[campaign] = budgetVal;
+            }
+
+            const isKeyword = entity.includes('keyword') || entity.includes('mot-cl') || entity.includes('palabra') || entity.includes('parola');
+            const isPT = entity.includes('targeting') || entity.includes('ciblage') || entity.includes('segmentación');
+            if (!isKeyword && !isPT) continue;
+            if (entity.includes('negat')) continue;
+            const adgroup = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
+            const keyword = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim() : '';
+            const ptExpr = cm.ptExpr !== -1 ? String(r[cm.ptExpr] || '').trim() : '';
+            const matchtype = cm.matchtype !== -1 ? String(r[cm.matchtype] || '').trim() : '';
+            const currentBid = parseNum(r[cm.bid]);
+            const impressions = parseNum(r[cm.impressions]);
+            const clicks = parseNum(r[cm.clicks]);
+            const spend = parseNum(r[cm.spend]);
+            const sales = cm.sales !== -1 ? parseNum(r[cm.sales]) : 0;
+            const orders = cm.orders !== -1 ? parseNum(r[cm.orders]) : 0;
+
+            const label = isKeyword ? keyword : ptExpr;
+            if (!label && !keyword) continue;
+            if (currentBid <= 0) continue;
+
+            rawItems.push({
+                campaign, adgroup, label: label || keyword, matchtype,
+                type: isKeyword ? 'Keyword' : 'Product Targeting',
+                campType: detectType(campaign),
+                currentBid, impressions, clicks, spend, sales, orders,
+                cpc: clicks > 0 ? spend / clicks : 0,
+                acos: sales > 0 ? (spend / sales * 100) : (orders === 0 ? Infinity : 0),
+                roas: spend > 0 ? sales / spend : 0,
+                convRate: clicks > 0 ? (orders / clicks * 100) : 0,
+                rpc: clicks > 0 ? sales / clicks : 0
+            });
+        }
+    }
+
+    rawItems = [];
+
+    if (file.name.match(/\.(xlsx|xls)$/i)) {
+        const reader = new FileReader();
+        reader.onload = evt => {
+            const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+            wb.SheetNames.forEach(sn => {
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+                processSheet(rows);
+            });
+            finishUpload(file);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        const reader = new FileReader();
+        reader.onload = evt => {
+            const sep = evt.target.result.includes('\t') ? '\t' : ',';
+            const rows = evt.target.result.split(/\r?\n/).filter(l => l.trim()).map(l => {
+                const res = []; let cur = '', q = false;
+                for (let i = 0; i < l.length; i++) { if (l[i]==='"'){q=!q;continue;} if (l[i]===sep&&!q){res.push(cur.trim());cur='';continue;} cur+=l[i]; }
+                res.push(cur.trim()); return res;
+            });
+            processSheet(rows);
+            finishUpload(file);
+        };
+        reader.readAsText(file);
+    }
+}
+
+function finishUpload(file) {
+    const msgEl = document.getElementById('uploadMsg');
+    if (rawItems.length === 0) {
+        msgEl.innerHTML = '<div class="error-msg">Keine Keywords oder Product Targeting Einträge mit Geboten gefunden.</div>';
+        return;
+    }
+
+    // Count campaign types
+    campaignTypes = {};
+    rawItems.forEach(item => {
+        if (!campaignTypes[item.campType]) campaignTypes[item.campType] = { count: 0, spend: 0, sales: 0 };
+        campaignTypes[item.campType].count++;
+        campaignTypes[item.campType].spend += item.spend;
+        campaignTypes[item.campType].sales += item.sales;
+    });
+
+    document.getElementById('fileInfoContainer').innerHTML = `<div class="file-info"><span class="name">${escapeHtml(file.name)}</span><span class="meta">${rawItems.length} Keywords/Targets, ${Object.keys(campaignTypes).length} Kampagnentypen</span><span class="remove" onclick="clearUpload()">&times;</span></div>`;
+
+    renderAcosGrid();
+    document.getElementById('stepTargets').classList.remove('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+    document.getElementById('stepExport').classList.add('hidden');
+}
+
+function clearUpload() {
+    rawItems = [];
+    optimizedItems = [];
+    campaignTypes = {};
+    campaignBudgets = {};
+    document.getElementById('fileInfoContainer').innerHTML = '';
+    document.getElementById('stepTargets').classList.add('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+    document.getElementById('stepExport').classList.add('hidden');
+    fileInput.value = '';
+}
+
+// --- ACoS Target Grid ---
+function renderAcosGrid() {
+    const defaults = { 'Auto': 25, 'Brand': 15, 'Generic': 25, 'Competitor': 30, 'Harvest': 25, 'Single Keyword': 20, 'Product Targeting': 30, 'Sponsored Display': 35, 'Sonstige': 25 };
+    const grid = document.getElementById('acosGrid');
+    grid.innerHTML = Object.entries(campaignTypes).sort((a, b) => b[1].count - a[1].count).map(([type, data]) => {
+        const def = defaults[type] || 25;
+        const currentAcos = data.sales > 0 ? (data.spend / data.sales * 100).toFixed(1) : '–';
+        return `<div class="acos-target">
+            <div class="type-label">${escapeHtml(type)}</div>
+            <div class="type-count">${data.count} Einträge · Aktueller ACoS: ${currentAcos}%</div>
+            <label style="font-size:11px;">Ziel-ACoS (%)</label>
+            <input type="number" class="acos-input" data-type="${escapeHtml(type)}" value="${def}" step="1" min="1" max="200">
+        </div>`;
+    }).join('');
+}
+
+// --- Optimization ---
+function optimizeBids() {
+    const minBid = parseFloat(document.getElementById('minBid').value) || 0.02;
+    const maxBid = parseFloat(document.getElementById('maxBid').value) || 10;
+    const noSalesAction = document.getElementById('noSalesAction').value;
+
+    // Collect ACoS targets per type
+    const acosTargets = {};
+    document.querySelectorAll('.acos-input').forEach(input => {
+        acosTargets[input.dataset.type] = parseFloat(input.value) / 100;
+    });
+
+    optimizedItems = rawItems.map(item => {
+        const targetAcos = acosTargets[item.campType] || 0.25;
+        let newBid = item.currentBid;
+        let reason = '';
+
+        if (item.orders > 0 && item.clicks > 0) {
+            // Formula: New Bid = Target ACoS × Revenue per Click
+            const rpc = item.sales / item.clicks;
+            newBid = targetAcos * rpc;
+            reason = 'ACoS-Optimierung';
+        } else if (item.clicks > 0 && item.orders === 0) {
+            // No conversions
+            switch (noSalesAction) {
+                case 'reduce20': newBid = item.currentBid * 0.8; reason = 'Keine Sales (−20%)'; break;
+                case 'reduce30': newBid = item.currentBid * 0.7; reason = 'Keine Sales (−30%)'; break;
+                case 'reduce50': newBid = item.currentBid * 0.5; reason = 'Keine Sales (−50%)'; break;
+                case 'min': newBid = minBid; reason = 'Keine Sales (Min.)'; break;
+                case 'keep': newBid = item.currentBid; reason = 'Keine Sales (beibehalten)'; break;
+            }
+        } else {
+            // No clicks at all
+            newBid = item.currentBid;
+            reason = 'Keine Klicks';
+        }
+
+        // Clamp
+        newBid = Math.max(minBid, Math.min(maxBid, Math.round(newBid * 100) / 100));
+
+        const change = newBid - item.currentBid;
+        const changePct = item.currentBid > 0 ? (change / item.currentBid * 100) : 0;
+        const direction = Math.abs(changePct) < 1 ? 'same' : (change > 0 ? 'up' : 'down');
+
+        return { ...item, newBid, change, changePct, direction, reason };
+    });
+
+    // Select all with changes by default
+    selectedItems.clear();
+    optimizedItems.forEach((item, i) => { if (item.direction !== 'same') selectedItems.add(i); });
+
+    currentPage = 1;
+    sortCol = 'changePct';
+    sortDir = 'desc';
+
+    renderStats();
+    renderComparison();
+    renderBudgetWarnings();
+    renderFilters();
+    renderTable();
+    document.getElementById('stepResults').classList.remove('hidden');
+    document.getElementById('stepExport').classList.remove('hidden');
+    document.getElementById('stepResults').scrollIntoView({ behavior: 'smooth' });
+}
+
+// --- Stats ---
+function renderStats() {
+    const ups = optimizedItems.filter(i => i.direction === 'up');
+    const downs = optimizedItems.filter(i => i.direction === 'down');
+    const sames = optimizedItems.filter(i => i.direction === 'same');
+    const avgChange = optimizedItems.length > 0 ? (optimizedItems.reduce((s, i) => s + i.changePct, 0) / optimizedItems.length).toFixed(1) : 0;
+
+    document.getElementById('statsRow').innerHTML = `
+        <div class="stat-card"><div class="stat-label">Gesamt Keywords/Targets</div><div class="stat-value">${optimizedItems.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Gebote erhöhen</div><div class="stat-value success">${ups.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Gebote senken</div><div class="stat-value danger">${downs.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Keine Änderung</div><div class="stat-value">${sames.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Ø Änderung</div><div class="stat-value ${parseFloat(avgChange)>0?'success':parseFloat(avgChange)<0?'danger':''}">${avgChange}%</div></div>
+    `;
+}
+
+// --- Vorher/Nachher Vergleich ---
+function renderComparison() {
+    const items = optimizedItems;
+    if (items.length === 0) return;
+
+    const totalSpend = items.reduce((s, i) => s + i.spend, 0);
+    const totalSales = items.reduce((s, i) => s + i.sales, 0);
+    const totalClicks = items.reduce((s, i) => s + i.clicks, 0);
+    const currentAcos = totalSales > 0 ? (totalSpend / totalSales * 100) : 0;
+    const currentRoas = totalSpend > 0 ? (totalSales / totalSpend) : 0;
+    const avgBid = items.reduce((s, i) => s + i.currentBid, 0) / items.length;
+
+    // Estimate new metrics: new spend ≈ old spend × (newBid / oldBid) for each item
+    let estNewSpend = 0;
+    items.forEach(i => {
+        const ratio = i.currentBid > 0 ? i.newBid / i.currentBid : 1;
+        estNewSpend += i.spend * ratio;
+    });
+    const estNewAcos = totalSales > 0 ? (estNewSpend / totalSales * 100) : 0;
+    const estNewRoas = estNewSpend > 0 ? (totalSales / estNewSpend) : 0;
+    const newAvgBid = items.reduce((s, i) => s + i.newBid, 0) / items.length;
+    const spendDiff = estNewSpend - totalSpend;
+    const acosDiff = estNewAcos - currentAcos;
+
+    function cls(val) { return val > 0.1 ? 'up' : val < -0.1 ? 'down' : ''; }
+    function sign(val) { return val > 0 ? '+' : ''; }
+
+    document.getElementById('comparisonGrid').innerHTML = `
+        <div class="comparison-box">
+            <div class="box-title">Aktuell</div>
+            <div class="box-row"><span class="label">Ø Gebot</span><span class="value">${formatCurrency(avgBid)}</span></div>
+            <div class="box-row"><span class="label">Gesamtspend</span><span class="value">${formatCurrency(totalSpend)}</span></div>
+            <div class="box-row"><span class="label">ACoS</span><span class="value">${currentAcos.toFixed(1)}%</span></div>
+            <div class="box-row"><span class="label">ROAS</span><span class="value">${currentRoas.toFixed(2)}x</span></div>
+        </div>
+        <div class="comparison-box after">
+            <div class="box-title">Nach Optimierung (geschätzt)</div>
+            <div class="box-row"><span class="label">Ø Gebot</span><span class="value ${cls(newAvgBid - avgBid)}">${formatCurrency(newAvgBid)} (${sign(newAvgBid - avgBid)}${((newAvgBid - avgBid) / avgBid * 100).toFixed(1)}%)</span></div>
+            <div class="box-row"><span class="label">Gesamtspend</span><span class="value ${cls(spendDiff)}">${formatCurrency(estNewSpend)} (${sign(spendDiff)}${formatCurrency(spendDiff)})</span></div>
+            <div class="box-row"><span class="label">ACoS</span><span class="value ${cls(-acosDiff)}">${estNewAcos.toFixed(1)}% (${sign(acosDiff)}${acosDiff.toFixed(1)}pp)</span></div>
+            <div class="box-row"><span class="label">ROAS</span><span class="value ${cls(estNewRoas - currentRoas)}">${estNewRoas.toFixed(2)}x</span></div>
+        </div>
+    `;
+}
+
+// --- Budget Check ---
+function renderBudgetWarnings() {
+    const warnings = [];
+    // Group optimized items by campaign, sum up new bids × estimated clicks
+    const campData = {};
+    optimizedItems.forEach(item => {
+        if (!campData[item.campaign]) campData[item.campaign] = { totalNewBidSpend: 0, totalOldBidSpend: 0, budget: campaignBudgets[item.campaign] || 0 };
+        // Estimate daily spend: use ratio of new/old bid
+        const ratio = item.currentBid > 0 ? item.newBid / item.currentBid : 1;
+        const estDailySpend = item.spend * ratio;
+        campData[item.campaign].totalNewBidSpend += estDailySpend;
+        campData[item.campaign].totalOldBidSpend += item.spend;
+    });
+
+    Object.entries(campData).forEach(([campName, data]) => {
+        if (data.budget > 0 && data.totalNewBidSpend > data.budget * 30) {
+            // Rough check: if estimated monthly spend exceeds 30x daily budget
+            const dailyEst = data.totalNewBidSpend / 30; // rough daily
+            if (dailyEst > data.budget * 1.5) {
+                warnings.push('Kampagne "' + campName + '": Geschätzter Tages-Spend (' + formatCurrency(dailyEst) + ') könnte das Tagesbudget (' + formatCurrency(data.budget) + ') übersteigen.');
+            }
+        }
+    });
+
+    const el = document.getElementById('budgetWarnings');
+    el.innerHTML = warnings.map(w => '<div class="warn-msg">' + w + '</div>').join('');
+}
+
+// --- Filters ---
+function renderFilters() {
+    const types = [...new Set(optimizedItems.map(i => i.campType))].sort();
+    document.getElementById('filterType').innerHTML = '<option value="">Alle Typen</option>' + types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+
+    const campaigns = [...new Set(optimizedItems.map(i => i.campaign))].sort();
+    document.getElementById('filterCampaign').innerHTML = '<option value="">Alle Kampagnen (' + campaigns.length + ')</option>' + campaigns.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+}
+
+// --- Table ---
+function getFilteredData() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    const typeFilter = document.getElementById('filterType').value;
+    const dirFilter = document.getElementById('filterDirection').value;
+    const campFilter = document.getElementById('filterCampaign').value;
+
+    return optimizedItems.map((item, idx) => ({ ...item, idx })).filter(item => {
+        if (search && !item.label.toLowerCase().includes(search) && !item.campaign.toLowerCase().includes(search)) return false;
+        if (typeFilter && item.campType !== typeFilter) return false;
+        if (dirFilter && item.direction !== dirFilter) return false;
+        if (campFilter && item.campaign !== campFilter) return false;
+        return true;
+    });
+}
+
+function renderTable() {
+    const data = getFilteredData();
+
+    // Sort
+    data.sort((a, b) => {
+        let va = a[sortCol], vb = b[sortCol];
+        if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb||'').toLowerCase(); }
+        return sortDir === 'asc' ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
+    });
+
+    const totalPages = Math.ceil(data.length / PAGE_SIZE);
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+    const pageData = data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+    const cols = [
+        { id: 'select', label: '' },
+        { id: 'label', label: 'Keyword / Target', sort: true },
+        { id: 'campType', label: 'Typ', sort: true },
+        { id: 'campaign', label: 'Kampagne', sort: true },
+        { id: 'currentBid', label: 'Aktuell', sort: true, num: true },
+        { id: 'newBid', label: 'Neu', sort: true, num: true },
+        { id: 'changePct', label: 'Änderung', sort: true, num: true },
+        { id: 'acos', label: 'ACoS', sort: true, num: true },
+        { id: 'orders', label: 'Orders', sort: true, num: true },
+        { id: 'clicks', label: 'Klicks', sort: true, num: true },
+        { id: 'spend', label: 'Spend', sort: true, num: true },
+        { id: 'reason', label: 'Grund', sort: true }
+    ];
+
+    document.getElementById('tableHead').innerHTML = '<tr>' + cols.map(c => {
+        const arrow = c.id === sortCol ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
+        const click = c.sort ? ` onclick="sortTable('${c.id}')"` : '';
+        return `<th${click}>${c.label}${arrow}</th>`;
+    }).join('') + '</tr>';
+
+    document.getElementById('tableBody').innerHTML = pageData.map(row => {
+        const checked = selectedItems.has(row.idx) ? 'checked' : '';
+        const cls = selectedItems.has(row.idx) ? ' class="selected"' : '';
+        const dirClass = row.direction === 'up' ? 'bid-up' : row.direction === 'down' ? 'bid-down' : 'bid-same';
+        const arrow = row.direction === 'up' ? '&#9650; ' : row.direction === 'down' ? '&#9660; ' : '';
+        const changeTxt = Math.abs(row.changePct) < 1 ? '–' : (row.changePct > 0 ? '+' : '') + row.changePct.toFixed(1) + '%';
+        const acosDisplay = row.acos === Infinity ? '–' : row.acos.toFixed(1) + '%';
+        let acosColor = 'var(--text-primary)';
+        if (row.acos !== Infinity && row.acos > 0) {
+            if (row.acos > 50) acosColor = 'var(--error)';
+            else if (row.acos > 30) acosColor = 'var(--warn)';
+            else if (row.acos <= 20) acosColor = 'var(--success)';
+        }
+
+        return `<tr${cls}>
+            <td><input type="checkbox" ${checked} onchange="toggleItem(${row.idx},this.checked)"></td>
+            <td>${escapeHtml(row.label)}</td>
+            <td><span style="font-size:10px;padding:2px 6px;border-radius:3px;background:var(--bg-hover);color:var(--text-secondary)">${escapeHtml(row.campType)}</span></td>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(row.campaign)}">${escapeHtml(row.campaign)}</td>
+            <td class="num">${formatCurrency(row.currentBid)}</td>
+            <td class="num"><input type="number" value="${row.newBid.toFixed(2)}" step="0.01" min="0.02" onchange="optimizedItems[${row.idx}].newBid=parseFloat(this.value);recalcChange(${row.idx});"></td>
+            <td class="num"><span class="bid-change ${dirClass}">${arrow}${changeTxt}</span></td>
+            <td class="num" style="color:${acosColor}">${acosDisplay}</td>
+            <td class="num">${row.orders}</td>
+            <td class="num">${row.clicks.toLocaleString('de-DE')}</td>
+            <td class="num">${formatCurrency(row.spend)}</td>
+            <td style="font-size:11px;color:var(--text-secondary)">${escapeHtml(row.reason)}</td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('tableCount').textContent = data.length + ' von ' + optimizedItems.length;
+    updateSelectedCount();
+    renderPagination(totalPages);
+}
+
+function recalcChange(idx) {
+    const item = optimizedItems[idx];
+    item.change = item.newBid - item.currentBid;
+    item.changePct = item.currentBid > 0 ? (item.change / item.currentBid * 100) : 0;
+    item.direction = Math.abs(item.changePct) < 1 ? 'same' : (item.change > 0 ? 'up' : 'down');
+    renderComparison();
+    renderTable();
+}
+
+function renderPagination(totalPages) {
+    const c = document.getElementById('pagination');
+    if (totalPages <= 1) { c.innerHTML = ''; return; }
+    let h = '<button ' + (currentPage<=1?'disabled':'') + ' onclick="currentPage--;renderTable();">&laquo;</button>';
+    const s = Math.max(1,currentPage-3), e = Math.min(totalPages,currentPage+3);
+    if (s>1) h+='<button onclick="currentPage=1;renderTable();">1</button><span class="page-info">...</span>';
+    for (let i=s;i<=e;i++) h+='<button class="'+(i===currentPage?'active':'')+'" onclick="currentPage='+i+';renderTable();">'+i+'</button>';
+    if (e<totalPages) h+='<span class="page-info">...</span><button onclick="currentPage='+totalPages+';renderTable();">'+totalPages+'</button>';
+    h+='<button '+(currentPage>=totalPages?'disabled':'')+' onclick="currentPage++;renderTable();">&raquo;</button>';
+    h+='<span class="page-info">Seite '+currentPage+' von '+totalPages+'</span>';
+    c.innerHTML=h;
+}
+
+function sortTable(col) {
+    if (sortCol===col) sortDir=sortDir==='asc'?'desc':'asc';
+    else { sortCol=col; sortDir=col==='label'||col==='campaign'||col==='campType'||col==='reason'?'asc':'desc'; }
+    renderTable();
+}
+
+function toggleItem(idx, checked) { if (checked) selectedItems.add(idx); else selectedItems.delete(idx); updateSelectedCount(); }
+function selectAll() { optimizedItems.forEach((_, i) => selectedItems.add(i)); renderTable(); }
+function deselectAll() { selectedItems.clear(); renderTable(); }
+function selectFiltered() { getFilteredData().forEach(r => selectedItems.add(r.idx)); renderTable(); }
+function selectOnlyChanges() { selectedItems.clear(); optimizedItems.forEach((item, i) => { if (item.direction !== 'same') selectedItems.add(i); }); renderTable(); }
+function updateSelectedCount() { document.getElementById('selectedCount').textContent = selectedItems.size + ' Anpassungen ausgewählt'; }
+
+// --- Marketplace Translations ---
+const T = {
+    de: { keyword: 'Keyword', prodTargeting: 'Produkt-Targeting', update: 'Aktualisieren', enabled: 'Aktiviert', product: 'Gesponserte Produkte', headers: ['Produkt','Entität','Operation','Kampagnen-ID','Anzeigengruppen-ID','Portfolio-ID','Anzeigen-ID','Keyword-ID','Produkt-Targeting-ID','Kampagnenname','Name der Anzeigengruppe','Startdatum','Enddatum','Targeting-Typ','Zustand','Tagesbudget','SKU','ASIN','Standardgebot für die Anzeigengruppe','Gebot','Keyword-Text','Übereinstimmungstyp','Gebotsstrategie','Platzierung','Prozentsatz','Ausdruck für Produkt-Targeting'], sheet: 'Bid Optimization' },
+    en: { keyword: 'Keyword', prodTargeting: 'Product Targeting', update: 'Update', enabled: 'Enabled', product: 'Sponsored Products', headers: ['Product','Entity','Operation','Campaign ID','Ad Group ID','Portfolio ID','Ad ID','Keyword ID','Product Targeting ID','Campaign Name','Ad Group Name','Start Date','End Date','Targeting Type','State','Daily Budget','SKU','ASIN','Ad Group Default Bid','Bid','Keyword Text','Match Type','Bidding Strategy','Placement','Percentage','Product Targeting Expression'], sheet: 'Bid Optimization' },
+    fr: { keyword: 'Mot-clé', prodTargeting: 'Ciblage de produit', update: 'Mettre à jour', enabled: 'Activé', product: 'Produits sponsorisés', headers: ['Produit','Entité','Opération','ID de la campagne','ID du groupe d\'annonces','ID du portefeuille','ID de l\'annonce','ID du mot-clé','ID du ciblage de produit','Nom de la campagne','Nom du groupe d\'annonces','Date de début','Date de fin','Type de ciblage','État','Budget quotidien','SKU','ASIN','Enchère par défaut du groupe d\'annonces','Enchère','Texte du mot-clé','Type de correspondance','Stratégie d\'enchères','Emplacement','Pourcentage','Expression de ciblage de produit'], sheet: 'Bid Optimization' },
+    it: { keyword: 'Parola chiave', prodTargeting: 'Targeting di prodotto', update: 'Aggiorna', enabled: 'Abilitato', product: 'Prodotti sponsorizzati', headers: ['Prodotto','Entità','Operazione','ID campagna','ID gruppo di annunci','ID portafoglio','ID annuncio','ID parola chiave','ID targeting di prodotto','Nome campagna','Nome gruppo di annunci','Data di inizio','Data di fine','Tipo di targeting','Stato','Budget giornaliero','SKU','ASIN','Offerta predefinita del gruppo di annunci','Offerta','Testo parola chiave','Tipo di corrispondenza','Strategia di offerta','Posizionamento','Percentuale','Espressione di targeting di prodotto'], sheet: 'Bid Optimization' },
+    es: { keyword: 'Palabra clave', prodTargeting: 'Segmentación de producto', update: 'Actualizar', enabled: 'Habilitado', product: 'Productos patrocinados', headers: ['Producto','Entidad','Operación','ID de campaña','ID de grupo de anuncios','ID de portafolio','ID de anuncio','ID de palabra clave','ID de segmentación de producto','Nombre de la campaña','Nombre del grupo de anuncios','Fecha de inicio','Fecha de fin','Tipo de segmentación','Estado','Presupuesto diario','SKU','ASIN','Puja predeterminada del grupo de anuncios','Puja','Texto de palabra clave','Tipo de coincidencia','Estrategia de pujas','Ubicación','Porcentaje','Expresión de segmentación de producto'], sheet: 'Bid Optimization' }
+};
+
+// --- Export ---
+function exportBulkSheet() {
+    const selected = optimizedItems.filter((_, i) => selectedItems.has(i));
+    if (selected.length === 0) { document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Anpassungen ausgewählt.</div>'; return; }
+
+    const mp = document.getElementById('exportMarketplace').value;
+    const t = T[mp] || T['de'];
+    const h = t.headers;
+
+    function emptyRow() { const r = {}; h.forEach(c => r[c] = ''); return r; }
+
+    const rows = selected.map(item => {
+        const r = emptyRow();
+        r[h[0]] = t.product;
+        r[h[1]] = item.type === 'Keyword' ? t.keyword : t.prodTargeting;
+        r[h[2]] = t.update;
+        r[h[3]] = item.campaign;
+        r[h[4]] = item.adgroup;
+        r[h[14]] = t.enabled;
+        r[h[19]] = item.newBid;
+        if (item.type === 'Keyword') {
+            r[h[20]] = item.label;
+            r[h[21]] = item.matchtype;
+        } else {
+            r[h[25]] = item.label;
+        }
+        return r;
+    });
+
+    const wsData = [h, ...rows.map(r => h.map(c => r[c] || ''))];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = h.map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, ws, t.sheet);
+
+    const today = new Date();
+    const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    const fileName = 'Bid-Optimization ' + dateStr + '.xlsx';
+    XLSX.writeFile(wb, fileName);
+
+    document.getElementById('resultMsg').innerHTML = '<div class="success-msg">"' + fileName + '" erstellt (' + selected.length + ' Gebote angepasst).</div>';
+    setTimeout(() => { const el = document.getElementById('resultMsg').querySelector('.success-msg'); if (el) el.remove(); }, 4000);
+}
+
+// --- Analysis Export ---
+function exportAnalysis() {
+    const headers = ['Keyword/Target', 'Typ', 'Kampagnentyp', 'Kampagne', 'Anzeigengruppe', 'Aktuelles Gebot', 'Neues Gebot', 'Änderung %', 'ACoS %', 'ROAS', 'Orders', 'Klicks', 'Spend', 'Sales', 'CPC', 'Grund'];
+    const rows = optimizedItems.map(r => [r.label, r.type, r.campType, r.campaign, r.adgroup, r.currentBid, r.newBid, r.changePct.toFixed(1), r.acos === Infinity ? '' : r.acos.toFixed(1), r.roas.toFixed(2), r.orders, r.clicks, r.spend, r.sales, r.cpc.toFixed(2), r.reason]);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws['!cols'] = headers.map(() => ({ wch: 16 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Bid Analyse');
+    const d = new Date();
+    XLSX.writeFile(wb, 'Bid-Analyse ' + d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '.xlsx');
+}
+</script>
+</body>
+</html>

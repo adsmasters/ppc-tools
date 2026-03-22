@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilfe - AdsMasters PPC Tools</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117; --bg-secondary: #161b22; --border: #30363d;
+            --text-primary: #e6edf3; --text-secondary: #8b949e; --accent: #3551FF;
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff; --bg-secondary: #f6f8fa; --border: #d0d7de;
+            --text-primary: #1f2328; --text-secondary: #656d76; --accent: #3551FF;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar-left { display: flex; align-items: center; gap: 32px; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-nav { display: flex; gap: 16px; }
+        .topbar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+        .topbar-nav a:hover { color: var(--text-primary); }
+        .topbar-nav a.active { color: var(--text-primary); font-weight: 600; }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+
+        .main { max-width: 900px; margin: 0 auto; padding: 32px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 32px; }
+
+        .toc { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 32px; }
+        .toc-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+        .toc a { display: block; color: var(--accent); text-decoration: none; font-size: 13px; padding: 3px 0; }
+        .toc a:hover { text-decoration: underline; }
+
+        .section { margin-bottom: 32px; }
+        .section h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .section h3 { font-size: 14px; font-weight: 700; margin: 16px 0 8px; }
+        .section p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 10px; }
+        .section ul { margin: 8px 0 12px 20px; }
+        .section li { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+        .section li strong { color: var(--text-primary); }
+
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 10px 0; }
+        .card-label { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+
+        kbd { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 12px; font-family: monospace; }
+
+        @media (max-width: 600px) {
+            .topbar { padding: 0 12px; height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+            .main { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+<script>
+    if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
+    // Theme
+    const saved = localStorage.getItem('ppc_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    function toggleTheme() {
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = current === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('ppc_theme', next);
+        document.documentElement.setAttribute('data-theme', next);
+        document.getElementById('themeToggle').innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';
+    }
+</script>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <nav class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="campaign-creator.html">Kampagnen Ersteller</a>
+            <a href="help.html" class="active">Hilfe</a>
+        </nav>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9790;</button>
+        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+    </div>
+</div>
+<script>document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'dark') === 'dark' ? '&#9788;' : '&#9790;';</script>
+
+<div class="main">
+    <h1 class="page-title">Hilfe & Dokumentation</h1>
+    <p class="page-sub">Anleitung zum Kampagnen Ersteller und allen Features</p>
+
+    <div class="toc">
+        <div class="toc-title">Inhaltsverzeichnis</div>
+        <a href="#workflow">1. Workflow-Übersicht</a>
+        <a href="#step1">2. Step 1: Beworbene Produkte</a>
+        <a href="#step2">3. Step 2: Keywords & Targeting</a>
+        <a href="#step3">4. Step 3: Kampagnen-Einstellungen</a>
+        <a href="#step4">5. Step 4: Kampagnen-Vorlagen</a>
+        <a href="#marketplace">6. Marketplace-Auswahl</a>
+        <a href="#presets">7. Presets (Konfigurationen)</a>
+        <a href="#import">8. Import-Funktionen</a>
+        <a href="#preview">9. Vorschau & Download</a>
+        <a href="#shortcuts">10. Tastenkürzel</a>
+        <a href="#tips">11. Tipps & Best Practices</a>
+    </div>
+
+    <div class="section" id="workflow">
+        <h2>1. Workflow-Übersicht</h2>
+        <p>Der Kampagnen Ersteller generiert Amazon Advertising Bulk Upload Sheets im Excel-Format. Der Workflow ist in 4 Schritte aufgeteilt:</p>
+        <ul>
+            <li><strong>Step 1:</strong> Produkte und ASINs/SKUs definieren</li>
+            <li><strong>Step 2:</strong> Keywords und Targeting-ASINs eingeben</li>
+            <li><strong>Step 3:</strong> Gebote, Budget und Einstellungen festlegen</li>
+            <li><strong>Step 4:</strong> Kampagnentypen auswählen und konfigurieren</li>
+        </ul>
+        <p>Nach dem Generieren erscheint eine Vorschau mit Zusammenfassung. Erst nach Bestätigung wird die Excel-Datei heruntergeladen.</p>
+    </div>
+
+    <div class="section" id="step1">
+        <h2>2. Step 1: Beworbene Produkte</h2>
+        <h3>Vendor vs. Seller Modus</h3>
+        <p>Wähle den passenden Modus je nach Kontotyp:</p>
+        <ul>
+            <li><strong>Vendor (ASIN):</strong> Produkte werden über ASINs identifiziert. ASINs müssen 10 Zeichen lang sein und mit B0 beginnen.</li>
+            <li><strong>Seller (SKU):</strong> Produkte werden über SKUs identifiziert. Jede SKU muss ausgefüllt sein.</li>
+        </ul>
+        <h3>Mehrere Produkte</h3>
+        <p>Du kannst beliebig viele Produktgruppen anlegen. Jede Produktgruppe erhält eigene Kampagnen. Der Produktname wird für die Kampagnenbenennung verwendet.</p>
+        <h3>Produkt-Import</h3>
+        <p>Nutze den "Produkte importieren" Button, um Produkte aus einer Excel/CSV-Datei zu laden. Format: Spalte A = Produktname, Spalte B+ = ASINs. Eine Vorlage kannst du über "Vorlage herunterladen" bekommen.</p>
+    </div>
+
+    <div class="section" id="step2">
+        <h2>3. Step 2: Keywords & Targeting</h2>
+        <h3>Generische Keywords</h3>
+        <p>Allgemeine Suchbegriffe für dein Produkt. Werden in Exact- und Broad-Match-Kampagnen aufgeteilt.</p>
+        <div class="card">
+            <div class="card-label">Keyword Allocation</div>
+            <p>Bestimmt, wie viele Keywords pro Kampagne gruppiert werden. Beispiel: 50 Keywords mit Allocation 10 = 5 Kampagnen mit je 10 Keywords. So kannst du Budgets gleichmäßig verteilen.</p>
+        </div>
+        <h3>Eigenmarken Keywords</h3>
+        <p>Keywords die deinen Markennamen enthalten. Werden in Exact, Broad und Phrase Kampagnen angelegt.</p>
+        <h3>Wettbewerber Keywords</h3>
+        <p>Keywords von Wettbewerbern. Werden in Exact und Broad Kampagnen mit eigener Allocation aufgeteilt.</p>
+        <h3>Einzelne Keywords</h3>
+        <p>Jedes Keyword wird als eigene Kampagne mit Exact Match angelegt. Ideal für Top-Performer Keywords, die ein eigenes Budget benötigen.</p>
+        <h3>Produktausrichtung (ASIN Targeting)</h3>
+        <p>Eigene und Wettbewerber-ASINs für Product Targeting Kampagnen. Wettbewerber-ASINs können über die Allocation auf mehrere Kampagnen aufgeteilt werden.</p>
+        <h3>Import</h3>
+        <p>Alle Felder unterstützen CSV/Excel-Import über den "CSV/Excel Import" Button oder per Drag & Drop einer Datei direkt auf das Textfeld.</p>
+    </div>
+
+    <div class="section" id="step3">
+        <h2>4. Step 3: Kampagnen-Einstellungen</h2>
+        <h3>Gebotsstrategie</h3>
+        <ul>
+            <li><strong>Nur senken:</strong> Amazon senkt Gebote bei geringer Conversion-Wahrscheinlichkeit</li>
+            <li><strong>Erhöhen und senken:</strong> Amazon passt Gebote in beide Richtungen an</li>
+            <li><strong>Fest:</strong> Gebote bleiben unverändert</li>
+        </ul>
+        <h3>Standardgebot & Tagesbudget</h3>
+        <p>Diese Werte werden automatisch in alle Kampagnen-Vorlagen (Step 4) übernommen. Wenn du einen Wert in Step 4 manuell änderst, wird dieser nicht mehr automatisch überschrieben.</p>
+        <h3>Portfolio-ID</h3>
+        <p>Optional. Weist alle Kampagnen einem Amazon Portfolio zu.</p>
+        <h3>Placement-Anpassungen</h3>
+        <p>Prozentuale Gebotserhöhung für bestimmte Platzierungen. Z.B. 50% bei Top of Search = dein Gebot wird um 50% erhöht für die oberste Position.</p>
+        <h3>Negative Keywords</h3>
+        <ul>
+            <li><strong>Negative Keywords (Exact/Phrase):</strong> Werden auf Anzeigengruppen-Ebene eingefügt</li>
+            <li><strong>Kampagnen Negative Keywords:</strong> Werden auf Kampagnen-Ebene eingefügt</li>
+            <li><strong>Negatives Produkt-Targeting:</strong> ASINs die von Product Targeting ausgeschlossen werden</li>
+        </ul>
+    </div>
+
+    <div class="section" id="step4">
+        <h2>5. Step 4: Kampagnen-Vorlagen</h2>
+        <p>Hier wählst du aus, welche Kampagnentypen erstellt werden sollen. Jeder Typ kann individuell konfiguriert werden:</p>
+        <ul>
+            <li><strong>Gebot:</strong> Standardgebot für die Anzeigengruppe</li>
+            <li><strong>Tagesbudget:</strong> Budget pro Tag für diese Kampagne</li>
+            <li><strong>Negative KW:</strong> Ob negative Keywords für diesen Kampagnentyp eingefügt werden</li>
+        </ul>
+        <h3>Sponsored Products Kampagnen</h3>
+        <ul>
+            <li><strong>Auto-Kampagne:</strong> Mit Sub-Targeting (Enge/Entfernte Übereinstimmung, Ersatz, Ergänzungen)</li>
+            <li><strong>Generic Keywords:</strong> Exact & Broad Match</li>
+            <li><strong>Brand Keywords:</strong> Exact, Broad & Phrase Match</li>
+            <li><strong>Competitor Keywords:</strong> Exact & Broad Match</li>
+            <li><strong>Produktausrichtung:</strong> Brand & Competitor ASINs</li>
+            <li><strong>Einzelnes Keyword:</strong> Eine Kampagne pro Keyword (Exact)</li>
+        </ul>
+        <h3>Sponsored Display Kampagnen</h3>
+        <ul>
+            <li><strong>SD Produktausrichtung (Competitor):</strong> Anzeigen auf Wettbewerber-Produktseiten</li>
+            <li><strong>SD Produktausrichtung (Brand):</strong> Anzeigen auf eigenen Produktseiten (Cross-Selling)</li>
+        </ul>
+        <h3>Cross-Negation</h3>
+        <p>Wenn aktiviert, werden Brand Keywords als Negative Phrase und generische Keywords als Negative Exact automatisch in die Auto-Kampagne eingefügt. Das verhindert Keyword-Kannibalisierung zwischen Auto- und manuellen Kampagnen.</p>
+    </div>
+
+    <div class="section" id="marketplace">
+        <h2>6. Marketplace-Auswahl</h2>
+        <p>Wähle den Ziel-Marktplatz aus. Alle Spaltenüberschriften, Match Types und Entitäten im Bulk Sheet werden in die passende Sprache übersetzt:</p>
+        <ul>
+            <li><strong>Deutschland (DE):</strong> Deutsch</li>
+            <li><strong>USA / UK (EN):</strong> Englisch</li>
+            <li><strong>Frankreich (FR):</strong> Französisch</li>
+            <li><strong>Italien (IT):</strong> Italienisch</li>
+            <li><strong>Spanien (ES):</strong> Spanisch</li>
+        </ul>
+        <p>Die Kampagnennamen bleiben sprachneutral (Englisch) für konsistentes Kampagnen-Management über Marktplätze hinweg.</p>
+    </div>
+
+    <div class="section" id="presets">
+        <h2>7. Presets (Konfigurationen)</h2>
+        <p>Du kannst die komplette Formular-Konfiguration als Preset speichern und später wieder laden.</p>
+        <ul>
+            <li><strong>Speichern:</strong> Speichert alle aktuellen Einstellungen unter einem Namen</li>
+            <li><strong>Laden:</strong> Stellt ein gespeichertes Preset wieder her</li>
+            <li><strong>Löschen:</strong> Entfernt das ausgewählte Preset</li>
+            <li><strong>Export:</strong> Exportiert alle Presets als JSON-Datei (zum Teilen mit Kollegen)</li>
+            <li><strong>Import:</strong> Importiert Presets aus einer JSON-Datei</li>
+        </ul>
+        <p>Presets werden im Browser (localStorage) gespeichert und bleiben zwischen Sitzungen erhalten.</p>
+    </div>
+
+    <div class="section" id="import">
+        <h2>8. Import-Funktionen</h2>
+        <h3>Keyword/ASIN Import</h3>
+        <p>Jedes Textfeld unterstützt zwei Import-Methoden:</p>
+        <ul>
+            <li><strong>Button:</strong> Klicke "CSV/Excel Import" und wähle eine Datei</li>
+            <li><strong>Drag & Drop:</strong> Ziehe eine CSV/Excel-Datei direkt auf das Textfeld</li>
+        </ul>
+        <p>Unterstützte Formate: .csv, .tsv, .xlsx, .xls. Importierte Werte werden an bestehende Einträge angehängt.</p>
+        <h3>Produkt-Import</h3>
+        <p>Importiere mehrere Produkte gleichzeitig aus einer Excel/CSV-Datei. Format:</p>
+        <div class="card">
+            <div class="card-label">Tabellenformat</div>
+            <p>Spalte A: Produktname | Spalte B: ASIN 1 | Spalte C: ASIN 2 | ...</p>
+            <p>Die erste Zeile kann optional eine Kopfzeile sein (wird automatisch erkannt).</p>
+        </div>
+    </div>
+
+    <div class="section" id="preview">
+        <h2>9. Vorschau & Download</h2>
+        <p>Nach dem Klick auf "Bulk Sheet erstellen" erscheint eine Vorschau mit:</p>
+        <ul>
+            <li>Zusammenfassung: Anzahl Kampagnen, Anzeigengruppen, Keywords, Targeting</li>
+            <li>Tabellenvorschau der ersten 50 Zeilen</li>
+            <li>Warnungen bei Duplikaten oder doppelten Kampagnennamen</li>
+        </ul>
+        <p>SP und SD Kampagnen werden in separate Tabellenblätter innerhalb derselben Excel-Datei geschrieben.</p>
+    </div>
+
+    <div class="section" id="shortcuts">
+        <h2>10. Tastenkürzel</h2>
+        <div class="card">
+            <p><kbd>Ctrl</kbd> + <kbd>Enter</kbd> &mdash; Bulk Sheet generieren</p>
+            <p><kbd>Ctrl</kbd> + <kbd>S</kbd> &mdash; Preset speichern</p>
+        </div>
+    </div>
+
+    <div class="section" id="tips">
+        <h2>11. Tipps & Best Practices</h2>
+        <ul>
+            <li><strong>Cross-Negation aktivieren:</strong> Verhindert, dass die Auto-Kampagne Traffic von manuellen Kampagnen "stiehlt"</li>
+            <li><strong>Keyword Allocation nutzen:</strong> Bei vielen Keywords (50+) auf 10-15 Keywords pro Kampagne aufteilen, um das Budget besser zu verteilen</li>
+            <li><strong>Presets für wiederkehrende Kunden:</strong> Speichere Grundkonfigurationen (Gebotsstrategie, Budgets) als Preset und passe nur Keywords/ASINs an</li>
+            <li><strong>Negative Keywords pflegen:</strong> Füge irrelevante Suchbegriffe als Negative Keywords hinzu, bevor du das Bulk Sheet erstellst</li>
+            <li><strong>Einzelne Keywords:</strong> Nutze diese Funktion für deine Top 5-10 Keywords, die ein eigenes Budget verdienen</li>
+            <li><strong>Validierung beachten:</strong> Das Tool prüft ASIN-Formate, fehlende Produktnamen und Keyword-Duplikate automatisch</li>
+        </ul>
+    </div>
+</div>
+
+</body>
+</html>

@@ -6,54 +6,96 @@
     <title>Kampagnen Ersteller - AdsMasters PPC Tools</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
+        /* --- Theme Variables --- */
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-hover: #1c2129;
+            --border: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --accent: #3551FF;
+            --accent-hover: #2a41cc;
+            --error: #f85149;
+            --error-bg: #f8514911;
+            --error-bg-hover: #f8514922;
+            --warn: #d29922;
+            --warn-bg: #d2992211;
+            --success: #3fb950;
+            --success-bg: #3fb95011;
+            --overlay: rgba(0,0,0,0.7);
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f8fa;
+            --bg-hover: #eef1f5;
+            --border: #d0d7de;
+            --text-primary: #1f2328;
+            --text-secondary: #656d76;
+            --accent: #3551FF;
+            --accent-hover: #2a41cc;
+            --error: #cf222e;
+            --error-bg: #cf222e11;
+            --error-bg-hover: #cf222e22;
+            --warn: #9a6700;
+            --warn-bg: #9a670011;
+            --success: #1a7f37;
+            --success-bg: #1a7f3711;
+            --overlay: rgba(0,0,0,0.4);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
-        .topbar { background: #161b22; border-bottom: 1px solid #30363d; padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
         .topbar-left { display: flex; align-items: center; gap: 32px; }
-        .topbar-logo { font-size: 18px; font-weight: 700; color: #e6edf3; text-decoration: none; }
-        .topbar-logo span { color: #3551FF; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
         .topbar-nav { display: flex; gap: 16px; }
-        .topbar-nav a { color: #8b949e; text-decoration: none; font-size: 14px; }
-        .topbar-nav a:hover { color: #e6edf3; }
-        .btn-logout { background: transparent; border: 1px solid #30363d; color: #8b949e; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
-        .btn-logout:hover { color: #e6edf3; border-color: #8b949e; }
+        .topbar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+        .topbar-nav a:hover { color: var(--text-primary); }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
 
         .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
         .page-header { margin-bottom: 24px; }
         .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-        .page-sub { font-size: 14px; color: #8b949e; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); }
 
         .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
 
-        .card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
         .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .card-title .step { background: #3551FF; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        .card-title .step { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
 
-        label { display: block; font-size: 13px; color: #8b949e; margin-bottom: 4px; font-weight: 600; }
+        label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
         input[type="text"], input[type="number"], input[type="date"], select, textarea {
-            width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
-            color: #e6edf3; font-size: 13px; font-family: Arial, sans-serif;
+            width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text-primary); font-size: 13px; font-family: Arial, sans-serif;
         }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #3551FF; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
         textarea { resize: vertical; min-height: 60px; }
         .field { margin-bottom: 14px; }
         .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-        .toggle-group { display: flex; border: 1px solid #30363d; border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
-        .toggle-btn { flex: 1; padding: 8px 12px; background: #0d1117; color: #8b949e; border: none; font-size: 13px; cursor: pointer; text-align: center; font-weight: 600; }
-        .toggle-btn.active { background: #3551FF; color: #fff; }
+        .toggle-group { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+        .toggle-btn { flex: 1; padding: 8px 12px; background: var(--bg-primary); color: var(--text-secondary); border: none; font-size: 13px; cursor: pointer; text-align: center; font-weight: 600; }
+        .toggle-btn.active { background: var(--accent); color: #fff; }
 
-        .section-label { font-size: 14px; font-weight: 700; margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid #30363d; }
+        .section-label { font-size: 14px; font-weight: 700; margin: 18px 0 10px; padding-top: 14px; border-top: 1px solid var(--border); }
         .section-label:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
 
-        .counter { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; padding: 8px 12px; background: #0d1117; border-radius: 6px; }
-        .counter-item { font-size: 12px; color: #8b949e; }
-        .counter-item strong { color: #e6edf3; }
+        .counter { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; padding: 8px 12px; background: var(--bg-primary); border-radius: 6px; }
+        .counter-item { font-size: 12px; color: var(--text-secondary); }
+        .counter-item strong { color: var(--text-primary); }
 
-        .campaign-option { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+        .campaign-option { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
         .campaign-option-header { display: flex; align-items: center; gap: 10px; }
-        .campaign-option-header input[type="checkbox"] { width: 16px; height: 16px; accent-color: #3551FF; cursor: pointer; flex-shrink: 0; }
-        .campaign-option-header .co-label { font-size: 13px; font-weight: 600; color: #e6edf3; flex: 1; }
+        .campaign-option-header input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+        .campaign-option-header .co-label { font-size: 13px; font-weight: 600; color: var(--text-primary); flex: 1; }
         .campaign-option-fields { display: flex; gap: 10px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
         .campaign-option-fields .mini-field { display: flex; flex-direction: column; gap: 2px; }
         .campaign-option-fields .mini-field label { font-size: 11px; margin-bottom: 0; }
@@ -61,39 +103,96 @@
         .campaign-option-fields .mini-field.neg-check { flex-direction: row; align-items: center; gap: 4px; }
         .campaign-option-fields .mini-field.neg-check label { margin-bottom: 0; }
         .campaign-option-fields .mini-field.neg-check input { width: 16px; }
-        .auto-sub { margin-top: 10px; padding: 10px; background: #161b22; border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .auto-sub { margin-top: 10px; padding: 10px; background: var(--bg-secondary); border-radius: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .auto-sub-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-        .auto-sub-item input[type="checkbox"] { width: 14px; height: 14px; accent-color: #3551FF; }
+        .auto-sub-item input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--accent); }
         .auto-sub-item input[type="number"] { width: 70px; padding: 4px 6px; font-size: 12px; }
 
         .btn-row { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; }
         .btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
-        .btn-primary { background: #3551FF; color: #fff; }
-        .btn-primary:hover { background: #2a41cc; }
-        .btn-secondary { background: transparent; border: 1px solid #30363d; color: #8b949e; }
-        .btn-secondary:hover { color: #e6edf3; border-color: #8b949e; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-secondary); }
 
         .lang-select { display: flex; gap: 6px; margin-bottom: 4px; }
-        .lang-btn { padding: 5px 14px; border-radius: 5px; background: #0d1117; border: 1px solid #30363d; color: #8b949e; cursor: pointer; font-size: 12px; font-weight: 600; }
-        .lang-btn.active { background: #3551FF; color: #fff; border-color: #3551FF; }
-        .lang-hint { font-size: 11px; color: #8b949e; margin-bottom: 14px; }
+        .lang-btn { padding: 5px 14px; border-radius: 5px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-secondary); cursor: pointer; font-size: 12px; font-weight: 600; }
+        .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .lang-hint { font-size: 11px; color: var(--text-secondary); margin-bottom: 14px; }
 
-        .product-block { border: 1px solid #30363d; border-radius: 8px; padding: 14px; margin-bottom: 14px; background: #0d1117; position: relative; }
+        .product-block { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; background: var(--bg-primary); position: relative; }
         .product-block-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .product-block-header span { font-size: 13px; font-weight: 700; color: #e6edf3; }
+        .product-block-header span { font-size: 13px; font-weight: 700; color: var(--text-primary); }
         .product-block-actions { display: flex; gap: 6px; }
-        .btn-sm { padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid #30363d; background: #161b22; color: #8b949e; }
-        .btn-sm:hover { color: #e6edf3; border-color: #8b949e; }
-        .btn-sm.danger { color: #f85149; border-color: #f85149; }
-        .btn-sm.danger:hover { background: #f8514922; }
-        .btn-add-product { display: inline-flex; align-items: center; gap: 4px; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px dashed #30363d; background: transparent; color: #8b949e; margin-top: 4px; }
-        .btn-add-product:hover { color: #e6edf3; border-color: #8b949e; }
-        .field-hint { font-size: 11px; color: #8b949e; margin-top: 2px; font-weight: 400; }
+        .btn-sm { padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .btn-sm:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-sm.danger { color: var(--error); border-color: var(--error); }
+        .btn-sm.danger:hover { background: var(--error-bg-hover); }
+        .btn-add-product { display: inline-flex; align-items: center; gap: 4px; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px dashed var(--border); background: transparent; color: var(--text-secondary); margin-top: 4px; }
+        .btn-add-product:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .field-hint { font-size: 11px; color: var(--text-secondary); margin-top: 2px; font-weight: 400; }
         .error-container { margin-bottom: 16px; }
-        .error-msg { color: #f85149; font-size: 13px; padding: 8px 12px; border: 1px solid #f85149; border-radius: 6px; margin-bottom: 6px; background: #f8514911; }
+        .error-msg { color: var(--error); font-size: 13px; padding: 8px 12px; border: 1px solid var(--error); border-radius: 6px; margin-bottom: 6px; background: var(--error-bg); }
+        .warn-msg { color: var(--warn); font-size: 13px; padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; margin-bottom: 6px; background: var(--warn-bg); }
+        .success-msg { color: var(--success); font-size: 13px; padding: 8px 12px; border: 1px solid var(--success); border-radius: 6px; margin-bottom: 6px; background: var(--success-bg); animation: fadeOut 0.5s ease 3s forwards; }
+        @keyframes fadeOut { to { opacity: 0; } }
+
+        .progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); z-index: 300; transition: width 0.3s; }
+        @keyframes progressPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
+        .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; white-space: nowrap; max-width: 280px; white-space: normal; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+        textarea.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg-primary)); }
+        .drop-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--accent) 10%, var(--bg-primary)); border: 2px dashed var(--accent); border-radius: 6px; color: var(--accent); font-size: 13px; font-weight: 600; pointer-events: none; z-index: 5; }
+
+        .label-row { display: flex; align-items: center; justify-content: space-between; }
+        .btn-import { padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .btn-import:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .import-input { display: none; }
+
+        .preset-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .preset-bar select { flex: 1; min-width: 150px; }
+        .preset-bar .btn-sm { white-space: nowrap; }
+
+        .preview-overlay { position: fixed; inset: 0; background: var(--overlay); z-index: 200; display: flex; align-items: center; justify-content: center; }
+        .preview-modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; max-width: 95vw; max-height: 90vh; width: 1200px; display: flex; flex-direction: column; }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+        .preview-header h3 { font-size: 16px; font-weight: 700; }
+        .preview-summary { display: flex; gap: 16px; flex-wrap: wrap; padding: 12px 20px; background: var(--bg-primary); border-bottom: 1px solid var(--border); }
+        .preview-summary .stat { font-size: 13px; color: var(--text-secondary); }
+        .preview-summary .stat strong { color: var(--text-primary); }
+        .preview-body { overflow: auto; flex: 1; padding: 0; }
+        .preview-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .preview-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 8px 10px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .preview-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; color: var(--text-primary); }
+        .preview-table tr:hover td { background: var(--bg-hover); }
+        .preview-footer { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border); }
+        .preview-footer .info { font-size: 12px; color: var(--text-secondary); }
 
         @media (max-width: 900px) {
             .layout { grid-template-columns: 1fr; }
+            .topbar { padding: 0 16px; }
+            .main { padding: 16px; }
+            .preset-bar { flex-direction: column; align-items: stretch; }
+            .preset-bar select { min-width: 100%; }
+        }
+        @media (max-width: 600px) {
+            .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+            .topbar-left { gap: 12px; }
+            .topbar-logo { font-size: 15px; }
+            .main { padding: 12px 10px; }
+            .page-title { font-size: 20px; }
+            .card { padding: 16px; }
+            .field-row { grid-template-columns: 1fr; }
+            .campaign-option-fields { flex-direction: column; align-items: stretch; }
+            .campaign-option-fields .mini-field input { width: 100%; }
+            .auto-sub { grid-template-columns: 1fr; }
+            .btn-row { flex-direction: column; }
+            .btn-row .btn { width: 100%; text-align: center; }
+            .label-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .preview-modal { width: 100vw; max-height: 100vh; border-radius: 0; }
+            .preview-summary { flex-direction: column; gap: 6px; }
         }
     </style>
 </head>
@@ -105,15 +204,30 @@
         <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
         <nav class="topbar-nav">
             <a href="dashboard.html">Dashboard</a>
+            <a href="help.html">Hilfe</a>
         </nav>
     </div>
-    <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Theme wechseln">&#9790;</button>
+        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+    </div>
 </div>
 
 <div class="main">
     <div class="page-header">
         <h1 class="page-title">Kampagnen Ersteller</h1>
         <p class="page-sub">Amazon Sponsored Products Bulk Upload Sheet Generator</p>
+    </div>
+
+    <!-- Preset Bar -->
+    <div class="preset-bar">
+        <select id="presetSelect"><option value="">— Preset wählen —</option></select>
+        <button class="btn-sm" onclick="loadPreset()">Laden</button>
+        <button class="btn-sm" onclick="savePreset()" title="Ctrl+S">Speichern</button>
+        <button class="btn-sm danger" onclick="deletePreset()">Löschen</button>
+        <button class="btn-sm" onclick="exportPresets()">Export</button>
+        <button class="btn-sm" onclick="document.getElementById('presetImportFile').click()">Import</button>
+        <input type="file" id="presetImportFile" class="import-input" accept=".json">
     </div>
 
     <div class="layout">
@@ -128,11 +242,16 @@
                     <button class="toggle-btn" onclick="setMode('seller')">Seller: SKU Listen</button>
                 </div>
 
-                <div class="lang-select">
-                    <button class="lang-btn active" onclick="setLang('de')">Deutsch</button>
-                    <button class="lang-btn" onclick="setLang('en')">English</button>
+                <div class="field">
+                    <label>Marketplace <span class="tooltip-icon" data-tip="Bestimmt die Sprache aller Spalten, Entitäten und Match Types im Bulk Sheet.">?</span></label>
+                    <select id="marketplaceSelect" onchange="setMarketplace(this.value)">
+                        <option value="de">Deutschland (DE)</option>
+                        <option value="en">USA / UK (EN)</option>
+                        <option value="fr">Frankreich (FR)</option>
+                        <option value="it">Italien (IT)</option>
+                        <option value="es">Spanien (ES)</option>
+                    </select>
                 </div>
-                <div class="lang-hint">Sprache des Bulk Sheets</div>
 
                 <div id="productBlocksContainer">
                     <div class="product-block" data-product-index="0">
@@ -153,7 +272,12 @@
                         </div>
                     </div>
                 </div>
-                <button class="btn-add-product" onclick="addProduct()">+ Produkt hinzufügen</button>
+                <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
+                    <button class="btn-add-product" onclick="addProduct()">+ Produkt hinzufügen</button>
+                    <button class="btn-import" onclick="document.getElementById('productImportFile').click()">Produkte importieren</button>
+                    <button class="btn-import" onclick="downloadProductTemplate()">Vorlage herunterladen</button>
+                    <input type="file" id="productImportFile" class="import-input" accept=".csv,.xlsx,.xls,.tsv">
+                </div>
             </div>
 
             <!-- STEP 2 -->
@@ -163,11 +287,11 @@
                 <!-- Generic Keywords -->
                 <div class="section-label">Generische Keywords</div>
                 <div class="field">
-                    <label>Keywords (eine pro Zeile)</label>
+                    <div class="label-row"><label>Keywords (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('genericKw')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="genericKw"></div>
                     <textarea id="genericKw" rows="4" placeholder="langhantel&#10;langhantelstange&#10;hantelstange"></textarea>
                 </div>
                 <div class="field">
-                    <label>Keyword Allocation (pro Kampagne)</label>
+                    <label>Keyword Allocation (pro Kampagne) <span class="tooltip-icon" data-tip="Anzahl Keywords pro Kampagne. Wenn du z.B. 50 Keywords und Allocation 10 hast, werden 5 Kampagnen mit je 10 Keywords erstellt.">?</span></label>
                     <textarea id="genericAlloc" rows="1" placeholder="10"></textarea>
                 </div>
                 <div class="counter" id="genericCounter">
@@ -180,14 +304,14 @@
                 <!-- Brand Keywords -->
                 <div class="section-label">Eigenmarken Keywords</div>
                 <div class="field">
-                    <label>Eigenmarken Keywords (eine pro Zeile)</label>
+                    <div class="label-row"><label>Eigenmarken Keywords (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('brandKw')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="brandKw"></div>
                     <textarea id="brandKw" rows="3" placeholder="eigenmarke keyword"></textarea>
                 </div>
 
                 <!-- Competitor Keywords -->
                 <div class="section-label">Wettbewerber Keywords</div>
                 <div class="field">
-                    <label>Wettbewerber Keywords (eine pro Zeile)</label>
+                    <div class="label-row"><label>Wettbewerber Keywords (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('compKw')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="compKw"></div>
                     <textarea id="compKw" rows="3" placeholder="wettbewerber keyword"></textarea>
                 </div>
                 <div class="field">
@@ -204,18 +328,18 @@
                 <!-- Single Keywords -->
                 <div class="section-label">Einzelne Keywords</div>
                 <div class="field">
-                    <label>Einzelne Keywords (eine pro Zeile, jedes = eigene Kampagne)</label>
+                    <div class="label-row"><label>Einzelne Keywords (eine pro Zeile) <span class="tooltip-icon" data-tip="Jedes Keyword wird als eigene Kampagne mit Exact Match angelegt — ideal für Top-Performer Keywords mit eigenem Budget.">?</span></label><button class="btn-import" onclick="triggerImport('singleKw')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="singleKw"></div>
                     <textarea id="singleKw" rows="3" placeholder="langhantelstange"></textarea>
                 </div>
 
                 <!-- Product Placement -->
                 <div class="section-label">Produktausrichtung</div>
                 <div class="field">
-                    <label>Eigenmarken ASINs (eine pro Zeile)</label>
+                    <div class="label-row"><label>Eigenmarken ASINs (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('brandAsins')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="brandAsins"></div>
                     <textarea id="brandAsins" rows="3" placeholder="B0XXXXXX"></textarea>
                 </div>
                 <div class="field">
-                    <label>Wettbewerber ASINs (eine pro Zeile)</label>
+                    <div class="label-row"><label>Wettbewerber ASINs (eine pro Zeile)</label><button class="btn-import" onclick="triggerImport('compAsins')">CSV/Excel Import</button><input type="file" class="import-input" accept=".csv,.xlsx,.xls,.tsv" data-target="compAsins"></div>
                     <textarea id="compAsins" rows="3" placeholder="B0XXXXXX"></textarea>
                 </div>
                 <div class="field">
@@ -238,7 +362,7 @@
                 <div class="card-title"><span class="step">3</span> Kampagnen-Einstellungen</div>
 
                 <div class="field">
-                    <label>Gebotsstrategie</label>
+                    <label>Gebotsstrategie <span class="tooltip-icon" data-tip="'Nur senken': Amazon senkt Gebote bei geringer Conversion-Wahrscheinlichkeit. 'Erhöhen und senken': Amazon passt Gebote in beide Richtungen an. 'Fest': Gebote bleiben unverändert.">?</span></label>
                     <select id="biddingStrategy">
                         <option value="down">Dynamische Gebote &ndash; nur senken</option>
                         <option value="updown">Dynamische Gebote &ndash; erhöhen und senken</option>
@@ -256,9 +380,31 @@
                     </div>
                 </div>
                 <div class="field">
-                    <label>Kampagnen-Startdatum</label>
-                    <input type="date" id="startDate">
+                    <label>Portfolio-ID <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
+                    <input type="text" id="portfolioId" placeholder="z.B. 123456789">
                 </div>
+                <div class="field-row">
+                    <div class="field">
+                        <label>Kampagnen-Startdatum</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="field">
+                        <label>Enddatum <span style="font-weight:400;color:#8b949e;">(optional)</span></label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+                <div class="section-label">Placement-Anpassungen <span style="font-weight:400;color:var(--text-secondary);">(optional)</span> <span class="tooltip-icon" data-tip="Prozentuale Gebotserhöhung für bestimmte Platzierungen. Z.B. 50% bei Top of Search = dein Gebot wird um 50% erhöht, wenn die Anzeige ganz oben erscheint.">?</span></div>
+                <div class="field-row">
+                    <div class="field">
+                        <label>Top of Search (%)</label>
+                        <input type="number" id="placementTos" step="1" min="0" max="900" value="" placeholder="z.B. 50">
+                    </div>
+                    <div class="field">
+                        <label>Product Pages (%)</label>
+                        <input type="number" id="placementPp" step="1" min="0" max="900" value="" placeholder="z.B. 25">
+                    </div>
+                </div>
+
                 <div class="field">
                     <label>Negative Keywords (Exact)</label>
                     <textarea id="negKwExact" rows="3" placeholder="ein Keyword pro Zeile"></textarea>
@@ -295,6 +441,7 @@
                         <div class="mini-field"><label>Gebot</label><input type="number" id="bid-auto" step="0.01" value="0.50"></div>
                         <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-auto" step="0.01" value="10.00"></div>
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-auto" checked><label>Negative KW</label></div>
+                        <div class="mini-field neg-check"><input type="checkbox" id="cross-neg-auto" checked><label>Cross-Negation <span class="tooltip-icon" data-tip="Brand Keywords werden als Negative Phrase, generische Keywords als Negative Exact in die Auto-Kampagne eingefügt — verhindert Kannibalisierung.">?</span></label></div>
                     </div>
                     <div class="auto-sub" id="autoSubOptions">
                         <div class="auto-sub-item"><input type="checkbox" id="auto-close" checked><span>Enge Übereinstimmung</span><input type="number" id="bid-auto-close" step="0.01" value="0.50"></div>
@@ -433,6 +580,33 @@
                         <div class="mini-field neg-check"><input type="checkbox" id="neg-single"><label>Negative KW</label></div>
                     </div>
                 </div>
+
+                <!-- SD Section Header -->
+                <div class="section-label" style="margin-top:20px;">Sponsored Display</div>
+
+                <!-- SD Product Targeting - Competitor -->
+                <div class="campaign-option">
+                    <div class="campaign-option-header">
+                        <input type="checkbox" id="chk-sd-pt-comp">
+                        <span class="co-label">SD: Produktausrichtung (Competitor ASIN)</span>
+                    </div>
+                    <div class="campaign-option-fields">
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-sd-pt-comp" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-sd-pt-comp" step="0.01" value="1.00"></div>
+                    </div>
+                </div>
+
+                <!-- SD Product Targeting - Brand -->
+                <div class="campaign-option">
+                    <div class="campaign-option-header">
+                        <input type="checkbox" id="chk-sd-pt-brand">
+                        <span class="co-label">SD: Produktausrichtung (Brand ASIN)</span>
+                    </div>
+                    <div class="campaign-option-fields">
+                        <div class="mini-field"><label>Gebot</label><input type="number" id="bid-sd-pt-brand" step="0.01" value="0.50"></div>
+                        <div class="mini-field"><label>Tagesbudget</label><input type="number" id="budget-sd-pt-brand" step="0.01" value="1.00"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Error Container -->
@@ -441,13 +615,353 @@
             <!-- Buttons -->
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="resetAll()">Zurücksetzen</button>
-                <button class="btn btn-primary" onclick="generateExcel()">Bulk Sheet erstellen</button>
+                <button class="btn btn-primary" onclick="generateExcel()" title="Ctrl+Enter">Bulk Sheet erstellen</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+// --- Theme Toggle ---
+function initTheme() {
+    const saved = localStorage.getItem('ppc_theme') || 'dark';
+    applyTheme(saved);
+}
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.innerHTML = theme === 'dark' ? '&#9788;' : '&#9790;';
+}
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('ppc_theme', next);
+    applyTheme(next);
+}
+initTheme();
+
+// --- Keyboard Shortcuts ---
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        generateExcel();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        savePreset();
+    }
+});
+
+// --- Drag & Drop on Textareas ---
+document.addEventListener('dragover', function(e) {
+    const ta = e.target.closest('textarea');
+    if (!ta) return;
+    e.preventDefault();
+    ta.classList.add('drag-over');
+});
+document.addEventListener('dragleave', function(e) {
+    const ta = e.target.closest('textarea');
+    if (!ta) return;
+    ta.classList.remove('drag-over');
+});
+document.addEventListener('drop', function(e) {
+    const ta = e.target.closest('textarea');
+    if (!ta) return;
+    e.preventDefault();
+    ta.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    if (file.name.match(/\.(xlsx|xls)$/i)) {
+        reader.onload = function(evt) {
+            const data = new Uint8Array(evt.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+            const values = rows.flat().map(v => String(v).trim()).filter(Boolean);
+            appendToTextarea(ta, values);
+        };
+        reader.readAsArrayBuffer(file);
+    } else if (file.name.match(/\.(csv|tsv|txt)$/i)) {
+        reader.onload = function(evt) {
+            const text = evt.target.result;
+            const sep = text.includes('\t') ? '\t' : ',';
+            const values = text.split(/\r?\n/).flatMap(line => line.split(sep)).map(v => v.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+            appendToTextarea(ta, values);
+        };
+        reader.readAsText(file);
+    }
+});
+
+// --- CSV/Excel Import ---
+function triggerImport(targetId) {
+    const input = document.querySelector('.import-input[data-target="' + targetId + '"]');
+    input.value = '';
+    input.click();
+}
+
+document.addEventListener('change', function(e) {
+    if (!e.target.classList.contains('import-input')) return;
+    const file = e.target.files[0];
+    if (!file) return;
+    const targetId = e.target.dataset.target;
+    const textarea = document.getElementById(targetId);
+
+    const reader = new FileReader();
+    if (file.name.match(/\.(xlsx|xls)$/i)) {
+        reader.onload = function(evt) {
+            const data = new Uint8Array(evt.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+            const values = rows.flat().map(v => String(v).trim()).filter(Boolean);
+            appendToTextarea(textarea, values);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.onload = function(evt) {
+            const text = evt.target.result;
+            const sep = text.includes('\t') ? '\t' : ',';
+            const values = text.split(/\r?\n/).flatMap(line => line.split(sep)).map(v => v.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+            appendToTextarea(textarea, values);
+        };
+        reader.readAsText(file);
+    }
+});
+
+// --- Bulk Product Import ---
+document.getElementById('productImportFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+
+    function processProductRows(rows) {
+        if (rows.length === 0) return;
+        const container = document.getElementById('productBlocksContainer');
+        // Check if the first row is a header
+        const firstCell = String(rows[0][0] || '').toLowerCase();
+        const startIdx = (firstCell === 'produktname' || firstCell === 'product' || firstCell === 'name') ? 1 : 0;
+
+        for (let i = startIdx; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 2) continue;
+            const name = String(row[0] || '').trim();
+            if (!name) continue;
+            const asins = row.slice(1).flatMap(v => String(v || '').split(/[,;]/).map(s => s.trim())).filter(Boolean);
+            if (asins.length === 0) continue;
+            const block = createProductBlock(name, asins.join('\n'));
+            container.appendChild(block);
+        }
+        renumberProducts();
+    }
+
+    if (file.name.match(/\.(xlsx|xls)$/i)) {
+        reader.onload = function(evt) {
+            const data = new Uint8Array(evt.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+            processProductRows(rows);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.onload = function(evt) {
+            const text = evt.target.result;
+            const sep = text.includes('\t') ? '\t' : ',';
+            const rows = text.split(/\r?\n/).filter(l => l.trim()).map(line => line.split(sep).map(v => v.trim().replace(/^["']|["']$/g, '')));
+            processProductRows(rows);
+        };
+        reader.readAsText(file);
+    }
+    e.target.value = '';
+});
+
+// --- Product Template Download ---
+function downloadProductTemplate() {
+    const wb = XLSX.utils.book_new();
+    const data = [
+        ['Produktname', 'ASIN 1', 'ASIN 2', 'ASIN 3', 'ASIN 4', 'ASIN 5'],
+        ['Langhantel', 'B0XXXXXXXXX', 'B0YYYYYYYYY', '', '', ''],
+        ['Kurzhantel', 'B0ZZZZZZZZZ', '', '', '', '']
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Produkte');
+    XLSX.writeFile(wb, 'Produkt-Import-Vorlage.xlsx');
+}
+
+function appendToTextarea(textarea, values) {
+    const existing = textarea.value.trim();
+    const newVal = existing ? existing + '\n' + values.join('\n') : values.join('\n');
+    textarea.value = newVal;
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+// --- Presets (localStorage) ---
+const PRESET_KEY = 'ppc_presets';
+
+function getPresets() {
+    try { return JSON.parse(localStorage.getItem(PRESET_KEY)) || {}; } catch { return {}; }
+}
+
+function refreshPresetDropdown() {
+    const sel = document.getElementById('presetSelect');
+    const presets = getPresets();
+    sel.innerHTML = '<option value="">— Preset wählen —</option>';
+    Object.keys(presets).sort().forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        sel.appendChild(opt);
+    });
+}
+
+function gatherFormState() {
+    const state = { mode, lang };
+    // Products
+    const blocks = getProductBlocks();
+    state.products = [];
+    blocks.forEach(b => {
+        state.products.push({
+            name: b.querySelector('.productName').value,
+            list: b.querySelector('.productList').value
+        });
+    });
+    // Text fields
+    const textIds = ['genericKw', 'genericAlloc', 'brandKw', 'compKw', 'compKwAlloc', 'singleKw', 'brandAsins', 'compAsins', 'compAsinAlloc', 'negKwExact', 'negKwPhrase', 'campNegKwExact', 'campNegKwPhrase', 'negProdTargeting'];
+    state.texts = {};
+    textIds.forEach(id => state.texts[id] = document.getElementById(id).value);
+    // Settings
+    state.biddingStrategy = document.getElementById('biddingStrategy').value;
+    state.dailyBudget = document.getElementById('dailyBudget').value;
+    state.overallBid = document.getElementById('overallBid').value;
+    state.portfolioId = document.getElementById('portfolioId').value;
+    state.placementTos = document.getElementById('placementTos').value;
+    state.placementPp = document.getElementById('placementPp').value;
+    // Campaign options
+    const checkIds = ['chk-auto', 'chk-generic-exact', 'chk-generic-broad', 'chk-brand-exact', 'chk-brand-broad', 'chk-brand-phrase', 'chk-comp-exact', 'chk-comp-broad', 'chk-pt-comp', 'chk-pt-brand', 'chk-single', 'neg-auto', 'neg-generic-exact', 'neg-generic-broad', 'neg-brand-exact', 'neg-brand-broad', 'neg-brand-phrase', 'neg-comp-exact', 'neg-comp-broad', 'neg-pt-comp', 'neg-pt-brand', 'neg-single', 'auto-close', 'auto-loose', 'auto-substitutes', 'auto-complements'];
+    state.checks = {};
+    checkIds.forEach(id => state.checks[id] = document.getElementById(id).checked);
+    // Bids & budgets
+    const allBidBudget = [...budgetIds, ...bidIds, ...autoBidIds];
+    state.bidsBudgets = {};
+    // Note: budgetIds/bidIds/autoBidIds are defined later, so we read them by selector
+    document.querySelectorAll('.campaign-option input[type="number"]').forEach(el => {
+        if (el.id) state.bidsBudgets[el.id] = el.value;
+    });
+    return state;
+}
+
+function applyFormState(state) {
+    // Mode & Lang
+    setMode(state.mode || 'vendor');
+    setLang(state.lang || 'de');
+    // Products
+    const container = document.getElementById('productBlocksContainer');
+    container.innerHTML = '';
+    productCounter = 0;
+    (state.products || [{ name: '', list: '' }]).forEach((p, i) => {
+        const block = createProductBlock(p.name, p.list);
+        container.appendChild(block);
+    });
+    renumberProducts();
+    // Text fields
+    if (state.texts) {
+        Object.entries(state.texts).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        });
+    }
+    // Settings
+    if (state.biddingStrategy) document.getElementById('biddingStrategy').value = state.biddingStrategy;
+    if (state.dailyBudget) document.getElementById('dailyBudget').value = state.dailyBudget;
+    if (state.overallBid) document.getElementById('overallBid').value = state.overallBid;
+    document.getElementById('portfolioId').value = state.portfolioId || '';
+    document.getElementById('placementTos').value = state.placementTos || '';
+    document.getElementById('placementPp').value = state.placementPp || '';
+    // Checkboxes
+    if (state.checks) {
+        Object.entries(state.checks).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.checked = val;
+        });
+    }
+    // Bids & budgets
+    if (state.bidsBudgets) {
+        Object.entries(state.bidsBudgets).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        });
+    }
+    // Update counters
+    updateCounter('genericKw', 'genericAlloc', 'genericCounter');
+    updateCounter('compKw', 'compKwAlloc', 'compKwCounter');
+    updateCounter('compAsins', 'compAsinAlloc', 'compAsinCounter');
+}
+
+function savePreset() {
+    const name = prompt('Preset-Name eingeben:');
+    if (!name || !name.trim()) return;
+    const presets = getPresets();
+    presets[name.trim()] = gatherFormState();
+    localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+    refreshPresetDropdown();
+    document.getElementById('presetSelect').value = name.trim();
+}
+
+function loadPreset() {
+    const name = document.getElementById('presetSelect').value;
+    if (!name) return;
+    const presets = getPresets();
+    if (!presets[name]) return;
+    applyFormState(presets[name]);
+}
+
+function deletePreset() {
+    const name = document.getElementById('presetSelect').value;
+    if (!name) return;
+    if (!confirm('Preset "' + name + '" wirklich löschen?')) return;
+    const presets = getPresets();
+    delete presets[name];
+    localStorage.setItem(PRESET_KEY, JSON.stringify(presets));
+    refreshPresetDropdown();
+}
+
+function exportPresets() {
+    const presets = getPresets();
+    if (Object.keys(presets).length === 0) return;
+    const blob = new Blob([JSON.stringify(presets, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ppc-presets.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    refreshPresetDropdown();
+
+    document.getElementById('presetImportFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const imported = JSON.parse(evt.target.result);
+                const existing = getPresets();
+                const merged = { ...existing, ...imported };
+                localStorage.setItem(PRESET_KEY, JSON.stringify(merged));
+                refreshPresetDropdown();
+                const count = Object.keys(imported).length;
+                showSuccess(count + ' Preset(s) importiert.');
+            } catch { /* invalid JSON */ }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    });
+});
+
 // --- State ---
 let mode = 'vendor'; // vendor or seller
 let lang = 'de';
@@ -465,12 +979,99 @@ function setMode(m) {
     });
 }
 
-function setLang(l) {
-    lang = l;
-    document.querySelectorAll('.lang-btn').forEach((b, i) => {
-        b.classList.toggle('active', (i === 0 && l === 'de') || (i === 1 && l === 'en'));
-    });
+function setMarketplace(m) {
+    lang = m;
+    document.getElementById('marketplaceSelect').value = m;
 }
+
+// Marketplace translations for Amazon Bulk Sheet
+const T = {
+    de: {
+        product: 'Gesponserte Produkte',
+        campaign: 'Kampagne', adGroup: 'Anzeigengruppe', productAd: 'Produktanzeige',
+        keyword: 'Keyword', negKeyword: 'Negatives Keyword', negCampKeyword: 'Negatives Kampagnen-Keyword',
+        prodTargeting: 'Produkt-Targeting', negProdTargeting: 'Negatives Produkt-Targeting',
+        biddingAdj: 'Gebotsanpassung',
+        exact: 'Genau Passend', broad: 'Weitgehend', phrase: 'Wortgruppe',
+        negExact: 'Negativ Genau Passend', negPhrase: 'Negativ Wortgruppe',
+        create: 'Erstellen', auto: 'Automatisch', manual: 'Manuell',
+        enabled: 'Aktiviert',
+        bidDown: 'Dynamische Gebote \u2013 nur senken',
+        bidUpDown: 'Dynamische Gebote \u2013 erh\u00f6hen und senken',
+        bidFixed: 'Feste Gebote',
+        placeTos: 'Oberste Suchergebnisse (erste Seite)', placePp: 'Produktseiten',
+        headers: ['Produkt', 'Entit\u00e4t', 'Operation', 'Kampagnen-ID', 'Anzeigengruppen-ID', 'Portfolio-ID', 'Anzeigen-ID', 'Keyword-ID', 'Produkt-Targeting-ID', 'Kampagnenname', 'Name der Anzeigengruppe', 'Startdatum', 'Enddatum', 'Targeting-Typ', 'Zustand', 'Tagesbudget', 'SKU', 'ASIN', 'Standardgebot f\u00fcr die Anzeigengruppe', 'Gebot', 'Keyword-Text', '\u00dcbereinstimmungstyp', 'Gebotsstrategie', 'Platzierung', 'Prozentsatz', 'Ausdruck f\u00fcr Produkt-Targeting'],
+        sheetSP: 'Sponsored Products-Kampagnen', sheetSD: 'Sponsored Display-Kampagnen'
+    },
+    en: {
+        product: 'Sponsored Products',
+        campaign: 'Campaign', adGroup: 'Ad Group', productAd: 'Product Ad',
+        keyword: 'Keyword', negKeyword: 'Negative Keyword', negCampKeyword: 'Campaign Negative Keyword',
+        prodTargeting: 'Product Targeting', negProdTargeting: 'Negative Product Targeting',
+        biddingAdj: 'Bidding Adjustment',
+        exact: 'Exact', broad: 'Broad', phrase: 'Phrase',
+        negExact: 'Negative Exact', negPhrase: 'Negative Phrase',
+        create: 'Create', auto: 'Auto', manual: 'Manual',
+        enabled: 'Enabled',
+        bidDown: 'Dynamic bids - down only',
+        bidUpDown: 'Dynamic bids - up and down',
+        bidFixed: 'Fixed bids',
+        placeTos: 'Top of Search (first page)', placePp: 'Product Pages',
+        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'],
+        sheetSP: 'Sponsored Products Campaigns', sheetSD: 'Sponsored Display Campaigns'
+    },
+    fr: {
+        product: 'Produits sponsoris\u00e9s',
+        campaign: 'Campagne', adGroup: 'Groupe d\'annonces', productAd: 'Annonce produit',
+        keyword: 'Mot-cl\u00e9', negKeyword: 'Mot-cl\u00e9 n\u00e9gatif', negCampKeyword: 'Mot-cl\u00e9 n\u00e9gatif de campagne',
+        prodTargeting: 'Ciblage de produit', negProdTargeting: 'Ciblage de produit n\u00e9gatif',
+        biddingAdj: 'Ajustement des ench\u00e8res',
+        exact: 'Expression exacte', broad: 'Requ\u00eate large', phrase: 'Expression',
+        negExact: 'Expression exacte - n\u00e9gatif', negPhrase: 'Expression - n\u00e9gatif',
+        create: 'Cr\u00e9er', auto: 'Automatique', manual: 'Manuel',
+        enabled: 'Activ\u00e9',
+        bidDown: 'Ench\u00e8res dynamiques - \u00e0 la baisse uniquement',
+        bidUpDown: 'Ench\u00e8res dynamiques - \u00e0 la hausse et \u00e0 la baisse',
+        bidFixed: 'Ench\u00e8res fixes',
+        placeTos: 'Haut des r\u00e9sultats de recherche (premi\u00e8re page)', placePp: 'Pages produit',
+        headers: ['Produit', 'Entit\u00e9', 'Op\u00e9ration', 'ID de la campagne', 'ID du groupe d\'annonces', 'ID du portefeuille', 'ID de l\'annonce', 'ID du mot-cl\u00e9', 'ID du ciblage de produit', 'Nom de la campagne', 'Nom du groupe d\'annonces', 'Date de d\u00e9but', 'Date de fin', 'Type de ciblage', '\u00c9tat', 'Budget quotidien', 'SKU', 'ASIN', 'Ench\u00e8re par d\u00e9faut du groupe d\'annonces', 'Ench\u00e8re', 'Texte du mot-cl\u00e9', 'Type de correspondance', 'Strat\u00e9gie d\'ench\u00e8res', 'Emplacement', 'Pourcentage', 'Expression de ciblage de produit'],
+        sheetSP: 'Campagnes Sponsored Products', sheetSD: 'Campagnes Sponsored Display'
+    },
+    it: {
+        product: 'Prodotti sponsorizzati',
+        campaign: 'Campagna', adGroup: 'Gruppo di annunci', productAd: 'Annuncio prodotto',
+        keyword: 'Parola chiave', negKeyword: 'Parola chiave negativa', negCampKeyword: 'Parola chiave negativa della campagna',
+        prodTargeting: 'Targeting di prodotto', negProdTargeting: 'Targeting di prodotto negativo',
+        biddingAdj: 'Aggiustamento delle offerte',
+        exact: 'Corrispondenza esatta', broad: 'Corrispondenza generica', phrase: 'Corrispondenza a frase',
+        negExact: 'Corrispondenza esatta negativa', negPhrase: 'Corrispondenza a frase negativa',
+        create: 'Crea', auto: 'Automatico', manual: 'Manuale',
+        enabled: 'Abilitato',
+        bidDown: 'Offerte dinamiche - solo al ribasso',
+        bidUpDown: 'Offerte dinamiche - al rialzo e al ribasso',
+        bidFixed: 'Offerte fisse',
+        placeTos: 'Inizio dei risultati di ricerca (prima pagina)', placePp: 'Pagine prodotto',
+        headers: ['Prodotto', 'Entit\u00e0', 'Operazione', 'ID campagna', 'ID gruppo di annunci', 'ID portafoglio', 'ID annuncio', 'ID parola chiave', 'ID targeting di prodotto', 'Nome campagna', 'Nome gruppo di annunci', 'Data di inizio', 'Data di fine', 'Tipo di targeting', 'Stato', 'Budget giornaliero', 'SKU', 'ASIN', 'Offerta predefinita del gruppo di annunci', 'Offerta', 'Testo parola chiave', 'Tipo di corrispondenza', 'Strategia di offerta', 'Posizionamento', 'Percentuale', 'Espressione di targeting di prodotto'],
+        sheetSP: 'Campagne Sponsored Products', sheetSD: 'Campagne Sponsored Display'
+    },
+    es: {
+        product: 'Productos patrocinados',
+        campaign: 'Campa\u00f1a', adGroup: 'Grupo de anuncios', productAd: 'Anuncio de producto',
+        keyword: 'Palabra clave', negKeyword: 'Palabra clave negativa', negCampKeyword: 'Palabra clave negativa de campa\u00f1a',
+        prodTargeting: 'Segmentaci\u00f3n de producto', negProdTargeting: 'Segmentaci\u00f3n de producto negativa',
+        biddingAdj: 'Ajuste de pujas',
+        exact: 'Coincidencia exacta', broad: 'Coincidencia amplia', phrase: 'Coincidencia de frase',
+        negExact: 'Coincidencia exacta negativa', negPhrase: 'Coincidencia de frase negativa',
+        create: 'Crear', auto: 'Autom\u00e1tico', manual: 'Manual',
+        enabled: 'Habilitado',
+        bidDown: 'Pujas din\u00e1micas - solo a la baja',
+        bidUpDown: 'Pujas din\u00e1micas - al alza y a la baja',
+        bidFixed: 'Pujas fijas',
+        placeTos: 'Parte superior de los resultados de b\u00fasqueda (primera p\u00e1gina)', placePp: 'P\u00e1ginas de producto',
+        headers: ['Producto', 'Entidad', 'Operaci\u00f3n', 'ID de campa\u00f1a', 'ID de grupo de anuncios', 'ID de portafolio', 'ID de anuncio', 'ID de palabra clave', 'ID de segmentaci\u00f3n de producto', 'Nombre de la campa\u00f1a', 'Nombre del grupo de anuncios', 'Fecha de inicio', 'Fecha de fin', 'Tipo de segmentaci\u00f3n', 'Estado', 'Presupuesto diario', 'SKU', 'ASIN', 'Puja predeterminada del grupo de anuncios', 'Puja', 'Texto de palabra clave', 'Tipo de coincidencia', 'Estrategia de pujas', 'Ubicaci\u00f3n', 'Porcentaje', 'Expresi\u00f3n de segmentaci\u00f3n de producto'],
+        sheetSP: 'Campa\u00f1as de Sponsored Products', sheetSD: 'Campa\u00f1as de Sponsored Display'
+    }
+};
 
 // --- Product block management ---
 let productCounter = 1;
@@ -615,12 +1216,16 @@ function resetAll() {
     document.querySelectorAll('.col-left > .card:nth-child(2) textarea, .col-right textarea').forEach(el => el.value = '');
     const d = new Date();
     document.getElementById('startDate').value = d.toISOString().slice(0, 10);
+    document.getElementById('endDate').value = '';
+    document.getElementById('portfolioId').value = '';
+    document.getElementById('placementTos').value = '';
+    document.getElementById('placementPp').value = '';
     document.querySelectorAll('.campaign-option input[type="checkbox"]').forEach(el => el.checked = true);
     updateCounter('genericKw', 'genericAlloc', 'genericCounter');
     updateCounter('compKw', 'compKwAlloc', 'compKwCounter');
     updateCounter('compAsins', 'compAsinAlloc', 'compAsinCounter');
     setMode('vendor');
-    setLang('de');
+    setMarketplace('de');
 
     // Clear error messages
     document.getElementById('errorContainer').innerHTML = '';
@@ -636,8 +1241,8 @@ const autoFilledBudgets = new Set();
 const autoFilledBids = new Set();
 let isAutoFilling = false;
 
-const budgetIds = ['budget-auto', 'budget-generic-exact', 'budget-generic-broad', 'budget-brand-exact', 'budget-brand-broad', 'budget-brand-phrase', 'budget-comp-exact', 'budget-comp-broad', 'budget-pt-comp', 'budget-pt-brand', 'budget-single'];
-const bidIds = ['bid-auto', 'bid-generic-exact', 'bid-generic-broad', 'bid-brand-exact', 'bid-brand-broad', 'bid-brand-phrase', 'bid-comp-exact', 'bid-comp-broad', 'bid-pt-comp', 'bid-pt-brand', 'bid-single'];
+const budgetIds = ['budget-auto', 'budget-generic-exact', 'budget-generic-broad', 'budget-brand-exact', 'budget-brand-broad', 'budget-brand-phrase', 'budget-comp-exact', 'budget-comp-broad', 'budget-pt-comp', 'budget-pt-brand', 'budget-single', 'budget-sd-pt-comp', 'budget-sd-pt-brand'];
+const bidIds = ['bid-auto', 'bid-generic-exact', 'bid-generic-broad', 'bid-brand-exact', 'bid-brand-broad', 'bid-brand-phrase', 'bid-comp-exact', 'bid-comp-broad', 'bid-pt-comp', 'bid-pt-brand', 'bid-single', 'bid-sd-pt-comp', 'bid-sd-pt-brand'];
 const autoBidIds = ['bid-auto-close', 'bid-auto-loose', 'bid-auto-substitutes', 'bid-auto-complements'];
 
 // Mark all as auto-filled initially
@@ -690,7 +1295,29 @@ document.getElementById('overallBid').addEventListener('input', function() {
 });
 
 // --- Excel Generation ---
+function showProgress() {
+    let bar = document.querySelector('.progress-bar');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.className = 'progress-bar';
+        document.body.appendChild(bar);
+    }
+    bar.style.width = '0%';
+    bar.style.display = 'block';
+    setTimeout(() => bar.style.width = '30%', 10);
+    setTimeout(() => bar.style.width = '60%', 100);
+    return bar;
+}
+function finishProgress(bar) {
+    bar.style.width = '100%';
+    setTimeout(() => { bar.style.display = 'none'; bar.style.width = '0%'; }, 400);
+}
+
 function generateExcel() {
+    const progressBar = showProgress();
+    try { _generateExcelInner(progressBar); } catch(e) { console.error(e); } finally { finishProgress(progressBar); }
+}
+function _generateExcelInner(progressBar) {
     // Clear previous errors
     const errorContainer = document.getElementById('errorContainer');
     errorContainer.innerHTML = '';
@@ -739,79 +1366,115 @@ function generateExcel() {
         const items = listText.split('\n').map(s => s.trim()).filter(Boolean);
         if (name && items.length > 0) {
             allProducts.push({ name, items });
+        } else if (name && items.length === 0) {
+            errors.push('Produkt "' + name + '" hat keine ' + (isVendor ? 'ASINs' : 'SKUs') + '.');
+        } else if (!name && items.length > 0) {
+            errors.push('Ein Produkt hat ' + (isVendor ? 'ASINs' : 'SKUs') + ' aber keinen Namen.');
         }
     }
 
+    if (errors.length > 0) {
+        errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
+        return;
+    }
+
     if (allProducts.length === 0) {
-        alert('Bitte mindestens ein Produkt mit Namen und ASINs/SKUs eingeben.');
+        errors.push('Bitte mindestens ein Produkt mit Namen und ASINs/SKUs eingeben.');
+        errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
+        return;
+    }
+
+    // ASIN/SKU validation
+    if (isVendor) {
+        const asinRegex = /^B0[A-Z0-9]{8}$/i;
+        allProducts.forEach(p => {
+            p.items.forEach(item => {
+                if (!asinRegex.test(item)) {
+                    errors.push('Ungültige ASIN "' + item + '" bei Produkt "' + p.name + '" (muss 10 Zeichen lang sein und mit B0 beginnen).');
+                }
+            });
+        });
+    } else {
+        allProducts.forEach(p => {
+            p.items.forEach(item => {
+                if (item.length === 0) {
+                    errors.push('Leere SKU bei Produkt "' + p.name + '" gefunden.');
+                }
+            });
+        });
+    }
+
+    // Validate targeting ASINs
+    if (isVendor) {
+        const asinRegex = /^B0[A-Z0-9]{8}$/i;
+        const brandAsinCheck = getLines('brandAsins');
+        brandAsinCheck.forEach(a => {
+            if (!asinRegex.test(a)) errors.push('Ungültige Eigenmarken-ASIN: "' + a + '"');
+        });
+        const compAsinCheck = getLines('compAsins');
+        compAsinCheck.forEach(a => {
+            if (!asinRegex.test(a)) errors.push('Ungültige Wettbewerber-ASIN: "' + a + '"');
+        });
+        const negProdCheck = getLines('negProdTargeting');
+        negProdCheck.forEach(a => {
+            if (!asinRegex.test(a)) errors.push('Ungültige Negative Targeting-ASIN: "' + a + '"');
+        });
+    }
+
+    if (errors.length > 0) {
+        errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
         return;
     }
 
     const isVendor = mode === 'vendor';
+    const t = T[lang] || T['de'];
     const isDE = lang === 'de';
 
     const startDateRaw = document.getElementById('startDate').value;
     const startDate = startDateRaw.replace(/-/g, '');
+    const endDateRaw = document.getElementById('endDate').value;
+    const endDate = endDateRaw ? endDateRaw.replace(/-/g, '') : '';
+    const portfolioId = document.getElementById('portfolioId').value.trim();
+    const placementTos = document.getElementById('placementTos').value;
+    const placementPp = document.getElementById('placementPp').value;
 
     const biddingVal = document.getElementById('biddingStrategy').value;
-    const biddingStrategyMap = {
-        de: { down: 'Dynamische Gebote \u2013 nur senken', updown: 'Dynamische Gebote \u2013 erh\u00f6hen und senken', fixed: 'Feste Gebote' },
-        en: { down: 'Dynamic bids - down only', updown: 'Dynamic bids - up and down', fixed: 'Fixed bids' }
-    };
-    const biddingStrategy = biddingStrategyMap[isDE ? 'de' : 'en'][biddingVal];
+    const biddingStrategyLookup = { down: t.bidDown, updown: t.bidUpDown, fixed: t.bidFixed };
+    const biddingStrategy = biddingStrategyLookup[biddingVal];
 
-    const state = isDE ? 'Aktiviert' : 'Enabled';
+    const state = t.enabled;
 
-    // Match types
-    const mt = {
-        exact: isDE ? 'Genau Passend' : 'Exact',
-        broad: isDE ? 'Weitgehend' : 'Broad',
-        phrase: isDE ? 'Wortgruppe' : 'Phrase',
-        negExact: isDE ? 'Negativ Genau Passend' : 'Negative Exact',
-        negPhrase: isDE ? 'Negativ Wortgruppe' : 'Negative Phrase'
-    };
+    const mt = { exact: t.exact, broad: t.broad, phrase: t.phrase, negExact: t.negExact, negPhrase: t.negPhrase };
 
-    // Entity names
     const ent = {
-        campaign: isDE ? 'Kampagne' : 'Campaign',
-        adGroup: isDE ? 'Anzeigengruppe' : 'Ad Group',
-        productAd: isDE ? 'Produktanzeige' : 'Product Ad',
-        keyword: isDE ? 'Keyword' : 'Keyword',
-        negKeyword: isDE ? 'Negatives Keyword' : 'Negative Keyword',
-        negCampKeyword: isDE ? 'Negatives Kampagnen-Keyword' : 'Campaign Negative Keyword',
-        prodTargeting: isDE ? 'Produkt-Targeting' : 'Product Targeting',
-        negProdTargeting: isDE ? 'Negatives Produkt-Targeting' : 'Negative Product Targeting'
+        campaign: t.campaign, adGroup: t.adGroup, productAd: t.productAd,
+        keyword: t.keyword, negKeyword: t.negKeyword, negCampKeyword: t.negCampKeyword,
+        prodTargeting: t.prodTargeting, negProdTargeting: t.negProdTargeting
     };
 
-    const op = isDE ? 'Erstellen' : 'Create';
-    const targetAuto = isDE ? 'Automatisch' : 'Auto';
-    const targetManual = isDE ? 'Manuell' : 'Manual';
+    const op = t.create;
+    const targetAuto = t.auto;
+    const targetManual = t.manual;
 
-    // Column headers
-    const headers = isDE
-        ? ['Produkt', 'Entit\u00e4t', 'Operation', 'Kampagnen-ID', 'Anzeigengruppen-ID', 'Portfolio-ID', 'Anzeigen-ID', 'Keyword-ID', 'Produkt-Targeting-ID', 'Kampagnenname', 'Name der Anzeigengruppe', 'Startdatum', 'Enddatum', 'Targeting-Typ', 'Zustand', 'Tagesbudget', 'SKU', 'ASIN', 'Standardgebot f\u00fcr die Anzeigengruppe', 'Gebot', 'Keyword-Text', '\u00dcbereinstimmungstyp', 'Gebotsstrategie', 'Platzierung', 'Prozentsatz', 'Ausdruck f\u00fcr Produkt-Targeting']
-        : ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'];
+    const headers = t.headers;
 
-    // Campaign naming
+    // Campaign naming (stays language-neutral for consistency)
     const cn = {
-        auto: isDE ? 'SP: Auto-Kampagne' : 'SP: Auto Campaign',
-        genericExact: isDE ? 'SP: Generische-Keywords (Exact)' : 'SP: Generic Keywords (Exact)',
-        genericBroad: isDE ? 'SP: Generische-Keywords (Broad)' : 'SP: Generic Keywords (Broad)',
-        brandExact: isDE ? 'SP: Eigenmarken-Keywords (Exact)' : 'SP: Brand Keywords (Exact)',
-        brandBroad: isDE ? 'SP: Eigenmarken-Keywords (Broad)' : 'SP: Brand Keywords (Broad)',
-        brandPhrase: isDE ? 'SP: Eigenmarken-Keywords (Phrase)' : 'SP: Brand Keywords (Phrase)',
-        compExact: isDE ? 'SP: Wettbewerb-Keywords (Exact)' : 'SP: Competitor Keywords (Exact)',
-        compBroad: isDE ? 'SP: Wettbewerb-Keywords (Broad)' : 'SP: Competitor Keywords (Broad)',
-        ptBrand: isDE ? 'SP: Produktausrichtung (Eigenmarken)' : 'SP: Product Targeting (Brand)',
-        ptComp: isDE ? 'SP: Produktausrichtung (Wettbewerb)' : 'SP: Product Targeting (Competitor)'
+        auto: 'SP: Auto Campaign',
+        genericExact: 'SP: Generic Keywords (Exact)',
+        genericBroad: 'SP: Generic Keywords (Broad)',
+        brandExact: 'SP: Brand Keywords (Exact)',
+        brandBroad: 'SP: Brand Keywords (Broad)',
+        brandPhrase: 'SP: Brand Keywords (Phrase)',
+        compExact: 'SP: Competitor Keywords (Exact)',
+        compBroad: 'SP: Competitor Keywords (Broad)',
+        ptBrand: 'SP: Product Targeting (Brand)',
+        ptComp: 'SP: Product Targeting (Competitor)'
     };
 
-    // Auto sub-targeting expressions
     const autoTargetExpr = {
-        close: isDE ? 'close-match' : 'close-match',
-        loose: isDE ? 'loose-match' : 'loose-match',
-        substitutes: isDE ? 'substitutes' : 'substitutes',
-        complements: isDE ? 'complements' : 'complements'
+        close: 'close-match', loose: 'loose-match',
+        substitutes: 'substitutes', complements: 'complements'
     };
 
     // Negative keywords
@@ -821,13 +1484,20 @@ function generateExcel() {
     const campNegKwPhraseList = getLines('campNegKwPhrase');
     const negProdTargetList = getLines('negProdTargeting');
 
-    // Keywords
-    const genericKws = unique(getLines('genericKw'));
-    const brandKws = unique(getLines('brandKw'));
-    const compKws = unique(getLines('compKw'));
-    const singleKws = unique(getLines('singleKw'));
-    const brandAsinsList = unique(getLines('brandAsins'));
-    const compAsinsList = unique(getLines('compAsins'));
+    // Keywords (with duplicate detection)
+    const warnings = [];
+    function uniqueWithWarn(arr, label) {
+        const u = [...new Set(arr.map(s => s.toLowerCase()))];
+        const dupes = arr.length - u.length;
+        if (dupes > 0) warnings.push(dupes + ' doppelte ' + label + ' entfernt.');
+        return u;
+    }
+    const genericKws = uniqueWithWarn(getLines('genericKw'), 'Generische Keywords');
+    const brandKws = uniqueWithWarn(getLines('brandKw'), 'Eigenmarken Keywords');
+    const compKws = uniqueWithWarn(getLines('compKw'), 'Wettbewerber Keywords');
+    const singleKws = uniqueWithWarn(getLines('singleKw'), 'Einzelne Keywords');
+    const brandAsinsList = uniqueWithWarn(getLines('brandAsins'), 'Eigenmarken ASINs');
+    const compAsinsList = uniqueWithWarn(getLines('compAsins'), 'Wettbewerber ASINs');
 
     // Allocations
     const genericAllocNum = parseInt(getLines('genericAlloc')[0], 10) || 0;
@@ -881,27 +1551,51 @@ function generateExcel() {
         const productName = productData.name;
         const productItems = productData.items; // ASINs or SKUs for this product
 
-        const spLabel = isDE ? 'Gesponserte Produkte' : 'Sponsored Products';
+        let productLabel = t.product;
 
         // --- Campaign Row builder ---
         function addCampaignRow(campName, targetType, budget, bidStrat) {
             const r = emptyRow();
-            r[hProduct] = spLabel;
+            r[hProduct] = productLabel;
             r[hEntity] = ent.campaign;
             r[hOp] = op;
             r[hCampId] = campName;
             r[hCampName] = campName;
             r[hStartDate] = startDate;
+            if (endDate) r[hEndDate] = endDate;
+            if (portfolioId) r[hPortfolioId] = portfolioId;
             r[hTargetType] = targetType;
             r[hState] = state;
             r[hBudget] = budget;
             r[hBiddingStrat] = bidStrat;
             rows.push(r);
+
+            // Placement adjustments
+            if (placementTos) {
+                const pr = emptyRow();
+                pr[hProduct] = productLabel;
+                pr[hEntity] = t.biddingAdj;
+                pr[hOp] = op;
+                pr[hCampId] = campName;
+                pr[hPlacement] = t.placeTos;
+                pr[hPercentage] = placementTos;
+                rows.push(pr);
+            }
+            if (placementPp) {
+                const pr = emptyRow();
+                pr[hProduct] = productLabel;
+                pr[hEntity] = t.biddingAdj;
+                pr[hOp] = op;
+                pr[hCampId] = campName;
+                pr[hPlacement] = t.placePp;
+                pr[hPercentage] = placementPp;
+                rows.push(pr);
+            }
         }
 
         function addAdGroupRow(campName, adGroupName, defaultBid) {
             const r = emptyRow();
-            r[hProduct] = spLabel;
+            r[hProduct] = productLabel;
             r[hEntity] = ent.adGroup;
             r[hOp] = op;
             r[hCampId] = campName;
@@ -916,7 +1610,7 @@ function generateExcel() {
         function addProductAdRows(campName, adGroupName) {
             productItems.forEach(productId => {
                 const r = emptyRow();
-                r[hProduct] = spLabel;
+                r[hProduct] = productLabel;
                 r[hEntity] = ent.productAd;
                 r[hOp] = op;
                 r[hCampId] = campName;
@@ -933,7 +1627,7 @@ function generateExcel() {
 
         function addKeywordRow(campName, adGroupName, kwText, matchType, bid) {
             const r = emptyRow();
-            r[hProduct] = spLabel;
+            r[hProduct] = productLabel;
             r[hEntity] = ent.keyword;
             r[hOp] = op;
             r[hCampId] = campName;
@@ -947,7 +1641,7 @@ function generateExcel() {
 
         function addNegKeywordRow(campName, adGroupName, kwText, matchType) {
             const r = emptyRow();
-            r[hProduct] = spLabel;
+            r[hProduct] = productLabel;
             r[hEntity] = ent.negKeyword;
             r[hOp] = op;
             r[hCampId] = campName;
@@ -960,7 +1654,7 @@ function generateExcel() {
 
         function addCampNegKeywordRow(campName, kwText, matchType) {
             const r = emptyRow();
-            r[hProduct] = spLabel;
+            r[hProduct] = productLabel;
             r[hEntity] = ent.negCampKeyword;
             r[hOp] = op;
             r[hCampId] = campName;
@@ -972,7 +1666,7 @@ function generateExcel() {
 
         function addProdTargetingRow(campName, adGroupName, expr, bid) {
             const r = emptyRow();
-            r[hProduct] = spLabel;
+            r[hProduct] = productLabel;
             r[hEntity] = ent.prodTargeting;
             r[hOp] = op;
             r[hCampId] = campName;
@@ -985,7 +1679,7 @@ function generateExcel() {
 
         function addNegProdTargetingRow(campName, adGroupName, asinVal) {
             const r = emptyRow();
-            r[hProduct] = spLabel;
+            r[hProduct] = productLabel;
             r[hEntity] = ent.negProdTargeting;
             r[hOp] = op;
             r[hCampId] = campName;
@@ -1053,6 +1747,12 @@ function generateExcel() {
                 });
                 // Also add negative product targeting for auto campaigns
                 negProdTargetList.forEach(asin => addNegProdTargetingRow(campName, adGroupName, asin));
+            }
+
+            // Cross-Negation: Brand KWs als Negative Broad, Generic Exact KWs als Negative Exact in Auto
+            if (document.getElementById('cross-neg-auto').checked) {
+                brandKws.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
+                genericKws.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
             }
         }
 
@@ -1177,34 +1877,231 @@ function generateExcel() {
                 }
             });
         }
+
+        // ========== SPONSORED DISPLAY CAMPAIGNS ==========
+        productLabel = 'Sponsored Display';
+
+        // ========== SD - PRODUCT TARGETING - BRAND ==========
+        if (document.getElementById('chk-sd-pt-brand').checked && brandAsinsList.length > 0) {
+            const bid = parseFloat(document.getElementById('bid-sd-pt-brand').value) || 0.50;
+            const budget = parseFloat(document.getElementById('budget-sd-pt-brand').value) || 1.00;
+            const campName = 'SD: Product Targeting (Brand) - ' + productName;
+            const adGroupName = 'ASIN';
+
+            // SD Campaign Row
+            const cr = emptyRow();
+            cr[hProduct] = productLabel;
+            cr[hEntity] = ent.campaign;
+            cr[hOp] = op;
+            cr[hCampId] = campName;
+            cr[hCampName] = campName;
+            cr[hStartDate] = startDate;
+            if (endDate) cr[hEndDate] = endDate;
+            if (portfolioId) cr[hPortfolioId] = portfolioId;
+            cr[hTargetType] = targetManual;
+            cr[hState] = state;
+            cr[hBudget] = budget;
+            cr[hBiddingStrat] = biddingStrategy;
+            rows.push(cr);
+
+            addAdGroupRow(campName, adGroupName, bid);
+            addProductAdRows(campName, adGroupName);
+
+            brandAsinsList.forEach(asin => {
+                addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
+            });
+        }
+
+        // ========== SD - PRODUCT TARGETING - COMPETITOR ==========
+        if (document.getElementById('chk-sd-pt-comp').checked && compAsinsList.length > 0) {
+            const bid = parseFloat(document.getElementById('bid-sd-pt-comp').value) || 0.50;
+            const budget = parseFloat(document.getElementById('budget-sd-pt-comp').value) || 1.00;
+
+            const chunks = splitIntoChunks(compAsinsList, compAsinAllocNum);
+            const totalChunks = chunks.length;
+
+            chunks.forEach((chunk, idx) => {
+                const splitLabel = totalChunks > 1 ? ' - ' + (idx + 1) + '/' + totalChunks : '';
+                const campName = 'SD: Product Targeting (Competitor)' + splitLabel + ' - ' + productName;
+                const adGroupName = 'ASIN';
+
+                const cr = emptyRow();
+                cr[hProduct] = productLabel;
+                cr[hEntity] = ent.campaign;
+                cr[hOp] = op;
+                cr[hCampId] = campName;
+                cr[hCampName] = campName;
+                cr[hStartDate] = startDate;
+                if (endDate) cr[hEndDate] = endDate;
+                if (portfolioId) cr[hPortfolioId] = portfolioId;
+                cr[hTargetType] = targetManual;
+                cr[hState] = state;
+                cr[hBudget] = budget;
+                cr[hBiddingStrat] = biddingStrategy;
+                rows.push(cr);
+
+                addAdGroupRow(campName, adGroupName, bid);
+                addProductAdRows(campName, adGroupName);
+
+                chunk.forEach(asin => {
+                    addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
+                });
+            });
+        }
     }); // end allProducts (product blocks) loop
 
     if (rows.length === 0) {
-        alert('Keine Kampagnen ausgewählt oder keine Keywords/ASINs eingegeben.');
+        errors.push('Keine Kampagnen ausgewählt oder keine Keywords/ASINs eingegeben.');
+        errorContainer.innerHTML = errors.map(e => '<div class="error-msg">' + e + '</div>').join('');
         return;
     }
 
-    // Build worksheet data
-    const wsData = [headers];
+    // Campaign duplicate check
+    const campNames = [];
+    const entCampName = t.campaign;
     rows.forEach(r => {
-        const row = headers.map(h => r[h] !== undefined ? r[h] : '');
-        wsData.push(row);
+        if (r[headers[1]] === entCampName && r[headers[9]]) campNames.push(r[headers[9]]);
+    });
+    const campCounts = {};
+    campNames.forEach(n => campCounts[n] = (campCounts[n] || 0) + 1);
+    const dupes = Object.entries(campCounts).filter(([, c]) => c > 1);
+    if (dupes.length > 0) {
+        dupes.forEach(([name, count]) => {
+            warnings.push('Kampagnenname "' + name + '" kommt ' + count + 'x vor.');
+        });
+    }
+
+    // Show warnings (non-blocking)
+    if (warnings.length > 0) {
+        errorContainer.innerHTML = warnings.map(w => '<div class="warn-msg">' + w + '</div>').join('');
+    }
+
+    // Show preview modal
+    showPreview(rows, headers, isDE, t);
+}
+
+function showPreview(rows, headers, isDE, t) {
+    // Calculate summary stats
+    const campaigns = new Set();
+    const adGroups = new Set();
+    let kwCount = 0, ptCount = 0;
+    const entCamp = t.campaign;
+    const entAG = t.adGroup;
+    const entKw = t.keyword;
+    const entPT = t.prodTargeting;
+    const hEntity = headers[1];
+    const hCampName = headers[9];
+    const hAdGroupName = headers[10];
+
+    rows.forEach(r => {
+        if (r[hEntity] === entCamp) campaigns.add(r[hCampName]);
+        if (r[hEntity] === entAG) adGroups.add(r[hCampName] + '|' + r[hAdGroupName]);
+        if (r[hEntity] === entKw) kwCount++;
+        if (r[hEntity] === entPT) ptCount++;
     });
 
-    const sheetName = isDE ? 'Sponsored Products-Kampagnen' : 'Sponsored Products Campaigns';
+    // Visible columns (skip empty ones)
+    const visibleCols = headers.filter(h => rows.some(r => r[h] !== '' && r[h] !== undefined));
+
+    // Build table rows (first 50)
+    const previewRows = rows.slice(0, 50);
+    const tableHead = visibleCols.map(h => '<th>' + h + '</th>').join('');
+    const tableBody = previewRows.map(r =>
+        '<tr>' + visibleCols.map(h => '<td>' + (r[h] !== undefined && r[h] !== '' ? r[h] : '') + '</td>').join('') + '</tr>'
+    ).join('');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'preview-overlay';
+    overlay.innerHTML = `
+        <div class="preview-modal">
+            <div class="preview-header">
+                <h3>Bulk Sheet Vorschau</h3>
+                <button class="btn-sm" onclick="closePreview()" style="font-size:18px;padding:4px 10px;">&times;</button>
+            </div>
+            <div class="preview-summary">
+                <div class="stat">Kampagnen: <strong>${campaigns.size}</strong></div>
+                <div class="stat">Anzeigengruppen: <strong>${adGroups.size}</strong></div>
+                <div class="stat">Keywords: <strong>${kwCount}</strong></div>
+                <div class="stat">Produkt-Targeting: <strong>${ptCount}</strong></div>
+                <div class="stat">Zeilen gesamt: <strong>${rows.length}</strong></div>
+            </div>
+            <div class="preview-body">
+                <table class="preview-table">
+                    <thead><tr>${tableHead}</tr></thead>
+                    <tbody>${tableBody}</tbody>
+                </table>
+            </div>
+            <div class="preview-footer">
+                <div class="info">${rows.length > 50 ? 'Vorschau zeigt 50 von ' + rows.length + ' Zeilen' : 'Alle ' + rows.length + ' Zeilen angezeigt'}</div>
+                <div style="display:flex;gap:10px;">
+                    <button class="btn btn-secondary" onclick="closePreview()">Abbrechen</button>
+                    <button class="btn btn-primary" id="btnDownload">Herunterladen</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Close on overlay click
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closePreview();
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') { closePreview(); document.removeEventListener('keydown', escHandler); }
+    });
+
+    // Download handler
+    document.getElementById('btnDownload').addEventListener('click', function() {
+        downloadExcel(rows, headers, isDE, t);
+        closePreview();
+    });
+}
+
+function closePreview() {
+    const overlay = document.querySelector('.preview-overlay');
+    if (overlay) overlay.remove();
+}
+
+function downloadExcel(rows, headers, isDE, t) {
+    const hProduct = headers[0];
+    const sdLabel = 'Sponsored Display';
+
+    const spRows = rows.filter(r => r[hProduct] !== sdLabel);
+    const sdRows = rows.filter(r => r[hProduct] === sdLabel);
+
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-    // Set column widths
-    ws['!cols'] = headers.map(() => ({ wch: 20 }));
+    if (spRows.length > 0) {
+        const spData = [headers, ...spRows.map(r => headers.map(h => r[h] !== undefined ? r[h] : ''))];
+        const spSheet = XLSX.utils.aoa_to_sheet(spData);
+        spSheet['!cols'] = headers.map(() => ({ wch: 20 }));
+        XLSX.utils.book_append_sheet(wb, spSheet, t.sheetSP);
+    }
 
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    if (sdRows.length > 0) {
+        const sdData = [headers, ...sdRows.map(r => headers.map(h => r[h] !== undefined ? r[h] : ''))];
+        const sdSheet = XLSX.utils.aoa_to_sheet(sdData);
+        sdSheet['!cols'] = headers.map(() => ({ wch: 20 }));
+        XLSX.utils.book_append_sheet(wb, sdSheet, t.sheetSD);
+    }
 
     const today = new Date();
     const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
     const fileName = 'Bulk-Upload ' + dateStr + '.xlsx';
-
     XLSX.writeFile(wb, fileName);
+    showSuccess('Bulk Sheet "' + fileName + '" erfolgreich erstellt (' + rows.length + ' Zeilen).');
+}
+
+function showSuccess(msg) {
+    const container = document.getElementById('errorContainer');
+    container.innerHTML = '<div class="success-msg">' + msg + '</div>';
+    setTimeout(() => {
+        const el = container.querySelector('.success-msg');
+        if (el) el.remove();
+    }, 4000);
 }
 </script>
 </body>

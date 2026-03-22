@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wasted Ad Spend - AdsMasters PPC Tools</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-hover: #1c2129;
+            --border: #30363d; --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #f85149; --error-bg: #f8514911;
+            --warn: #d29922; --warn-bg: #d2992211;
+            --success: #3fb950; --success-bg: #3fb95011;
+            --danger-soft: #f8514920;
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff; --bg-secondary: #f6f8fa; --bg-hover: #eef1f5;
+            --border: #d0d7de; --text-primary: #1f2328; --text-secondary: #656d76;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #cf222e; --error-bg: #cf222e11;
+            --warn: #9a6700; --warn-bg: #9a670011;
+            --success: #1a7f37; --success-bg: #1a7f3711;
+            --danger-soft: #cf222e15;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar-left { display: flex; align-items: center; gap: 32px; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-nav { display: flex; gap: 16px; }
+        .topbar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+        .topbar-nav a:hover { color: var(--text-primary); }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+
+        .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); }
+
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title .step { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+
+        label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; font-family: Arial, sans-serif; }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+        .field { margin-bottom: 14px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
+        .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; white-space: normal; max-width: 280px; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+        .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary)); }
+        .upload-zone .icon { font-size: 36px; margin-bottom: 10px; }
+        .upload-zone .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone .hint { font-size: 12px; color: var(--text-secondary); }
+        .upload-zone input { display: none; }
+        .file-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; margin-top: 12px; font-size: 13px; }
+        .file-info .name { flex: 1; font-weight: 600; }
+        .file-info .meta { color: var(--text-secondary); }
+        .file-info .remove { color: var(--error); cursor: pointer; font-weight: 700; }
+
+        .btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-sm { padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .btn-sm:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-danger { background: var(--error); color: #fff; border: none; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+
+        .toggle-group { display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+        .toggle-btn { flex: 1; padding: 8px 12px; background: var(--bg-primary); color: var(--text-secondary); border: none; font-size: 13px; cursor: pointer; text-align: center; font-weight: 600; }
+        .toggle-btn.active { background: var(--accent); color: #fff; }
+
+        /* Stats */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .stat-value { font-size: 22px; font-weight: 700; }
+        .stat-value.danger { color: var(--error); }
+        .stat-value.warn { color: var(--warn); }
+        .stat-value.success { color: var(--success); }
+
+        /* Results table */
+        .results-container { overflow-x: auto; }
+        .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+        .results-table th:hover { color: var(--text-primary); }
+        .results-table th .sort-icon { margin-left: 4px; font-size: 10px; }
+        .results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .results-table tr:hover td { background: var(--bg-hover); }
+        .results-table tr.selected td { background: var(--danger-soft); }
+        .results-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .results-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+        .results-table .wasted { color: var(--error); font-weight: 600; }
+
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+        .table-controls .left { display: flex; gap: 10px; align-items: center; }
+        .table-controls .right { display: flex; gap: 8px; align-items: center; }
+        .search-input { width: 220px; padding: 6px 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 12px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+
+        .error-msg { color: var(--error); font-size: 13px; padding: 8px 12px; border: 1px solid var(--error); border-radius: 6px; margin-bottom: 6px; background: var(--error-bg); }
+        .success-msg { color: var(--success); font-size: 13px; padding: 8px 12px; border: 1px solid var(--success); border-radius: 6px; margin-bottom: 6px; background: var(--success-bg); animation: fadeOut 0.5s ease 3s forwards; }
+        @keyframes fadeOut { to { opacity: 0; } }
+        .msg-container { margin-bottom: 16px; }
+
+        .hidden { display: none; }
+
+        /* Top 10 Bars */
+        .top10 { margin-bottom: 20px; }
+        .top10-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+        .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+        .bar-label { width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+        .bar-track { flex: 1; height: 20px; background: var(--bg-primary); border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, var(--error), #ff6b6b); border-radius: 4px; min-width: 2px; transition: width 0.4s; }
+        .bar-value { width: 80px; text-align: right; font-weight: 600; color: var(--error); flex-shrink: 0; }
+        .bar-row.asin .bar-fill { background: linear-gradient(90deg, var(--warn), #e8a317); }
+        .bar-row.asin .bar-value { color: var(--warn); }
+
+        /* Spend tiers */
+        .spend-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 20px; }
+        .tier-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 10px; text-align: center; }
+        .tier-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+        .tier-value { font-size: 16px; font-weight: 700; margin-top: 2px; }
+        .tier-count { font-size: 11px; color: var(--text-secondary); }
+
+        /* Pagination */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 12px; }
+        .pagination button { padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .pagination button:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .pagination button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+        .pagination .page-info { font-size: 12px; color: var(--text-secondary); }
+
+        /* Preset buttons */
+        .preset-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .preset-btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-secondary); }
+        .preset-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .preset-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        /* Live preview counter */
+        .live-counter { font-size: 13px; color: var(--accent); font-weight: 600; padding: 8px 0; }
+
+        /* Negatives upload */
+        .neg-upload-zone { border: 1px dashed var(--border); border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; font-size: 12px; color: var(--text-secondary); margin-top: 12px; transition: border-color 0.2s; }
+        .neg-upload-zone:hover { border-color: var(--accent); }
+
+        /* Campaign filter */
+        .campaign-filter { margin-bottom: 12px; }
+        .campaign-filter select { max-width: 300px; }
+
+        @media (max-width: 900px) { .field-row { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) {
+            .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+            .main { padding: 16px; }
+            .field-row { grid-template-columns: 1fr; }
+            .btn-row { flex-direction: column; }
+            .btn-row .btn { width: 100%; text-align: center; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+<script>
+    if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
+    // Theme
+    const saved = localStorage.getItem('ppc_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+</script>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <nav class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="campaign-creator.html">Kampagnen Ersteller</a>
+            <a href="help.html">Hilfe</a>
+        </nav>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9790;</button>
+        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <h1 class="page-title">Wasted Ad Spend Analyse</h1>
+        <p class="page-sub">Finde versteckten Wasted Ad Spend und generiere ein Negatives Keyword Bulk Sheet</p>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div class="card" id="stepUpload">
+        <div class="card-title"><span class="step">1</span> Search Term Reports hochladen</div>
+        <div class="upload-zone" id="uploadZone">
+            <div class="icon">&#128203;</div>
+            <div class="label">Search Term Report(s) hochladen</div>
+            <div class="hint">CSV oder Excel-Datei(en) hierher ziehen oder klicken — mehrere Dateien möglich</div>
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.tsv" multiple>
+        </div>
+        <div id="fileInfoContainer"></div>
+
+        <div class="neg-upload-zone" id="negUploadZone" onclick="document.getElementById('negFileInput').click()">
+            Bestehendes Bulk Sheet hochladen (optional) — bereits negierte Keywords werden markiert
+            <input type="file" id="negFileInput" accept=".csv,.xlsx,.xls,.tsv" style="display:none;">
+        </div>
+        <div id="negFileInfo"></div>
+        <div class="msg-container" id="uploadMsg"></div>
+    </div>
+
+    <!-- STEP 2: Filter Settings -->
+    <div class="card hidden" id="stepFilter">
+        <div class="card-title"><span class="step">2</span> Wasted Ad Spend definieren</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere, ab wann ein Suchbegriff als "Wasted Spend" gilt.</p>
+
+        <div class="preset-row">
+            <button class="preset-btn" onclick="applyPreset('conservative')">Konservativ (50+ Klicks)</button>
+            <button class="preset-btn active" onclick="applyPreset('moderate')">Moderat (20+ Klicks)</button>
+            <button class="preset-btn" onclick="applyPreset('aggressive')">Aggressiv (10+ Klicks)</button>
+        </div>
+
+        <div class="toggle-group" style="max-width:300px;">
+            <button class="toggle-btn active" onclick="setFilterMode('or')">ODER (einer reicht)</button>
+            <button class="toggle-btn" onclick="setFilterMode('and')">UND (alle müssen zutreffen)</button>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label><input type="checkbox" id="filterClicks" checked style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;"> Min. Klicks ohne Bestellung <span class="tooltip-icon" data-tip="Suchbegriffe mit mindestens X Klicks und 0 Bestellungen gelten als Wasted Spend.">?</span></label>
+                <input type="number" id="minClicks" value="20" min="1">
+            </div>
+            <div class="field">
+                <label><input type="checkbox" id="filterRoas" style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;"> Max. ROAS <span class="tooltip-icon" data-tip="Suchbegriffe mit ROAS unter diesem Wert gelten als Wasted Spend. Nur relevant wenn Bestellungen > 0.">?</span></label>
+                <input type="number" id="maxRoas" value="1.0" step="0.1" min="0">
+            </div>
+            <div class="field">
+                <label><input type="checkbox" id="filterAcos" style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;"> Min. ACoS (%) <span class="tooltip-icon" data-tip="Suchbegriffe mit ACoS über diesem Wert gelten als Wasted Spend.">?</span></label>
+                <input type="number" id="minAcos" value="100" step="1" min="0">
+            </div>
+        </div>
+        <div class="field-row">
+            <div class="field">
+                <label><input type="checkbox" id="filterSpend" style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;"> Min. Spend ohne Bestellung <span class="tooltip-icon" data-tip="Suchbegriffe mit mindestens X EUR Spend und 0 Bestellungen.">?</span></label>
+                <input type="number" id="minSpend" value="10" step="0.5" min="0">
+            </div>
+            <div class="field">
+                <label>Min. Impressionen <span class="tooltip-icon" data-tip="Nur Suchbegriffe mit mindestens X Impressionen berücksichtigen (filtert Noise raus).">?</span></label>
+                <input type="number" id="minImpressions" value="0" min="0">
+            </div>
+            <div class="field"></div>
+        </div>
+
+        <div class="live-counter" id="liveCounter"></div>
+        <div class="btn-row" style="justify-content:flex-start;">
+            <button class="btn btn-primary" onclick="analyzeData()">Analyse starten</button>
+        </div>
+    </div>
+
+    <!-- STEP 3: Results -->
+    <div class="card hidden" id="stepResults">
+        <div class="card-title"><span class="step">3</span> Ergebnisse</div>
+
+        <div class="stats-row" id="statsRow"></div>
+
+        <div id="spendTiers" class="spend-tiers"></div>
+
+        <div id="top10Container" class="top10"></div>
+
+        <div class="toggle-group" style="max-width:400px;margin-bottom:16px;">
+            <button class="toggle-btn active" onclick="setView('aggregated')">Aggregiert</button>
+            <button class="toggle-btn" onclick="setView('campaign')">Pro Kampagne</button>
+        </div>
+
+        <div class="campaign-filter" id="campaignFilterContainer"></div>
+
+        <div class="table-controls">
+            <div class="left">
+                <input type="text" class="search-input" id="searchInput" placeholder="Suchbegriff filtern..." oninput="currentPage=1;renderTable()">
+                <span style="font-size:12px;color:var(--text-secondary);" id="tableCount"></span>
+            </div>
+            <div class="right">
+                <button class="btn-sm" onclick="selectAll()">Alle auswählen</button>
+                <button class="btn-sm" onclick="deselectAll()">Keine auswählen</button>
+                <button class="btn-sm" onclick="selectFiltered()">Gefilterte auswählen</button>
+                <button class="btn-sm" onclick="exportAnalysis()">Analyse exportieren</button>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <table class="results-table" id="resultsTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+
+        <div class="msg-container" id="resultMsg" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- STEP 4: Export -->
+    <div class="card hidden" id="stepExport">
+        <div class="card-title"><span class="step">4</span> Negatives Bulk Sheet erstellen</div>
+        <div class="field-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+            <div class="field">
+                <label>Marketplace</label>
+                <select id="exportMarketplace">
+                    <option value="de">Deutschland (DE)</option>
+                    <option value="en">USA / UK (EN)</option>
+                    <option value="fr">Frankreich (FR)</option>
+                    <option value="it">Italien (IT)</option>
+                    <option value="es">Spanien (ES)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Negative Match Type</label>
+                <select id="exportMatchType">
+                    <option value="exact">Negative Exact</option>
+                    <option value="phrase">Negative Phrase</option>
+                    <option value="both">Beide (Exact + Phrase)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Ebene</label>
+                <select id="exportLevel">
+                    <option value="campaign">Kampagnen-Ebene</option>
+                    <option value="adgroup">Anzeigengruppen-Ebene</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" onclick="exportBulkSheet()" style="width:100%;">Bulk Sheet erstellen</button>
+            </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;" id="selectedCount">0 Keywords ausgewählt</div>
+    </div>
+</div>
+
+<script>
+// --- Theme ---
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('ppc_theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+    document.getElementById('themeToggle').innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';
+}
+document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'dark') === 'dark' ? '&#9788;' : '&#9790;';
+
+// --- Currency ---
+let detectedCurrency = 'EUR';
+const CURRENCY_MAP = { '€': 'EUR', '$': 'USD', '£': 'GBP' };
+function formatCurrency(val) {
+    return val.toLocaleString('de-DE', { style: 'currency', currency: detectedCurrency });
+}
+
+// --- Existing Negatives ---
+let existingNegatives = new Set();
+document.getElementById('negFileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    function extractNegatives(rows) {
+        existingNegatives.clear();
+        const headers = rows[0].map(c => String(c).toLowerCase().trim());
+        const kwIdx = headers.findIndex(h => h.includes('keyword') || h.includes('mot-cl') || h.includes('palabra') || h.includes('parola'));
+        const entityIdx = headers.findIndex(h => h.includes('entity') || h.includes('entit'));
+        if (kwIdx === -1) return;
+        for (let i = 1; i < rows.length; i++) {
+            const entity = entityIdx !== -1 ? String(rows[i][entityIdx] || '').toLowerCase() : '';
+            if (entity.includes('negat') || entityIdx === -1) {
+                const kw = String(rows[i][kwIdx] || '').trim().toLowerCase();
+                if (kw) existingNegatives.add(kw);
+            }
+        }
+        document.getElementById('negFileInfo').innerHTML = '<div class="file-info"><span class="name">' + escapeHtml(file.name) + '</span><span class="meta">' + existingNegatives.size + ' bestehende Negatives geladen</span><span class="remove" onclick="clearNegatives()">&times;</span></div>';
+    }
+    if (file.name.match(/\.(xlsx|xls)$/i)) {
+        reader.onload = function(evt) {
+            const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+            extractNegatives(rows);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.onload = function(evt) {
+            const sep = evt.target.result.includes('\t') ? '\t' : ',';
+            const rows = evt.target.result.split(/\r?\n/).filter(l => l.trim()).map(l => l.split(sep));
+            extractNegatives(rows);
+        };
+        reader.readAsText(file);
+    }
+});
+function clearNegatives() {
+    existingNegatives.clear();
+    document.getElementById('negFileInfo').innerHTML = '';
+    document.getElementById('negFileInput').value = '';
+}
+
+// --- State ---
+let rawData = [];
+let wastedData = [];
+let aggregatedData = [];
+let campaignData = [];
+let currentView = 'aggregated';
+let selectedTerms = new Set();
+let filterMode = 'or';
+let sortCol = 'spend';
+let sortDir = 'desc';
+let currentPage = 1;
+const PAGE_SIZE = 100;
+let campaignFilter = '';
+
+// --- Column mapping (auto-detect) ---
+const COL_ALIASES = {
+    campaign: ['campaign name', 'kampagnenname', 'nom de la campagne', 'nombre de la campaña', 'nome campagna', 'campaign'],
+    adgroup: ['ad group name', 'name der anzeigengruppe', 'nom du groupe d\'annonces', 'nombre del grupo de anuncios', 'nome gruppo di annunci', 'ad group'],
+    searchterm: ['customer search term', 'suchbegriff des kunden', 'terme de recherche client', 'término de búsqueda del cliente', 'termine di ricerca del cliente', 'search term', 'query'],
+    impressions: ['impressions', 'impressionen'],
+    clicks: ['clicks', 'klicks', 'clics', 'clic'],
+    spend: ['spend', 'ausgaben', 'dépenses', 'gasto', 'spesa', 'cost'],
+    sales: ['7 day total sales', '7-day total sales', 'total sales', 'umsatz', 'gesamtumsatz', 'verkäufe', 'sales', 'ventes', 'ventas', 'vendite', '7 day total sales (€)', '7 day total sales ($)'],
+    orders: ['7 day total orders', '7-day total orders', 'total orders', 'bestellungen', '7 day total orders (#)', 'orders', 'commandes', 'pedidos', 'ordini'],
+    acos: ['total advertising cost of sales (acos)', 'acos', 'acos total'],
+    matchtype: ['match type', 'übereinstimmungstyp', 'type de correspondance', 'tipo de coincidencia', 'tipo di corrispondenza']
+};
+
+function findCol(headers, key) {
+    const aliases = COL_ALIASES[key] || [];
+    const lower = headers.map(h => h.toLowerCase().trim());
+    for (const alias of aliases) {
+        const idx = lower.indexOf(alias);
+        if (idx !== -1) return idx;
+    }
+    // Partial match
+    for (const alias of aliases) {
+        const idx = lower.findIndex(h => h.includes(alias));
+        if (idx !== -1) return idx;
+    }
+    return -1;
+}
+
+// --- Upload ---
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('drag-over');
+    for (const f of e.dataTransfer.files) processFile(f, e.dataTransfer.files.length > 1);
+});
+fileInput.addEventListener('change', e => {
+    for (const f of e.target.files) processFile(f, e.target.files.length > 1);
+});
+
+let uploadedFiles = [];
+function processFile(file, isMulti) {
+    const reader = new FileReader();
+    const msgEl = document.getElementById('uploadMsg');
+    msgEl.innerHTML = '';
+
+    if (file.name.match(/\.(xlsx|xls)$/i)) {
+        reader.onload = function(evt) {
+            const data = new Uint8Array(evt.target.result);
+            const wb = XLSX.read(data, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+            handleParsedData(rows, file);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.onload = function(evt) {
+            const text = evt.target.result;
+            const sep = text.includes('\t') ? '\t' : ',';
+            const rows = text.split(/\r?\n/).filter(l => l.trim()).map(line => {
+                // Simple CSV parse (handles quoted fields)
+                const result = [];
+                let current = '', inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const ch = line[i];
+                    if (ch === '"') { inQuotes = !inQuotes; continue; }
+                    if (ch === sep && !inQuotes) { result.push(current.trim()); current = ''; continue; }
+                    current += ch;
+                }
+                result.push(current.trim());
+                return result;
+            });
+            handleParsedData(rows, file);
+        };
+        reader.readAsText(file);
+    }
+}
+
+function handleParsedData(rows, file) {
+    const msgEl = document.getElementById('uploadMsg');
+    if (rows.length < 2) {
+        msgEl.innerHTML = '<div class="error-msg">Datei enthält keine Daten.</div>';
+        return;
+    }
+
+    // Find header row (skip Amazon report metadata rows)
+    let headerIdx = 0;
+    for (let i = 0; i < Math.min(rows.length, 10); i++) {
+        const row = rows[i].map(c => String(c).toLowerCase().trim());
+        if (row.some(c => COL_ALIASES.searchterm.some(a => c.includes(a))) ||
+            row.some(c => COL_ALIASES.campaign.some(a => c.includes(a)))) {
+            headerIdx = i;
+            break;
+        }
+    }
+
+    const headers = rows[headerIdx].map(c => String(c));
+    const colMap = {};
+    for (const key of Object.keys(COL_ALIASES)) {
+        colMap[key] = findCol(headers, key);
+    }
+
+    // Validate required columns
+    const missing = [];
+    if (colMap.campaign === -1) missing.push('Campaign Name');
+    if (colMap.searchterm === -1) missing.push('Search Term');
+    if (colMap.clicks === -1) missing.push('Clicks');
+    if (colMap.spend === -1) missing.push('Spend');
+
+    if (missing.length > 0) {
+        msgEl.innerHTML = '<div class="error-msg">Fehlende Spalten: ' + missing.join(', ') + '. Bitte einen gültigen Search Term Report hochladen.</div>';
+        return;
+    }
+
+    // Detect currency from header names or values
+    headers.forEach(h => {
+        for (const [symbol, code] of Object.entries(CURRENCY_MAP)) {
+            if (h.includes(symbol)) { detectedCurrency = code; return; }
+        }
+    });
+    // Also check first data row for currency symbols
+    if (rows.length > headerIdx + 1) {
+        const firstRow = rows[headerIdx + 1];
+        [colMap.spend, colMap.sales].forEach(idx => {
+            if (idx === -1) return;
+            const val = String(firstRow[idx] || '');
+            for (const [symbol, code] of Object.entries(CURRENCY_MAP)) {
+                if (val.includes(symbol)) { detectedCurrency = code; return; }
+            }
+        });
+    }
+
+    // Parse data rows (append to existing for multi-file)
+    let newCount = 0;
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || r.length < 3) continue;
+        const searchTerm = String(r[colMap.searchterm] || '').trim();
+        if (!searchTerm) continue;
+
+        const isAsin = /^B0[A-Z0-9]{8}$/i.test(searchTerm) || /^b0/i.test(searchTerm);
+
+        rawData.push({
+            campaign: String(r[colMap.campaign] || '').trim(),
+            adgroup: colMap.adgroup !== -1 ? String(r[colMap.adgroup] || '').trim() : '',
+            searchterm: searchTerm,
+            matchtype: colMap.matchtype !== -1 ? String(r[colMap.matchtype] || '').trim() : '',
+            impressions: parseNum(r[colMap.impressions]),
+            clicks: parseNum(r[colMap.clicks]),
+            spend: parseNum(r[colMap.spend]),
+            sales: colMap.sales !== -1 ? parseNum(r[colMap.sales]) : 0,
+            orders: colMap.orders !== -1 ? parseNum(r[colMap.orders]) : 0,
+            isAsin: isAsin,
+        });
+        newCount++;
+    }
+
+    if (rawData.length === 0) {
+        msgEl.innerHTML = '<div class="error-msg">Keine gültigen Datenzeilen gefunden.</div>';
+        return;
+    }
+
+    // Track uploaded files
+    uploadedFiles.push({ name: file.name, count: newCount });
+    document.getElementById('fileInfoContainer').innerHTML = uploadedFiles.map((f, i) =>
+        `<div class="file-info"><span class="name">${escapeHtml(f.name)}</span><span class="meta">${f.count} Einträge</span>${i === uploadedFiles.length - 1 ? '<span class="remove" onclick="clearFile()">&times; Alle entfernen</span>' : ''}</div>`
+    ).join('');
+
+    // Show step 2
+    document.getElementById('stepFilter').classList.remove('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+    document.getElementById('stepExport').classList.add('hidden');
+    updateLiveCounter();
+}
+
+function parseNum(val) {
+    if (val === undefined || val === null || val === '') return 0;
+    const s = String(val).replace(/[^0-9.,\-]/g, '').replace(',', '.');
+    return parseFloat(s) || 0;
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function clearFile() {
+    rawData = [];
+    wastedData = [];
+    uploadedFiles = [];
+    document.getElementById('fileInfoContainer').innerHTML = '';
+    document.getElementById('stepFilter').classList.add('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+    document.getElementById('stepExport').classList.add('hidden');
+    fileInput.value = '';
+}
+
+// --- Filter Mode ---
+function setFilterMode(mode) {
+    filterMode = mode;
+    document.querySelectorAll('#stepFilter .toggle-btn').forEach((b, i) => {
+        b.classList.toggle('active', (i === 0 && mode === 'or') || (i === 1 && mode === 'and'));
+    });
+}
+
+// --- Presets ---
+function applyPreset(type) {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    const presets = {
+        conservative: { clicks: 50, roas: 0.5, acos: 150, spend: 20, useClicks: true, useRoas: false, useAcos: false, useSpend: false },
+        moderate: { clicks: 20, roas: 1.0, acos: 100, spend: 10, useClicks: true, useRoas: false, useAcos: false, useSpend: false },
+        aggressive: { clicks: 10, roas: 1.5, acos: 70, spend: 5, useClicks: true, useRoas: false, useAcos: false, useSpend: true }
+    };
+    const p = presets[type];
+    document.getElementById('minClicks').value = p.clicks;
+    document.getElementById('maxRoas').value = p.roas;
+    document.getElementById('minAcos').value = p.acos;
+    document.getElementById('minSpend').value = p.spend;
+    document.getElementById('filterClicks').checked = p.useClicks;
+    document.getElementById('filterRoas').checked = p.useRoas;
+    document.getElementById('filterAcos').checked = p.useAcos;
+    document.getElementById('filterSpend').checked = p.useSpend;
+    updateLiveCounter();
+}
+
+// --- Live Counter ---
+function getFilteredCount() {
+    const useClicks = document.getElementById('filterClicks').checked;
+    const useRoas = document.getElementById('filterRoas').checked;
+    const useAcos = document.getElementById('filterAcos').checked;
+    const useSpend = document.getElementById('filterSpend').checked;
+    const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
+    const maxRoas = parseFloat(document.getElementById('maxRoas').value) || 0;
+    const minAcos = parseFloat(document.getElementById('minAcos').value) || 0;
+    const minSpend = parseFloat(document.getElementById('minSpend').value) || 0;
+    const minImpressions = parseInt(document.getElementById('minImpressions').value) || 0;
+
+    return rawData.filter(row => {
+        if (row.impressions < minImpressions) return false;
+        const checks = [];
+        if (useClicks) checks.push(row.clicks >= minClicks && row.orders === 0);
+        if (useRoas && row.orders > 0) checks.push(row.spend > 0 && (row.sales / row.spend) < maxRoas);
+        if (useAcos && row.orders > 0 && row.spend > 0) checks.push((row.spend / row.sales * 100) > minAcos);
+        if (useSpend) checks.push(row.spend >= minSpend && row.orders === 0);
+        if (checks.length === 0) return false;
+        return filterMode === 'or' ? checks.some(c => c) : checks.every(c => c);
+    }).length;
+}
+
+function updateLiveCounter() {
+    if (rawData.length === 0) return;
+    const count = getFilteredCount();
+    const total = rawData.length;
+    document.getElementById('liveCounter').textContent = count + ' von ' + total + ' Suchbegriffen betroffen (' + (count / total * 100).toFixed(1) + '%)';
+}
+
+// Live counter on filter change
+document.addEventListener('DOMContentLoaded', function() {
+    ['filterClicks', 'filterRoas', 'filterAcos', 'filterSpend', 'minClicks', 'maxRoas', 'minAcos', 'minSpend', 'minImpressions'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateLiveCounter);
+        document.getElementById(id).addEventListener('change', updateLiveCounter);
+    });
+});
+
+// --- Analysis ---
+function analyzeData() {
+    const useClicks = document.getElementById('filterClicks').checked;
+    const useRoas = document.getElementById('filterRoas').checked;
+    const useAcos = document.getElementById('filterAcos').checked;
+    const useSpend = document.getElementById('filterSpend').checked;
+    const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
+    const maxRoas = parseFloat(document.getElementById('maxRoas').value) || 0;
+    const minAcos = parseFloat(document.getElementById('minAcos').value) || 0;
+    const minSpend = parseFloat(document.getElementById('minSpend').value) || 0;
+    const minImpressions = parseInt(document.getElementById('minImpressions').value) || 0;
+
+    wastedData = rawData.filter(row => {
+        // Base filter: min impressions
+        if (row.impressions < minImpressions) return false;
+
+        const checks = [];
+
+        if (useClicks) checks.push(row.clicks >= minClicks && row.orders === 0);
+        if (useRoas && row.orders > 0) checks.push(row.spend > 0 && (row.sales / row.spend) < maxRoas);
+        if (useAcos && row.orders > 0 && row.spend > 0) checks.push((row.spend / row.sales * 100) > minAcos);
+        if (useSpend) checks.push(row.spend >= minSpend && row.orders === 0);
+
+        if (checks.length === 0) return false;
+
+        return filterMode === 'or' ? checks.some(c => c) : checks.every(c => c);
+    });
+
+    // Build aggregated view
+    const aggMap = {};
+    wastedData.forEach(row => {
+        const key = row.searchterm.toLowerCase();
+        if (!aggMap[key]) {
+            aggMap[key] = { searchterm: row.searchterm, impressions: 0, clicks: 0, spend: 0, sales: 0, orders: 0, campaigns: new Set(), isAsin: row.isAsin || false };
+        }
+        aggMap[key].impressions += row.impressions;
+        aggMap[key].clicks += row.clicks;
+        aggMap[key].spend += row.spend;
+        aggMap[key].sales += row.sales;
+        aggMap[key].orders += row.orders;
+        aggMap[key].campaigns.add(row.campaign);
+    });
+    aggregatedData = Object.values(aggMap).map(a => ({
+        ...a, campaignCount: a.campaigns.size, campaignList: [...a.campaigns].join(', ')
+    }));
+
+    campaignData = wastedData.map(row => ({
+        ...row,
+        key: row.campaign + '|' + row.adgroup + '|' + row.searchterm
+    }));
+
+    // Mark existing negatives
+    aggregatedData.forEach(a => {
+        a.alreadyNegated = existingNegatives.has(a.searchterm.toLowerCase());
+    });
+    campaignData.forEach(r => {
+        r.alreadyNegated = existingNegatives.has(r.searchterm.toLowerCase());
+    });
+
+    // Select all non-negated by default
+    selectedTerms.clear();
+    if (currentView === 'aggregated') {
+        aggregatedData.filter(r => !r.alreadyNegated).forEach(r => selectedTerms.add(r.searchterm.toLowerCase()));
+    } else {
+        campaignData.filter(r => !r.alreadyNegated).forEach(r => selectedTerms.add(r.key));
+    }
+
+    currentPage = 1;
+    campaignFilter = '';
+
+    // Show results
+    renderStats();
+    renderSpendTiers();
+    renderTop10();
+    renderCampaignFilter();
+    renderTable();
+    document.getElementById('stepResults').classList.remove('hidden');
+    document.getElementById('stepExport').classList.remove('hidden');
+    document.getElementById('stepResults').scrollIntoView({ behavior: 'smooth' });
+}
+
+// --- Stats ---
+function renderStats() {
+    const totalSpend = wastedData.reduce((s, r) => s + r.spend, 0);
+    const totalClicks = wastedData.reduce((s, r) => s + r.clicks, 0);
+    const uniqueTerms = new Set(wastedData.map(r => r.searchterm.toLowerCase())).size;
+    const uniqueCampaigns = new Set(wastedData.map(r => r.campaign)).size;
+    const totalReportSpend = rawData.reduce((s, r) => s + r.spend, 0);
+    const pct = totalReportSpend > 0 ? (totalSpend / totalReportSpend * 100).toFixed(1) : 0;
+
+    const asinCount = new Set(wastedData.filter(r => r.isAsin).map(r => r.searchterm.toLowerCase())).size;
+    const kwCount = uniqueTerms - asinCount;
+
+    document.getElementById('statsRow').innerHTML = `
+        <div class="stat-card"><div class="stat-label">Wasted Spend</div><div class="stat-value danger">${formatCurrency(totalSpend)}</div></div>
+        <div class="stat-card"><div class="stat-label">Anteil am Gesamtspend</div><div class="stat-value warn">${pct}%</div></div>
+        <div class="stat-card"><div class="stat-label">Wasted Klicks</div><div class="stat-value">${totalClicks.toLocaleString('de-DE')}</div></div>
+        <div class="stat-card"><div class="stat-label">Suchbegriffe</div><div class="stat-value">${kwCount}</div></div>
+        <div class="stat-card"><div class="stat-label">ASINs</div><div class="stat-value">${asinCount}</div></div>
+        <div class="stat-card"><div class="stat-label">Kampagnen</div><div class="stat-value">${uniqueCampaigns}</div></div>
+    `;
+}
+
+// --- Spend Tiers ---
+function renderSpendTiers() {
+    const tiers = [
+        { label: '> 10 ' + detectedCurrency, min: 10, max: Infinity },
+        { label: '5-10 ' + detectedCurrency, min: 5, max: 10 },
+        { label: '2-5 ' + detectedCurrency, min: 2, max: 5 },
+        { label: '< 2 ' + detectedCurrency, min: 0, max: 2 },
+    ];
+    const container = document.getElementById('spendTiers');
+    container.innerHTML = tiers.map(tier => {
+        const items = aggregatedData.filter(r => r.spend >= tier.min && r.spend < tier.max);
+        const totalSpend = items.reduce((s, r) => s + r.spend, 0);
+        return `<div class="tier-card"><div class="tier-label">${tier.label}</div><div class="tier-value">${formatCurrency(totalSpend)}</div><div class="tier-count">${items.length} Suchbegriffe</div></div>`;
+    }).join('');
+}
+
+// --- Top 10 ---
+function renderTop10() {
+    const sorted = [...aggregatedData].sort((a, b) => b.spend - a.spend).slice(0, 10);
+    if (sorted.length === 0) { document.getElementById('top10Container').innerHTML = ''; return; }
+    const maxSpend = sorted[0].spend || 1;
+    document.getElementById('top10Container').innerHTML =
+        '<div class="top10-title">Top 10 Wasted Suchbegriffe</div>' +
+        sorted.map(r => {
+            const pct = (r.spend / maxSpend * 100).toFixed(0);
+            const cls = r.isAsin ? ' asin' : '';
+            return `<div class="bar-row${cls}"><div class="bar-label" title="${escapeHtml(r.searchterm)}">${escapeHtml(r.searchterm)}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><div class="bar-value">${formatCurrency(r.spend)}</div></div>`;
+        }).join('');
+}
+
+// --- Campaign Filter ---
+function renderCampaignFilter() {
+    const campaigns = [...new Set(wastedData.map(r => r.campaign))].sort();
+    if (campaigns.length <= 1) { document.getElementById('campaignFilterContainer').innerHTML = ''; return; }
+    document.getElementById('campaignFilterContainer').innerHTML =
+        '<div class="campaign-filter"><label>Kampagnen-Filter</label><select onchange="campaignFilter=this.value;currentPage=1;renderTable()"><option value="">Alle Kampagnen (' + campaigns.length + ')</option>' +
+        campaigns.map(c => '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>').join('') + '</select></div>';
+}
+
+// --- View Toggle ---
+function setView(view) {
+    currentView = view;
+    document.querySelectorAll('#stepResults .toggle-btn').forEach((b, i) => {
+        b.classList.toggle('active', (i === 0 && view === 'aggregated') || (i === 1 && view === 'campaign'));
+    });
+    selectedTerms.clear();
+    if (view === 'aggregated') {
+        aggregatedData.filter(r => !r.alreadyNegated).forEach(r => selectedTerms.add(r.searchterm.toLowerCase()));
+    } else {
+        campaignData.filter(r => !r.alreadyNegated).forEach(r => selectedTerms.add(r.key));
+    }
+    sortCol = 'spend';
+    sortDir = 'desc';
+    currentPage = 1;
+    renderTable();
+}
+
+// --- Table Rendering ---
+function renderTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    const thead = document.getElementById('tableHead');
+    const tbody = document.getElementById('tableBody');
+
+    let data, columns, keyFn;
+
+    if (currentView === 'aggregated') {
+        columns = [
+            { id: 'select', label: '', sortable: false },
+            { id: 'searchterm', label: 'Suchbegriff', sortable: true },
+            { id: 'spend', label: 'Spend', sortable: true, num: true },
+            { id: 'clicks', label: 'Klicks', sortable: true, num: true },
+            { id: 'impressions', label: 'Impressionen', sortable: true, num: true },
+            { id: 'orders', label: 'Bestellungen', sortable: true, num: true },
+            { id: 'sales', label: 'Umsatz', sortable: true, num: true },
+            { id: 'campaignCount', label: 'Kampagnen', sortable: true, num: true },
+        ];
+        data = aggregatedData.filter(r => !search || r.searchterm.toLowerCase().includes(search));
+        keyFn = r => r.searchterm.toLowerCase();
+    } else {
+        columns = [
+            { id: 'select', label: '', sortable: false },
+            { id: 'searchterm', label: 'Suchbegriff', sortable: true },
+            { id: 'campaign', label: 'Kampagne', sortable: true },
+            { id: 'adgroup', label: 'Anzeigengruppe', sortable: true },
+            { id: 'spend', label: 'Spend', sortable: true, num: true },
+            { id: 'clicks', label: 'Klicks', sortable: true, num: true },
+            { id: 'impressions', label: 'Impressionen', sortable: true, num: true },
+            { id: 'orders', label: 'Bestellungen', sortable: true, num: true },
+            { id: 'sales', label: 'Umsatz', sortable: true, num: true },
+        ];
+        data = campaignData.filter(r => !search || r.searchterm.toLowerCase().includes(search) || r.campaign.toLowerCase().includes(search));
+        keyFn = r => r.key;
+    }
+
+    // Sort
+    data.sort((a, b) => {
+        let va = a[sortCol], vb = b[sortCol];
+        if (typeof va === 'string') va = va.toLowerCase();
+        if (typeof vb === 'string') vb = vb.toLowerCase();
+        if (va < vb) return sortDir === 'asc' ? -1 : 1;
+        if (va > vb) return sortDir === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    // Header
+    thead.innerHTML = '<tr>' + columns.map(col => {
+        const arrow = col.id === sortCol ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
+        const onclick = col.sortable ? ` onclick="sortTable('${col.id}')"` : '';
+        return `<th${onclick}>${col.label}<span class="sort-icon">${arrow}</span></th>`;
+    }).join('') + '</tr>';
+
+    // Campaign filter
+    if (campaignFilter) {
+        if (currentView === 'aggregated') {
+            data = data.filter(r => {
+                const entries = wastedData.filter(w => w.searchterm.toLowerCase() === r.searchterm.toLowerCase());
+                return entries.some(e => e.campaign === campaignFilter);
+            });
+        } else {
+            data = data.filter(r => r.campaign === campaignFilter);
+        }
+    }
+
+    const totalFiltered = data.length;
+
+    // Pagination
+    const totalPages = Math.ceil(data.length / PAGE_SIZE);
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const pageData = data.slice(startIdx, startIdx + PAGE_SIZE);
+
+    // Heatmap: find max spend for color scaling
+    const maxSpend = data.length > 0 ? Math.max(...data.map(r => r.spend)) : 1;
+
+    // Body
+    tbody.innerHTML = pageData.map(row => {
+        const key = keyFn(row);
+        const checked = selectedTerms.has(key) ? 'checked' : '';
+        const selectedClass = selectedTerms.has(key) ? ' selected' : '';
+        const negatedClass = row.alreadyNegated ? ' already-negated' : '';
+        const negatedTitle = row.alreadyNegated ? ' title="Bereits negiert"' : '';
+        let cells = columns.map(col => {
+            if (col.id === 'select') return `<td><input type="checkbox" ${checked} onchange="toggleSelect('${escapeHtml(key)}', this.checked)"></td>`;
+            if (col.id === 'spend') {
+                const intensity = Math.min(row.spend / maxSpend, 1);
+                const r = Math.round(200 + intensity * 55), g = Math.round(80 - intensity * 40), b = Math.round(80 - intensity * 40);
+                const style = intensity > 0.05 ? ` style="color:rgb(${r},${g},${b});font-weight:600"` : '';
+                return `<td class="num"${style}>${formatCurrency(row.spend)}</td>`;
+            }
+            if (col.id === 'sales') return `<td class="num">${formatCurrency(row[col.id])}</td>`;
+            if (col.id === 'searchterm') {
+                const badge = row.isAsin ? ' <span style="font-size:10px;background:var(--warn-bg);color:var(--warn);padding:1px 5px;border-radius:3px;">ASIN</span>' : '';
+                const negBadge = row.alreadyNegated ? ' <span style="font-size:10px;background:var(--success-bg);color:var(--success);padding:1px 5px;border-radius:3px;">Negiert</span>' : '';
+                return `<td${negatedTitle}>${escapeHtml(String(row.searchterm))}${badge}${negBadge}</td>`;
+            }
+            if (col.num) return `<td class="num">${typeof row[col.id] === 'number' ? row[col.id].toLocaleString('de-DE') : row[col.id]}</td>`;
+            return `<td>${escapeHtml(String(row[col.id] || ''))}</td>`;
+        }).join('');
+        return `<tr class="${selectedClass}${negatedClass}">${cells}</tr>`;
+    }).join('');
+
+    document.getElementById('tableCount').textContent = totalFiltered + ' von ' + (currentView === 'aggregated' ? aggregatedData.length : campaignData.length) + ' Einträgen';
+    updateSelectedCount();
+    renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+    const container = document.getElementById('pagination');
+    if (totalPages <= 1) { container.innerHTML = ''; return; }
+    let html = '<button ' + (currentPage <= 1 ? 'disabled' : '') + ' onclick="currentPage--;renderTable();">&laquo;</button>';
+    const start = Math.max(1, currentPage - 3);
+    const end = Math.min(totalPages, currentPage + 3);
+    if (start > 1) html += '<button onclick="currentPage=1;renderTable();">1</button><span class="page-info">...</span>';
+    for (let i = start; i <= end; i++) {
+        html += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="currentPage=' + i + ';renderTable();">' + i + '</button>';
+    }
+    if (end < totalPages) html += '<span class="page-info">...</span><button onclick="currentPage=' + totalPages + ';renderTable();">' + totalPages + '</button>';
+    html += '<button ' + (currentPage >= totalPages ? 'disabled' : '') + ' onclick="currentPage++;renderTable();">&raquo;</button>';
+    html += '<span class="page-info">Seite ' + currentPage + ' von ' + totalPages + '</span>';
+    container.innerHTML = html;
+}
+
+function sortTable(col) {
+    if (sortCol === col) {
+        sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortCol = col;
+        sortDir = col === 'searchterm' || col === 'campaign' || col === 'adgroup' ? 'asc' : 'desc';
+    }
+    renderTable();
+}
+
+function toggleSelect(key, checked) {
+    if (checked) selectedTerms.add(key); else selectedTerms.delete(key);
+    updateSelectedCount();
+    // Update row class without full re-render
+}
+
+function selectAll() {
+    if (currentView === 'aggregated') {
+        aggregatedData.forEach(r => selectedTerms.add(r.searchterm.toLowerCase()));
+    } else {
+        campaignData.forEach(r => selectedTerms.add(r.key));
+    }
+    renderTable();
+}
+
+function deselectAll() {
+    selectedTerms.clear();
+    renderTable();
+}
+
+function selectFiltered() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    if (!search) return selectAll();
+    if (currentView === 'aggregated') {
+        aggregatedData.filter(r => r.searchterm.toLowerCase().includes(search)).forEach(r => selectedTerms.add(r.searchterm.toLowerCase()));
+    } else {
+        campaignData.filter(r => r.searchterm.toLowerCase().includes(search) || r.campaign.toLowerCase().includes(search)).forEach(r => selectedTerms.add(r.key));
+    }
+    renderTable();
+}
+
+function updateSelectedCount() {
+    document.getElementById('selectedCount').textContent = selectedTerms.size + ' Keywords ausgewählt';
+}
+
+// --- Marketplace Translations ---
+const TRANSLATIONS = {
+    de: {
+        negKeyword: 'Negatives Keyword', negCampKeyword: 'Negatives Kampagnen-Keyword',
+        negExact: 'Negativ Genau Passend', negPhrase: 'Negativ Wortgruppe',
+        create: 'Erstellen', enabled: 'Aktiviert', product: 'Gesponserte Produkte',
+        headers: ['Produkt', 'Entität', 'Operation', 'Kampagnen-ID', 'Anzeigengruppen-ID', 'Portfolio-ID', 'Anzeigen-ID', 'Keyword-ID', 'Produkt-Targeting-ID', 'Kampagnenname', 'Name der Anzeigengruppe', 'Startdatum', 'Enddatum', 'Targeting-Typ', 'Zustand', 'Tagesbudget', 'SKU', 'ASIN', 'Standardgebot für die Anzeigengruppe', 'Gebot', 'Keyword-Text', 'Übereinstimmungstyp', 'Gebotsstrategie', 'Platzierung', 'Prozentsatz', 'Ausdruck für Produkt-Targeting'],
+        sheet: 'Negative Keywords'
+    },
+    en: {
+        negKeyword: 'Negative Keyword', negCampKeyword: 'Campaign Negative Keyword',
+        negExact: 'Negative Exact', negPhrase: 'Negative Phrase',
+        create: 'Create', enabled: 'Enabled', product: 'Sponsored Products',
+        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'],
+        sheet: 'Negative Keywords'
+    },
+    fr: {
+        negKeyword: 'Mot-clé négatif', negCampKeyword: 'Mot-clé négatif de campagne',
+        negExact: 'Expression exacte - négatif', negPhrase: 'Expression - négatif',
+        create: 'Créer', enabled: 'Activé', product: 'Produits sponsorisés',
+        headers: ['Produit', 'Entité', 'Opération', 'ID de la campagne', 'ID du groupe d\'annonces', 'ID du portefeuille', 'ID de l\'annonce', 'ID du mot-clé', 'ID du ciblage de produit', 'Nom de la campagne', 'Nom du groupe d\'annonces', 'Date de début', 'Date de fin', 'Type de ciblage', 'État', 'Budget quotidien', 'SKU', 'ASIN', 'Enchère par défaut du groupe d\'annonces', 'Enchère', 'Texte du mot-clé', 'Type de correspondance', 'Stratégie d\'enchères', 'Emplacement', 'Pourcentage', 'Expression de ciblage de produit'],
+        sheet: 'Mots-clés négatifs'
+    },
+    it: {
+        negKeyword: 'Parola chiave negativa', negCampKeyword: 'Parola chiave negativa della campagna',
+        negExact: 'Corrispondenza esatta negativa', negPhrase: 'Corrispondenza a frase negativa',
+        create: 'Crea', enabled: 'Abilitato', product: 'Prodotti sponsorizzati',
+        headers: ['Prodotto', 'Entità', 'Operazione', 'ID campagna', 'ID gruppo di annunci', 'ID portafoglio', 'ID annuncio', 'ID parola chiave', 'ID targeting di prodotto', 'Nome campagna', 'Nome gruppo di annunci', 'Data di inizio', 'Data di fine', 'Tipo di targeting', 'Stato', 'Budget giornaliero', 'SKU', 'ASIN', 'Offerta predefinita del gruppo di annunci', 'Offerta', 'Testo parola chiave', 'Tipo di corrispondenza', 'Strategia di offerta', 'Posizionamento', 'Percentuale', 'Espressione di targeting di prodotto'],
+        sheet: 'Parole chiave negative'
+    },
+    es: {
+        negKeyword: 'Palabra clave negativa', negCampKeyword: 'Palabra clave negativa de campaña',
+        negExact: 'Coincidencia exacta negativa', negPhrase: 'Coincidencia de frase negativa',
+        create: 'Crear', enabled: 'Habilitado', product: 'Productos patrocinados',
+        headers: ['Producto', 'Entidad', 'Operación', 'ID de campaña', 'ID de grupo de anuncios', 'ID de portafolio', 'ID de anuncio', 'ID de palabra clave', 'ID de segmentación de producto', 'Nombre de la campaña', 'Nombre del grupo de anuncios', 'Fecha de inicio', 'Fecha de fin', 'Tipo de segmentación', 'Estado', 'Presupuesto diario', 'SKU', 'ASIN', 'Puja predeterminada del grupo de anuncios', 'Puja', 'Texto de palabra clave', 'Tipo de coincidencia', 'Estrategia de pujas', 'Ubicación', 'Porcentaje', 'Expresión de segmentación de producto'],
+        sheet: 'Palabras clave negativas'
+    }
+};
+
+// --- Export ---
+function exportBulkSheet() {
+    if (selectedTerms.size === 0) {
+        document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Keywords ausgewählt.</div>';
+        return;
+    }
+
+    const marketplace = document.getElementById('exportMarketplace').value;
+    const matchType = document.getElementById('exportMatchType').value;
+    const level = document.getElementById('exportLevel').value;
+    const t = TRANSLATIONS[marketplace] || TRANSLATIONS['de'];
+    const headers = t.headers;
+
+    function emptyRow() {
+        const r = {};
+        headers.forEach(h => r[h] = '');
+        return r;
+    }
+
+    const hProduct = headers[0], hEntity = headers[1], hOp = headers[2], hCampId = headers[3],
+        hAdGroupId = headers[4], hState = headers[14], hKwText = headers[20], hMatchType = headers[21];
+
+    const rows = [];
+    const matchTypes = [];
+    if (matchType === 'exact' || matchType === 'both') matchTypes.push(t.negExact);
+    if (matchType === 'phrase' || matchType === 'both') matchTypes.push(t.negPhrase);
+
+    const entityType = level === 'campaign' ? t.negCampKeyword : t.negKeyword;
+
+    if (currentView === 'aggregated') {
+        // For aggregated: add negative to each campaign the search term appeared in
+        aggregatedData.forEach(agg => {
+            if (!selectedTerms.has(agg.searchterm.toLowerCase())) return;
+            // Find all campaign/adgroup combos for this search term
+            const entries = wastedData.filter(r => r.searchterm.toLowerCase() === agg.searchterm.toLowerCase());
+            const seen = new Set();
+            entries.forEach(entry => {
+                const key = entry.campaign + '|' + entry.adgroup;
+                if (seen.has(key)) return;
+                seen.add(key);
+                matchTypes.forEach(mt => {
+                    const r = emptyRow();
+                    r[hProduct] = t.product;
+                    r[hEntity] = entityType;
+                    r[hOp] = t.create;
+                    r[hCampId] = entry.campaign;
+                    if (level === 'adgroup') r[hAdGroupId] = entry.adgroup;
+                    r[hState] = t.enabled;
+                    r[hKwText] = entry.searchterm;
+                    r[hMatchType] = mt;
+                    rows.push(r);
+                });
+            });
+        });
+    } else {
+        // Per campaign view
+        campaignData.forEach(row => {
+            if (!selectedTerms.has(row.key)) return;
+            matchTypes.forEach(mt => {
+                const r = emptyRow();
+                r[hProduct] = t.product;
+                r[hEntity] = entityType;
+                r[hOp] = t.create;
+                r[hCampId] = row.campaign;
+                if (level === 'adgroup') r[hAdGroupId] = row.adgroup;
+                r[hState] = t.enabled;
+                r[hKwText] = row.searchterm;
+                r[hMatchType] = mt;
+                rows.push(r);
+            });
+        });
+    }
+
+    // Add ASIN-based entries as Negative Product Targeting
+    const asinRows = [];
+    const hPtExpr = headers[25]; // Product Targeting Expression
+    const hNegPT = t.negKeyword.replace('Keyword', 'Produkt-Targeting').replace('keyword', 'product targeting'); // Fallback
+
+    function addAsinNegative(campaign, adgroup, asinVal) {
+        const r = emptyRow();
+        r[hProduct] = t.product;
+        r[hEntity] = t.headers === TRANSLATIONS['de'].headers ? 'Negatives Produkt-Targeting' :
+                     t.headers === TRANSLATIONS['en'].headers ? 'Negative Product Targeting' :
+                     t.headers === TRANSLATIONS['fr'].headers ? 'Ciblage de produit négatif' :
+                     t.headers === TRANSLATIONS['it'].headers ? 'Targeting di prodotto negativo' :
+                     'Segmentación de producto negativa';
+        r[hOp] = t.create;
+        r[hCampId] = campaign;
+        if (level === 'adgroup') r[hAdGroupId] = adgroup;
+        r[hState] = t.enabled;
+        r[hPtExpr] = 'asin="' + asinVal.toUpperCase() + '"';
+        asinRows.push(r);
+    }
+
+    // Process ASINs separately
+    if (currentView === 'aggregated') {
+        aggregatedData.forEach(agg => {
+            if (!selectedTerms.has(agg.searchterm.toLowerCase())) return;
+            if (!agg.isAsin) return;
+            const entries = wastedData.filter(r => r.searchterm.toLowerCase() === agg.searchterm.toLowerCase());
+            const seen = new Set();
+            entries.forEach(entry => {
+                const key = entry.campaign + '|' + entry.adgroup;
+                if (seen.has(key)) return;
+                seen.add(key);
+                addAsinNegative(entry.campaign, entry.adgroup, entry.searchterm);
+            });
+        });
+    } else {
+        campaignData.forEach(row => {
+            if (!selectedTerms.has(row.key)) return;
+            if (!row.isAsin) return;
+            addAsinNegative(row.campaign, row.adgroup, row.searchterm);
+        });
+    }
+
+    const allRows = [...rows, ...asinRows];
+
+    if (allRows.length === 0) {
+        document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Rows generiert.</div>';
+        return;
+    }
+
+    // Build Excel
+    const wsData = [headers, ...allRows.map(r => headers.map(h => r[h] || ''))];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = headers.map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, ws, t.sheet);
+
+    const today = new Date();
+    const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const fileName = 'Negatives-Bulk-Upload ' + dateStr + '.xlsx';
+    XLSX.writeFile(wb, fileName);
+
+    const kwCount = rows.length;
+    const asinCount = asinRows.length;
+    document.getElementById('resultMsg').innerHTML = '<div class="success-msg">"' + fileName + '" erstellt (' + kwCount + ' Negative Keywords' + (asinCount > 0 ? ', ' + asinCount + ' Negative ASINs' : '') + ').</div>';
+    setTimeout(() => { const el = document.getElementById('resultMsg').querySelector('.success-msg'); if (el) el.remove(); }, 4000);
+}
+
+// --- Analysis Export ---
+function exportAnalysis() {
+    const data = currentView === 'aggregated' ? aggregatedData : campaignData;
+    if (data.length === 0) return;
+
+    const headers = currentView === 'aggregated'
+        ? ['Suchbegriff', 'Typ', 'Spend', 'Klicks', 'Impressionen', 'Bestellungen', 'Umsatz', 'Kampagnen', 'Bereits negiert']
+        : ['Suchbegriff', 'Typ', 'Kampagne', 'Anzeigengruppe', 'Spend', 'Klicks', 'Impressionen', 'Bestellungen', 'Umsatz', 'Bereits negiert'];
+
+    const rows = data.map(r => {
+        const typ = r.isAsin ? 'ASIN' : 'Keyword';
+        if (currentView === 'aggregated') {
+            return [r.searchterm, typ, r.spend, r.clicks, r.impressions, r.orders, r.sales, r.campaignCount, r.alreadyNegated ? 'Ja' : 'Nein'];
+        }
+        return [r.searchterm, typ, r.campaign, r.adgroup, r.spend, r.clicks, r.impressions, r.orders, r.sales, r.alreadyNegated ? 'Ja' : 'Nein'];
+    });
+
+    const wsData = [headers, ...rows];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = headers.map(() => ({ wch: 18 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Wasted Ad Spend Analyse');
+
+    const today = new Date();
+    const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    XLSX.writeFile(wb, 'Wasted-Spend-Analyse ' + dateStr + '.xlsx');
+}
+</script>
+</body>
+</html>

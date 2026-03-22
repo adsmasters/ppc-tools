@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyword Harvesting - AdsMasters PPC Tools</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-hover: #1c2129;
+            --border: #30363d; --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #f85149; --error-bg: #f8514911;
+            --warn: #d29922; --warn-bg: #d2992211;
+            --success: #3fb950; --success-bg: #3fb95011;
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff; --bg-secondary: #f6f8fa; --bg-hover: #eef1f5;
+            --border: #d0d7de; --text-primary: #1f2328; --text-secondary: #656d76;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #cf222e; --error-bg: #cf222e11;
+            --warn: #9a6700; --warn-bg: #9a670011;
+            --success: #1a7f37; --success-bg: #1a7f3711;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar-left { display: flex; align-items: center; gap: 32px; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-nav { display: flex; gap: 16px; }
+        .topbar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+        .topbar-nav a:hover { color: var(--text-primary); }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title .step { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+        .field { margin-bottom: 14px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
+        .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; white-space: normal; max-width: 280px; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 12px; }
+        .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary)); }
+        .upload-zone .icon { font-size: 28px; margin-bottom: 6px; }
+        .upload-zone .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone .hint { font-size: 12px; color: var(--text-secondary); }
+        .upload-zone input { display: none; }
+        .file-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+        .file-info .name { flex: 1; font-weight: 600; }
+        .file-info .meta { color: var(--text-secondary); }
+        .file-info .remove { color: var(--error); cursor: pointer; font-weight: 700; }
+        .btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-sm { padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .btn-sm:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .stat-value { font-size: 22px; font-weight: 700; }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warn { color: var(--warn); }
+        .results-container { overflow-x: auto; }
+        .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+        .results-table th:hover { color: var(--text-primary); }
+        .results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .results-table tr:hover td { background: var(--bg-hover); }
+        .results-table tr.selected td { background: var(--success-bg); }
+        .results-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .results-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+        .results-table select { padding: 4px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); }
+        .results-table input[type="number"] { width: 70px; padding: 4px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); text-align: right; }
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+        .table-controls .left { display: flex; gap: 10px; align-items: center; }
+        .table-controls .right { display: flex; gap: 8px; align-items: center; }
+        .search-input { width: 220px; padding: 6px 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 12px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+        .error-msg { color: var(--error); font-size: 13px; padding: 8px 12px; border: 1px solid var(--error); border-radius: 6px; margin-bottom: 6px; background: var(--error-bg); }
+        .success-msg { color: var(--success); font-size: 13px; padding: 8px 12px; border: 1px solid var(--success); border-radius: 6px; margin-bottom: 6px; background: var(--success-bg); animation: fadeOut 0.5s ease 3s forwards; }
+        .warn-msg { color: var(--warn); font-size: 13px; padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; margin-bottom: 6px; background: var(--warn-bg); }
+        @keyframes fadeOut { to { opacity: 0; } }
+        .msg-container { margin-bottom: 16px; }
+        .hidden { display: none; }
+        .live-counter { font-size: 13px; color: var(--accent); font-weight: 600; padding: 8px 0; }
+        .preset-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .preset-btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-secondary); }
+        .preset-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .preset-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 12px; }
+        .pagination button { padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .pagination button:hover { color: var(--text-primary); }
+        .pagination button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+        .pagination .page-info { font-size: 12px; color: var(--text-secondary); }
+        .top10 { margin-bottom: 20px; }
+        .top10-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+        .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+        .bar-label { width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+        .bar-track { flex: 1; height: 20px; background: var(--bg-primary); border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, var(--success), #4ade80); border-radius: 4px; min-width: 2px; }
+        .bar-value { width: 80px; text-align: right; font-weight: 600; color: var(--success); flex-shrink: 0; }
+        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 900px) { .field-row { grid-template-columns: 1fr 1fr; } .upload-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } .field-row { grid-template-columns: 1fr; } .btn-row { flex-direction: column; } .btn-row .btn { width: 100%; text-align: center; } }
+    </style>
+</head>
+<body>
+<script>
+    if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
+    const saved = localStorage.getItem('ppc_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+</script>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <nav class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="campaign-creator.html">Kampagnen Ersteller</a>
+            <a href="help.html">Hilfe</a>
+        </nav>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9790;</button>
+        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <h1 class="page-title">Keyword Harvesting</h1>
+        <p class="page-sub">Finde profitable Suchbegriffe aus Auto-Kampagnen und erstelle manuelle Kampagnen</p>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div class="card" id="stepUpload">
+        <div class="card-title"><span class="step">1</span> Bulk Sheet hochladen</div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="icon">&#128203;</div>
+            <div class="label">Bulk Sheet hochladen</div>
+            <div class="hint">Excel-Datei mit Kampagnen, Keywords und Search Terms — alle Tabellenblätter werden automatisch ausgelesen</div>
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.tsv">
+        </div>
+        <div id="fileInfoContainer"></div>
+        <div class="msg-container" id="uploadMsg"></div>
+    </div>
+
+    <!-- STEP 2: Filter -->
+    <div class="card hidden" id="stepFilter">
+        <div class="card-title"><span class="step">2</span> Harvesting-Kriterien definieren</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere, ab wann ein Suchbegriff als profitabel gilt und geerntet werden soll.</p>
+
+        <div class="preset-row">
+            <button class="preset-btn" onclick="applyPreset('strict')">Streng (3+ Bestellungen)</button>
+            <button class="preset-btn active" onclick="applyPreset('moderate')">Moderat (2+ Bestellungen)</button>
+            <button class="preset-btn" onclick="applyPreset('loose')">Locker (1+ Bestellung)</button>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label>Min. Bestellungen <span class="tooltip-icon" data-tip="Suchbegriff muss mindestens X Bestellungen haben um als profitabel zu gelten.">?</span></label>
+                <input type="number" id="minOrders" value="2" min="1" oninput="updateLiveCounter()">
+            </div>
+            <div class="field">
+                <label>Max. ACoS (%) <span class="tooltip-icon" data-tip="Nur Suchbegriffe mit ACoS unter diesem Wert. Leer = kein ACoS-Filter.">?</span></label>
+                <input type="number" id="maxAcos" value="30" step="1" min="0" oninput="updateLiveCounter()">
+            </div>
+            <div class="field">
+                <label>Min. ROAS <span class="tooltip-icon" data-tip="Nur Suchbegriffe mit ROAS über diesem Wert. Leer = kein ROAS-Filter.">?</span></label>
+                <input type="number" id="minRoas" value="" step="0.1" min="0" placeholder="z.B. 3.0" oninput="updateLiveCounter()">
+            </div>
+        </div>
+        <div class="field-row">
+            <div class="field">
+                <label>Min. Klicks <span class="tooltip-icon" data-tip="Mindestanzahl Klicks für statistische Relevanz.">?</span></label>
+                <input type="number" id="minClicks" value="5" min="0" oninput="updateLiveCounter()">
+            </div>
+            <div class="field">
+                <label>Min. CTR (%) <span class="tooltip-icon" data-tip="Nur Suchbegriffe mit Click-Through-Rate über diesem Wert.">?</span></label>
+                <input type="number" id="minCtr" value="" step="0.1" min="0" placeholder="z.B. 0.5" oninput="updateLiveCounter()">
+            </div>
+            <div class="field">
+                <label>Nur Auto-Kampagnen <span class="tooltip-icon" data-tip="Wenn aktiviert, werden nur Suchbegriffe aus Auto-Kampagnen berücksichtigt.">?</span></label>
+                <select id="filterAutoOnly" onchange="updateLiveCounter()">
+                    <option value="yes">Ja, nur Auto-Kampagnen</option>
+                    <option value="no">Nein, alle Kampagnen</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="live-counter" id="liveCounter"></div>
+        <div class="btn-row" style="justify-content:flex-start;">
+            <button class="btn btn-primary" onclick="analyzeData()">Analyse starten</button>
+        </div>
+    </div>
+
+    <!-- STEP 3: Results -->
+    <div class="card hidden" id="stepResults">
+        <div class="card-title"><span class="step">3</span> Harvest-Kandidaten</div>
+        <div class="stats-row" id="statsRow"></div>
+        <div id="top10Container" class="top10"></div>
+
+        <div class="table-controls">
+            <div class="left">
+                <input type="text" class="search-input" id="searchInput" placeholder="Suchbegriff filtern..." oninput="currentPage=1;renderTable()">
+                <span style="font-size:12px;color:var(--text-secondary);" id="tableCount"></span>
+            </div>
+            <div class="right">
+                <button class="btn-sm" onclick="selectAll()">Alle auswählen</button>
+                <button class="btn-sm" onclick="deselectAll()">Keine</button>
+                <select class="btn-sm" style="border-radius:5px;padding:4px 6px;font-size:11px;background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border);" onchange="if(this.value){bulkSetMatchType(this.value);this.value='';}">
+                    <option value="">Match Type setzen...</option>
+                    <option value="exact">Alle → Exact</option>
+                    <option value="broad">Alle → Broad</option>
+                    <option value="phrase">Alle → Phrase</option>
+                </select>
+                <select class="btn-sm" style="border-radius:5px;padding:4px 6px;font-size:11px;background:var(--bg-secondary);color:var(--text-secondary);border:1px solid var(--border);" onchange="if(this.value){bulkAdjustBid(this.value);this.value='';}">
+                    <option value="">Gebote anpassen...</option>
+                    <option value="1.2">+20%</option>
+                    <option value="1.1">+10%</option>
+                    <option value="0.9">-10%</option>
+                    <option value="0.8">-20%</option>
+                    <option value="0.5">-50%</option>
+                </select>
+                <button class="btn-sm" onclick="exportAnalysis()">Analyse exportieren</button>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <table class="results-table" id="resultsTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+        <div class="msg-container" id="resultMsg" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- STEP 4: Export -->
+    <div class="card hidden" id="stepExport">
+        <div class="card-title"><span class="step">4</span> Bulk Sheet erstellen</div>
+        <div class="field-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+            <div class="field">
+                <label>Marketplace</label>
+                <select id="exportMarketplace">
+                    <option value="de">Deutschland (DE)</option>
+                    <option value="en">USA / UK (EN)</option>
+                    <option value="fr">Frankreich (FR)</option>
+                    <option value="it">Italien (IT)</option>
+                    <option value="es">Spanien (ES)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Standard Match Type</label>
+                <select id="defaultMatchType" onchange="applyDefaultMatchType()">
+                    <option value="exact">Exact</option>
+                    <option value="broad">Broad</option>
+                    <option value="phrase">Phrase</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Standard Tagesbudget</label>
+                <input type="number" id="defaultBudget" value="10.00" step="0.5">
+            </div>
+            <div class="field">
+                <label>Gebotsstrategie</label>
+                <select id="biddingStrategy">
+                    <option value="down">Nur senken</option>
+                    <option value="updown">Erhöhen und senken</option>
+                    <option value="fixed">Feste Gebote</option>
+                </select>
+            </div>
+        </div>
+        <div style="margin-top:10px;">
+            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="addAutoNegatives" checked style="width:15px;height:15px;accent-color:var(--accent);"> Geerntete Keywords als Negative Exact in Auto-Kampagnen einfügen <span class="tooltip-icon" data-tip="Verhindert doppeltes Bieten: Die geernteten Keywords werden als Negative Exact in den Auto-Kampagnen hinterlegt, aus denen sie stammen.">?</span></label>
+        </div>
+        <div class="btn-row">
+            <div style="font-size:12px;color:var(--text-secondary);flex:1;" id="selectedCount">0 Keywords ausgewählt</div>
+            <button class="btn btn-primary" onclick="exportBulkSheet()">Harvest Bulk Sheet erstellen</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- Theme ---
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('ppc_theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+    document.getElementById('themeToggle').innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';
+}
+document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'dark') === 'dark' ? '&#9788;' : '&#9790;';
+
+// --- State ---
+let strData = [];           // Search term report rows
+let bulkKeywords = new Set(); // Existing manual keywords (lowercase)
+let bulkCampaigns = [];     // Existing campaigns from bulk sheet {name, asins, adgroups}
+let harvestData = [];       // Filtered harvest candidates
+let selectedTerms = new Set();
+let sortCol = 'orders';
+let sortDir = 'desc';
+let currentPage = 1;
+const PAGE_SIZE = 100;
+let detectedCurrency = 'EUR';
+const CURRENCY_MAP = { '€': 'EUR', '$': 'USD', '£': 'GBP' };
+
+// --- Column aliases ---
+const COL = {
+    campaign: ['campaign name', 'kampagnenname', 'nom de la campagne', 'nombre de la campaña', 'nome campagna'],
+    adgroup: ['ad group name', 'name der anzeigengruppe', 'nom du groupe d\'annonces', 'ad group'],
+    searchterm: ['customer search term', 'suchbegriff des kunden', 'search term', 'query'],
+    targeting: ['targeting', 'targeting type', 'targeting-typ', 'type de ciblage'],
+    impressions: ['impressions', 'impressionen'],
+    clicks: ['clicks', 'klicks', 'clics'],
+    spend: ['spend', 'ausgaben', 'cost', 'dépenses', 'gasto'],
+    sales: ['7 day total sales', '7-day total sales', 'total sales', 'sales', 'umsatz'],
+    orders: ['7 day total orders', '7-day total orders', 'total orders', 'orders', 'bestellungen'],
+    matchtype: ['match type', 'übereinstimmungstyp'],
+    keyword: ['keyword text', 'keyword-text', 'texte du mot-clé', 'keyword'],
+    entity: ['entity', 'entität', 'entité', 'entidad', 'entità'],
+    asin: ['asin'],
+    sku: ['sku'],
+    state: ['state', 'zustand', 'état', 'estado', 'stato']
+};
+
+function findCol(headers, key) {
+    const aliases = COL[key] || [];
+    const lower = headers.map(h => h.toLowerCase().trim());
+    for (const a of aliases) { const i = lower.indexOf(a); if (i !== -1) return i; }
+    for (const a of aliases) { const i = lower.findIndex(h => h.includes(a)); if (i !== -1) return i; }
+    return -1;
+}
+
+function parseNum(val) {
+    if (val === undefined || val === null || val === '') return 0;
+    const s = String(val).replace(/[^0-9.,\-]/g, '').replace(',', '.');
+    return parseFloat(s) || 0;
+}
+
+function escapeHtml(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+function formatCurrency(val) { return val.toLocaleString('de-DE', { style: 'currency', currency: detectedCurrency }); }
+
+// --- Upload zone ---
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFileUpload(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFileUpload(e.target.files[0]); });
+
+// --- Handle File Upload (single Bulk Sheet with all sheets) ---
+function handleFileUpload(file) {
+    const msgEl = document.getElementById('uploadMsg');
+    msgEl.innerHTML = '';
+
+    if (file.name.match(/\.(xlsx|xls)$/i)) {
+        const reader = new FileReader();
+        reader.onload = evt => {
+            const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+            // Parse ALL sheets
+            strData = [];
+            bulkKeywords.clear();
+            bulkCampaigns = [];
+            const campMap = {};
+
+            wb.SheetNames.forEach(sheetName => {
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: '' });
+                if (rows.length < 2) return;
+
+                // Find header row
+                let headerIdx = 0;
+                for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                    const row = rows[i].map(c => String(c).toLowerCase().trim());
+                    if (row.some(c => COL.searchterm.some(a => c.includes(a))) ||
+                        row.some(c => COL.entity.some(a => c.includes(a))) ||
+                        row.some(c => COL.campaign.some(a => c.includes(a)))) {
+                        headerIdx = i; break;
+                    }
+                }
+
+                const headers = rows[headerIdx].map(c => String(c));
+                const cm = {};
+                for (const key of Object.keys(COL)) cm[key] = findCol(headers, key);
+
+                // Currency detection
+                headers.forEach(h => { for (const [sym, code] of Object.entries(CURRENCY_MAP)) { if (h.includes(sym)) detectedCurrency = code; } });
+
+                // Determine sheet type: Search Term sheet vs Campaign/Keyword sheet
+                const hasSearchTerm = cm.searchterm !== -1;
+                const hasEntity = cm.entity !== -1;
+
+                for (let i = headerIdx + 1; i < rows.length; i++) {
+                    const r = rows[i];
+                    if (!r || r.length < 3) continue;
+
+                    const campName = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
+                    const adgroupName = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
+                    const entity = cm.entity !== -1 ? String(r[cm.entity] || '').toLowerCase().trim() : '';
+
+                    // Extract search terms (from Search Term sheet)
+                    if (hasSearchTerm) {
+                        const st = String(r[cm.searchterm] || '').trim();
+                        if (st) {
+                            const impressions = parseNum(r[cm.impressions]);
+                            const clicks = parseNum(r[cm.clicks]);
+                            const spend = parseNum(r[cm.spend]);
+                            const sales = cm.sales !== -1 ? parseNum(r[cm.sales]) : 0;
+                            const orders = cm.orders !== -1 ? parseNum(r[cm.orders]) : 0;
+                            const targeting = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase() : '';
+                            const isAuto = targeting.includes('auto') || targeting.includes('automatisch') || targeting.includes('automatique') || targeting.includes('automático');
+
+                            strData.push({
+                                searchterm: st, campaign: campName, adgroup: adgroupName,
+                                impressions, clicks, spend, sales, orders, isAuto,
+                                cpc: clicks > 0 ? spend / clicks : 0,
+                                acos: sales > 0 ? (spend / sales * 100) : (spend > 0 ? Infinity : 0),
+                                roas: spend > 0 ? sales / spend : 0,
+                                ctr: impressions > 0 ? (clicks / impressions * 100) : 0,
+                                isAsin: /^B0[A-Z0-9]{8}$/i.test(st)
+                            });
+                        }
+                    }
+
+                    // Extract keywords and campaign structure (from Campaign sheet)
+                    if (hasEntity) {
+                        const kwText = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim().toLowerCase() : '';
+                        const asin = cm.asin !== -1 ? String(r[cm.asin] || '').trim() : '';
+                        const sku = cm.sku !== -1 ? String(r[cm.sku] || '').trim() : '';
+
+                        if (kwText && (entity.includes('keyword') || entity.includes('mot-cl') || entity.includes('palabra') || entity.includes('parola'))) {
+                            if (!entity.includes('negat')) bulkKeywords.add(kwText);
+                        }
+
+                        if (campName) {
+                            if (!campMap[campName]) campMap[campName] = { name: campName, asins: new Set(), skus: new Set(), adgroups: new Set() };
+                            if (asin) campMap[campName].asins.add(asin);
+                            if (sku) campMap[campName].skus.add(sku);
+                            if (adgroupName) campMap[campName].adgroups.add(adgroupName);
+                        }
+                    }
+                }
+            });
+
+            bulkCampaigns = Object.values(campMap).map(c => ({
+                name: c.name, asins: [...c.asins], skus: [...c.skus], adgroups: [...c.adgroups]
+            }));
+
+            finishUpload(file);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        // CSV/TSV — single sheet
+        const reader = new FileReader();
+        reader.onload = evt => {
+            const text = evt.target.result;
+            const sep = text.includes('\t') ? '\t' : ',';
+            const rows = text.split(/\r?\n/).filter(l => l.trim()).map(line => {
+                const result = []; let cur = '', inQ = false;
+                for (let i = 0; i < line.length; i++) {
+                    if (line[i] === '"') { inQ = !inQ; continue; }
+                    if (line[i] === sep && !inQ) { result.push(cur.trim()); cur = ''; continue; }
+                    cur += line[i];
+                }
+                result.push(cur.trim());
+                return result;
+            });
+            strData = [];
+            bulkKeywords.clear();
+            bulkCampaigns = [];
+            // Parse as search term data
+            let headerIdx = 0;
+            for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                const row = rows[i].map(c => String(c).toLowerCase().trim());
+                if (row.some(c => COL.searchterm.some(a => c.includes(a)))) { headerIdx = i; break; }
+            }
+            const headers = rows[headerIdx].map(c => String(c));
+            const cm = {};
+            for (const key of Object.keys(COL)) cm[key] = findCol(headers, key);
+            headers.forEach(h => { for (const [sym, code] of Object.entries(CURRENCY_MAP)) { if (h.includes(sym)) detectedCurrency = code; } });
+
+            for (let i = headerIdx + 1; i < rows.length; i++) {
+                const r = rows[i];
+                if (!r || r.length < 3) continue;
+                const st = cm.searchterm !== -1 ? String(r[cm.searchterm] || '').trim() : '';
+                if (!st) continue;
+                const impressions = parseNum(r[cm.impressions]);
+                const clicks = parseNum(r[cm.clicks]);
+                const spend = parseNum(r[cm.spend]);
+                const sales = cm.sales !== -1 ? parseNum(r[cm.sales]) : 0;
+                const orders = cm.orders !== -1 ? parseNum(r[cm.orders]) : 0;
+                const campName = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
+                const adgroup = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
+                const targeting = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase() : '';
+                const isAuto = targeting.includes('auto') || targeting.includes('automatisch');
+                strData.push({
+                    searchterm: st, campaign: campName, adgroup, impressions, clicks, spend, sales, orders, isAuto,
+                    cpc: clicks > 0 ? spend / clicks : 0,
+                    acos: sales > 0 ? (spend / sales * 100) : (spend > 0 ? Infinity : 0),
+                    roas: spend > 0 ? sales / spend : 0,
+                    ctr: impressions > 0 ? (clicks / impressions * 100) : 0,
+                    isAsin: /^B0[A-Z0-9]{8}$/i.test(st)
+                });
+            }
+            finishUpload(file);
+        };
+        reader.readAsText(file);
+    }
+}
+
+function finishUpload(file) {
+    const msgEl = document.getElementById('uploadMsg');
+    if (strData.length === 0) {
+        msgEl.innerHTML = '<div class="error-msg">Keine Search Term Daten gefunden. Stelle sicher, dass das Bulk Sheet ein Search Term Tabellenblatt enthält.</div>';
+        return;
+    }
+
+    const harvestCamps = bulkCampaigns.filter(c => c.name.toLowerCase().includes('harvest'));
+    const info = [strData.length + ' Suchbegriffe'];
+    if (bulkKeywords.size > 0) info.push(bulkKeywords.size + ' bestehende Keywords');
+    if (bulkCampaigns.length > 0) info.push(bulkCampaigns.length + ' Kampagnen');
+    if (harvestCamps.length > 0) info.push(harvestCamps.length + ' Harvest-Kampagnen');
+
+    document.getElementById('fileInfoContainer').innerHTML = `<div class="file-info"><span class="name">${escapeHtml(file.name)}</span><span class="meta">${info.join(', ')}</span><span class="remove" onclick="clearUpload()">&times;</span></div>`;
+
+    if (bulkKeywords.size === 0) {
+        msgEl.innerHTML = '<div class="warn-msg">Keine bestehenden Keywords im Bulk Sheet gefunden. Alle profitablen Suchbegriffe werden als Harvest-Kandidaten angezeigt.</div>';
+    }
+
+    document.getElementById('stepFilter').classList.remove('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+    document.getElementById('stepExport').classList.add('hidden');
+    updateLiveCounter();
+}
+
+function clearUpload() {
+    strData = [];
+    bulkKeywords.clear();
+    bulkCampaigns = [];
+    document.getElementById('fileInfoContainer').innerHTML = '';
+    document.getElementById('uploadMsg').innerHTML = '';
+    document.getElementById('stepFilter').classList.add('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+    document.getElementById('stepExport').classList.add('hidden');
+    document.getElementById('fileInput').value = '';
+}
+
+// --- Presets ---
+function applyPreset(type) {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    const p = { strict: { orders: 3, acos: 25, clicks: 10 }, moderate: { orders: 2, acos: 30, clicks: 5 }, loose: { orders: 1, acos: 50, clicks: 3 } }[type];
+    document.getElementById('minOrders').value = p.orders;
+    document.getElementById('maxAcos').value = p.acos;
+    document.getElementById('minClicks').value = p.clicks;
+    updateLiveCounter();
+}
+
+// --- Live Counter ---
+function getFilteredData() {
+    const minOrders = parseInt(document.getElementById('minOrders').value) || 1;
+    const maxAcos = parseFloat(document.getElementById('maxAcos').value);
+    const minRoas = parseFloat(document.getElementById('minRoas').value);
+    const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
+    const minCtr = parseFloat(document.getElementById('minCtr').value);
+    const autoOnly = document.getElementById('filterAutoOnly').value === 'yes';
+
+    // Aggregate by search term
+    const aggMap = {};
+    strData.forEach(row => {
+        if (autoOnly && !row.isAuto) return;
+        const key = row.searchterm.toLowerCase();
+        if (!aggMap[key]) aggMap[key] = { searchterm: row.searchterm, impressions: 0, clicks: 0, spend: 0, sales: 0, orders: 0, campaigns: new Set(), isAsin: row.isAsin };
+        aggMap[key].impressions += row.impressions;
+        aggMap[key].clicks += row.clicks;
+        aggMap[key].spend += row.spend;
+        aggMap[key].sales += row.sales;
+        aggMap[key].orders += row.orders;
+        aggMap[key].campaigns.add(row.campaign);
+    });
+
+    return Object.values(aggMap).filter(r => {
+        // Must not already exist as keyword
+        if (bulkKeywords.has(r.searchterm.toLowerCase())) return false;
+        // Profitability filters
+        if (r.orders < minOrders) return false;
+        if (r.clicks < minClicks) return false;
+        const acos = r.sales > 0 ? (r.spend / r.sales * 100) : Infinity;
+        if (!isNaN(maxAcos) && maxAcos > 0 && acos > maxAcos) return false;
+        const roas = r.spend > 0 ? r.sales / r.spend : 0;
+        if (!isNaN(minRoas) && minRoas > 0 && roas < minRoas) return false;
+        const ctr = r.impressions > 0 ? (r.clicks / r.impressions * 100) : 0;
+        if (!isNaN(minCtr) && minCtr > 0 && ctr < minCtr) return false;
+        return true;
+    }).map(r => ({
+        ...r,
+        cpc: r.clicks > 0 ? r.spend / r.clicks : 0,
+        acos: r.sales > 0 ? (r.spend / r.sales * 100) : 0,
+        roas: r.spend > 0 ? r.sales / r.spend : 0,
+        ctr: r.impressions > 0 ? (r.clicks / r.impressions * 100) : 0,
+        campaignCount: r.campaigns.size,
+        suggestedBid: r.clicks > 0 ? Math.round((r.spend / r.clicks) * 100) / 100 : 0.50,
+        matchType: 'exact',
+        targetCampaign: ''
+    }));
+}
+
+function updateLiveCounter() {
+    if (strData.length === 0) return;
+    const data = getFilteredData();
+    document.getElementById('liveCounter').textContent = data.length + ' profitable Suchbegriffe gefunden (von ' + strData.length + ' gesamt), ' + bulkKeywords.size + ' bereits als Keywords vorhanden';
+}
+
+// --- Analysis ---
+function analyzeData() {
+    harvestData = getFilteredData();
+
+    // Mark previously harvested
+    const prevHarvested = getHarvestedKeywords();
+    harvestData.forEach(r => {
+        r.alreadyHarvested = prevHarvested.has(r.searchterm.toLowerCase());
+    });
+
+    // Duplikat-Erkennung: Keywords in mehreren Auto-Kampagnen
+    const warnings = [];
+    const multiCampTerms = harvestData.filter(r => r.campaignCount > 1);
+    if (multiCampTerms.length > 0) {
+        warnings.push(multiCampTerms.length + ' Suchbegriffe performen in mehreren Kampagnen — prüfe ob Multi-ASIN Kampagnen betroffen sind.');
+    }
+    const prevCount = harvestData.filter(r => r.alreadyHarvested).length;
+    if (prevCount > 0) {
+        warnings.push(prevCount + ' Suchbegriffe wurden bereits in einer früheren Session geerntet.');
+    }
+
+    const msgEl = document.getElementById('resultMsg');
+    if (warnings.length > 0) {
+        msgEl.innerHTML = warnings.map(w => '<div class="warn-msg">' + w + '</div>').join('');
+    } else {
+        msgEl.innerHTML = '';
+    }
+
+    // Select all non-previously-harvested
+    selectedTerms.clear();
+    harvestData.filter(r => !r.alreadyHarvested).forEach(r => selectedTerms.add(r.searchterm.toLowerCase()));
+
+    currentPage = 1;
+    sortCol = 'orders';
+    sortDir = 'desc';
+    renderStats();
+    renderTop10();
+    renderTable();
+    document.getElementById('stepResults').classList.remove('hidden');
+    document.getElementById('stepExport').classList.remove('hidden');
+    document.getElementById('stepResults').scrollIntoView({ behavior: 'smooth' });
+}
+
+// --- Stats ---
+function renderStats() {
+    const totalSales = harvestData.reduce((s, r) => s + r.sales, 0);
+    const totalOrders = harvestData.reduce((s, r) => s + r.orders, 0);
+    const totalSpend = harvestData.reduce((s, r) => s + r.spend, 0);
+    const avgAcos = totalSales > 0 ? (totalSpend / totalSales * 100).toFixed(1) : 0;
+    const avgRoas = totalSpend > 0 ? (totalSales / totalSpend).toFixed(1) : 0;
+
+    document.getElementById('statsRow').innerHTML = `
+        <div class="stat-card"><div class="stat-label">Harvest-Kandidaten</div><div class="stat-value success">${harvestData.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Potentieller Umsatz</div><div class="stat-value success">${formatCurrency(totalSales)}</div></div>
+        <div class="stat-card"><div class="stat-label">Bestellungen</div><div class="stat-value">${totalOrders.toLocaleString('de-DE')}</div></div>
+        <div class="stat-card"><div class="stat-label">Spend</div><div class="stat-value">${formatCurrency(totalSpend)}</div></div>
+        <div class="stat-card"><div class="stat-label">Ø ACoS</div><div class="stat-value warn">${avgAcos}%</div></div>
+        <div class="stat-card"><div class="stat-label">Ø ROAS</div><div class="stat-value">${avgRoas}x</div></div>
+    `;
+}
+
+// --- Top 10 ---
+function renderTop10() {
+    const sorted = [...harvestData].sort((a, b) => b.orders - a.orders).slice(0, 10);
+    if (sorted.length === 0) { document.getElementById('top10Container').innerHTML = ''; return; }
+    const maxOrders = sorted[0].orders || 1;
+    document.getElementById('top10Container').innerHTML = '<div class="top10-title">Top 10 Harvest-Kandidaten (nach Bestellungen)</div>' +
+        sorted.map(r => `<div class="bar-row"><div class="bar-label" title="${escapeHtml(r.searchterm)}">${escapeHtml(r.searchterm)}</div><div class="bar-track"><div class="bar-fill" style="width:${(r.orders/maxOrders*100).toFixed(0)}%"></div></div><div class="bar-value">${r.orders} Orders</div></div>`).join('');
+}
+
+// --- Table ---
+function renderTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    const thead = document.getElementById('tableHead');
+    const tbody = document.getElementById('tableBody');
+
+    // Find harvest campaigns for dropdown
+    const harvestCamps = bulkCampaigns.filter(c => c.name.toLowerCase().includes('harvest'));
+    const campOptions = '<option value="">Neue Kampagne</option>' + harvestCamps.map(c => '<option value="' + escapeHtml(c.name) + '">' + escapeHtml(c.name) + '</option>').join('');
+
+    let data = harvestData.filter(r => !search || r.searchterm.toLowerCase().includes(search));
+
+    // Sort
+    data.sort((a, b) => {
+        let va = a[sortCol], vb = b[sortCol];
+        if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb||'').toLowerCase(); }
+        return sortDir === 'asc' ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
+    });
+
+    const totalFiltered = data.length;
+    const totalPages = Math.ceil(data.length / PAGE_SIZE);
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+    const pageData = data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+    const cols = [
+        { id: 'select', label: '' },
+        { id: 'searchterm', label: 'Suchbegriff', sort: true },
+        { id: 'orders', label: 'Bestellungen', sort: true, num: true },
+        { id: 'sales', label: 'Umsatz', sort: true, num: true },
+        { id: 'spend', label: 'Spend', sort: true, num: true },
+        { id: 'acos', label: 'ACoS', sort: true, num: true },
+        { id: 'clicks', label: 'Klicks', sort: true, num: true },
+        { id: 'cpc', label: 'CPC', sort: true, num: true },
+        { id: 'matchType', label: 'Match Type' },
+        { id: 'suggestedBid', label: 'Gebot' },
+        { id: 'targetCampaign', label: 'Ziel-Kampagne' }
+    ];
+
+    thead.innerHTML = '<tr>' + cols.map(c => {
+        const arrow = c.id === sortCol ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
+        const click = c.sort ? ` onclick="sortTable('${c.id}')"` : '';
+        return `<th${click}>${c.label}${arrow}</th>`;
+    }).join('') + '</tr>';
+
+    tbody.innerHTML = pageData.map((row, idx) => {
+        const key = row.searchterm.toLowerCase();
+        const checked = selectedTerms.has(key) ? 'checked' : '';
+        const cls = selectedTerms.has(key) ? ' class="selected"' : '';
+        const globalIdx = (currentPage - 1) * PAGE_SIZE + idx;
+        const asinBadge = row.isAsin ? ' <span style="font-size:10px;background:var(--warn-bg);color:var(--warn);padding:1px 5px;border-radius:3px;">ASIN</span>' : '';
+        const harvestedBadge = row.alreadyHarvested ? ' <span style="font-size:10px;background:var(--bg-hover);color:var(--text-secondary);padding:1px 5px;border-radius:3px;">Bereits geerntet</span>' : '';
+        const multiCampBadge = row.campaignCount > 1 ? ' <span style="font-size:10px;background:var(--warn-bg);color:var(--warn);padding:1px 5px;border-radius:3px;">' + row.campaignCount + ' Kampagnen</span>' : '';
+
+        // ACoS color scale: green < 15%, yellow 15-30%, orange 30-50%, red > 50%
+        let acosColor = 'var(--success)';
+        if (row.acos > 50) acosColor = 'var(--error)';
+        else if (row.acos > 30) acosColor = 'var(--warn)';
+        else if (row.acos > 15) acosColor = '#d4a017';
+
+        const mtSelect = `<select onchange="harvestData[${globalIdx}].matchType=this.value"><option value="exact"${row.matchType==='exact'?' selected':''}>Exact</option><option value="broad"${row.matchType==='broad'?' selected':''}>Broad</option><option value="phrase"${row.matchType==='phrase'?' selected':''}>Phrase</option></select>`;
+        const bidInput = `<input type="number" value="${row.suggestedBid.toFixed(2)}" step="0.01" min="0.02" onchange="harvestData[${globalIdx}].suggestedBid=parseFloat(this.value)||0.50">`;
+        const campSelect = `<select onchange="harvestData[${globalIdx}].targetCampaign=this.value" style="max-width:160px;">${campOptions}</select>`;
+
+        return `<tr${cls}><td><input type="checkbox" ${checked} onchange="toggleSelect('${escapeHtml(key)}',this.checked)"></td><td>${escapeHtml(row.searchterm)}${asinBadge}${harvestedBadge}${multiCampBadge}</td><td class="num">${row.orders}</td><td class="num">${formatCurrency(row.sales)}</td><td class="num">${formatCurrency(row.spend)}</td><td class="num" style="color:${acosColor};font-weight:600">${row.acos.toFixed(1)}%</td><td class="num">${row.clicks.toLocaleString('de-DE')}</td><td class="num">${formatCurrency(row.cpc)}</td><td>${mtSelect}</td><td>${bidInput}</td><td>${campSelect}</td></tr>`;
+    }).join('');
+
+    document.getElementById('tableCount').textContent = totalFiltered + ' von ' + harvestData.length + ' Einträgen';
+    updateSelectedCount();
+    renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+    const c = document.getElementById('pagination');
+    if (totalPages <= 1) { c.innerHTML = ''; return; }
+    let h = '<button ' + (currentPage<=1?'disabled':'') + ' onclick="currentPage--;renderTable();">&laquo;</button>';
+    const s = Math.max(1, currentPage-3), e = Math.min(totalPages, currentPage+3);
+    if (s > 1) h += '<button onclick="currentPage=1;renderTable();">1</button><span class="page-info">...</span>';
+    for (let i = s; i <= e; i++) h += '<button class="' + (i===currentPage?'active':'') + '" onclick="currentPage='+i+';renderTable();">'+i+'</button>';
+    if (e < totalPages) h += '<span class="page-info">...</span><button onclick="currentPage='+totalPages+';renderTable();">'+totalPages+'</button>';
+    h += '<button ' + (currentPage>=totalPages?'disabled':'') + ' onclick="currentPage++;renderTable();">&raquo;</button>';
+    h += '<span class="page-info">Seite '+currentPage+' von '+totalPages+'</span>';
+    c.innerHTML = h;
+}
+
+function sortTable(col) {
+    if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortCol = col; sortDir = col === 'searchterm' ? 'asc' : 'desc'; }
+    renderTable();
+}
+
+function toggleSelect(key, checked) { if (checked) selectedTerms.add(key); else selectedTerms.delete(key); updateSelectedCount(); }
+function selectAll() { harvestData.forEach(r => selectedTerms.add(r.searchterm.toLowerCase())); renderTable(); }
+function deselectAll() { selectedTerms.clear(); renderTable(); }
+function updateSelectedCount() { document.getElementById('selectedCount').textContent = selectedTerms.size + ' Keywords ausgewählt'; }
+
+function applyDefaultMatchType() {
+    const mt = document.getElementById('defaultMatchType').value;
+    harvestData.forEach(r => r.matchType = mt);
+    renderTable();
+}
+
+function bulkSetMatchType(mt) {
+    harvestData.filter(r => selectedTerms.has(r.searchterm.toLowerCase())).forEach(r => r.matchType = mt);
+    renderTable();
+}
+
+function bulkAdjustBid(factor) {
+    const f = parseFloat(factor);
+    harvestData.filter(r => selectedTerms.has(r.searchterm.toLowerCase())).forEach(r => {
+        r.suggestedBid = Math.round(r.suggestedBid * f * 100) / 100;
+        if (r.suggestedBid < 0.02) r.suggestedBid = 0.02;
+    });
+    renderTable();
+}
+
+// --- Previously harvested (localStorage) ---
+const HARVESTED_KEY = 'ppc_harvested_keywords';
+function getHarvestedKeywords() {
+    try { return new Set(JSON.parse(localStorage.getItem(HARVESTED_KEY)) || []); } catch { return new Set(); }
+}
+function markAsHarvested(keywords) {
+    const existing = getHarvestedKeywords();
+    keywords.forEach(k => existing.add(k.toLowerCase()));
+    localStorage.setItem(HARVESTED_KEY, JSON.stringify([...existing]));
+}
+
+// --- Marketplace Translations ---
+const T = {
+    de: { campaign: 'Kampagne', adGroup: 'Anzeigengruppe', productAd: 'Produktanzeige', keyword: 'Keyword', create: 'Erstellen', enabled: 'Aktiviert', auto: 'Automatisch', manual: 'Manuell', product: 'Gesponserte Produkte', exact: 'Genau Passend', broad: 'Weitgehend', phrase: 'Wortgruppe', bidDown: 'Dynamische Gebote \u2013 nur senken', bidUpDown: 'Dynamische Gebote \u2013 erhöhen und senken', bidFixed: 'Feste Gebote', headers: ['Produkt','Entität','Operation','Kampagnen-ID','Anzeigengruppen-ID','Portfolio-ID','Anzeigen-ID','Keyword-ID','Produkt-Targeting-ID','Kampagnenname','Name der Anzeigengruppe','Startdatum','Enddatum','Targeting-Typ','Zustand','Tagesbudget','SKU','ASIN','Standardgebot für die Anzeigengruppe','Gebot','Keyword-Text','Übereinstimmungstyp','Gebotsstrategie','Platzierung','Prozentsatz','Ausdruck für Produkt-Targeting'], sheet: 'Keyword Harvesting' },
+    en: { campaign: 'Campaign', adGroup: 'Ad Group', productAd: 'Product Ad', keyword: 'Keyword', create: 'Create', enabled: 'Enabled', auto: 'Auto', manual: 'Manual', product: 'Sponsored Products', exact: 'Exact', broad: 'Broad', phrase: 'Phrase', bidDown: 'Dynamic bids - down only', bidUpDown: 'Dynamic bids - up and down', bidFixed: 'Fixed bids', headers: ['Product','Entity','Operation','Campaign ID','Ad Group ID','Portfolio ID','Ad ID','Keyword ID','Product Targeting ID','Campaign Name','Ad Group Name','Start Date','End Date','Targeting Type','State','Daily Budget','SKU','ASIN','Ad Group Default Bid','Bid','Keyword Text','Match Type','Bidding Strategy','Placement','Percentage','Product Targeting Expression'], sheet: 'Keyword Harvesting' },
+    fr: { campaign: 'Campagne', adGroup: 'Groupe d\'annonces', productAd: 'Annonce produit', keyword: 'Mot-clé', create: 'Créer', enabled: 'Activé', auto: 'Automatique', manual: 'Manuel', product: 'Produits sponsorisés', exact: 'Expression exacte', broad: 'Requête large', phrase: 'Expression', bidDown: 'Enchères dynamiques - à la baisse uniquement', bidUpDown: 'Enchères dynamiques - à la hausse et à la baisse', bidFixed: 'Enchères fixes', headers: ['Produit','Entité','Opération','ID de la campagne','ID du groupe d\'annonces','ID du portefeuille','ID de l\'annonce','ID du mot-clé','ID du ciblage de produit','Nom de la campagne','Nom du groupe d\'annonces','Date de début','Date de fin','Type de ciblage','État','Budget quotidien','SKU','ASIN','Enchère par défaut du groupe d\'annonces','Enchère','Texte du mot-clé','Type de correspondance','Stratégie d\'enchères','Emplacement','Pourcentage','Expression de ciblage de produit'], sheet: 'Keyword Harvesting' },
+    it: { campaign: 'Campagna', adGroup: 'Gruppo di annunci', productAd: 'Annuncio prodotto', keyword: 'Parola chiave', create: 'Crea', enabled: 'Abilitato', auto: 'Automatico', manual: 'Manuale', product: 'Prodotti sponsorizzati', exact: 'Corrispondenza esatta', broad: 'Corrispondenza generica', phrase: 'Corrispondenza a frase', bidDown: 'Offerte dinamiche - solo al ribasso', bidUpDown: 'Offerte dinamiche - al rialzo e al ribasso', bidFixed: 'Offerte fisse', headers: ['Prodotto','Entità','Operazione','ID campagna','ID gruppo di annunci','ID portafoglio','ID annuncio','ID parola chiave','ID targeting di prodotto','Nome campagna','Nome gruppo di annunci','Data di inizio','Data di fine','Tipo di targeting','Stato','Budget giornaliero','SKU','ASIN','Offerta predefinita del gruppo di annunci','Offerta','Testo parola chiave','Tipo di corrispondenza','Strategia di offerta','Posizionamento','Percentuale','Espressione di targeting di prodotto'], sheet: 'Keyword Harvesting' },
+    es: { campaign: 'Campaña', adGroup: 'Grupo de anuncios', productAd: 'Anuncio de producto', keyword: 'Palabra clave', create: 'Crear', enabled: 'Habilitado', auto: 'Automático', manual: 'Manual', product: 'Productos patrocinados', exact: 'Coincidencia exacta', broad: 'Coincidencia amplia', phrase: 'Coincidencia de frase', bidDown: 'Pujas dinámicas - solo a la baja', bidUpDown: 'Pujas dinámicas - al alza y a la baja', bidFixed: 'Pujas fijas', headers: ['Producto','Entidad','Operación','ID de campaña','ID de grupo de anuncios','ID de portafolio','ID de anuncio','ID de palabra clave','ID de segmentación de producto','Nombre de la campaña','Nombre del grupo de anuncios','Fecha de inicio','Fecha de fin','Tipo de segmentación','Estado','Presupuesto diario','SKU','ASIN','Puja predeterminada del grupo de anuncios','Puja','Texto de palabra clave','Tipo de coincidencia','Estrategia de pujas','Ubicación','Porcentaje','Expresión de segmentación de producto'], sheet: 'Keyword Harvesting' }
+};
+
+// --- Export Bulk Sheet ---
+function exportBulkSheet() {
+    const selected = harvestData.filter(r => selectedTerms.has(r.searchterm.toLowerCase()));
+    if (selected.length === 0) { document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Keywords ausgewählt.</div>'; return; }
+
+    const mp = document.getElementById('exportMarketplace').value;
+    const t = T[mp] || T['de'];
+    const h = t.headers;
+    const budget = parseFloat(document.getElementById('defaultBudget').value) || 10;
+    const bidStratVal = document.getElementById('biddingStrategy').value;
+    const bidStrat = { down: t.bidDown, updown: t.bidUpDown, fixed: t.bidFixed }[bidStratVal];
+    const matchTypeMap = { exact: t.exact, broad: t.broad, phrase: t.phrase };
+
+    const today = new Date();
+    const startDate = today.toISOString().slice(0, 10).replace(/-/g, '');
+
+    function emptyRow() { const r = {}; h.forEach(c => r[c] = ''); return r; }
+
+    const rows = [];
+
+    // Group by target campaign
+    const newCampKeywords = selected.filter(r => !r.targetCampaign);
+    const existingCampKeywords = selected.filter(r => r.targetCampaign);
+
+    // New harvest campaigns: group by unique search terms, create one campaign
+    if (newCampKeywords.length > 0) {
+        const campName = 'SP: Harvest Keywords (Exact)';
+        const agName = 'HARVEST';
+
+        // Campaign row
+        const cr = emptyRow();
+        cr[h[0]] = t.product; cr[h[1]] = t.campaign; cr[h[2]] = t.create;
+        cr[h[3]] = campName; cr[h[9]] = campName; cr[h[11]] = startDate;
+        cr[h[13]] = t.manual; cr[h[14]] = t.enabled; cr[h[15]] = budget; cr[h[22]] = bidStrat;
+        rows.push(cr);
+
+        // Ad Group row
+        const ar = emptyRow();
+        ar[h[0]] = t.product; ar[h[1]] = t.adGroup; ar[h[2]] = t.create;
+        ar[h[3]] = campName; ar[h[4]] = agName; ar[h[10]] = agName;
+        ar[h[14]] = t.enabled; ar[h[18]] = newCampKeywords[0].suggestedBid;
+        rows.push(ar);
+
+        // Keyword rows
+        newCampKeywords.forEach(kw => {
+            const kr = emptyRow();
+            kr[h[0]] = t.product; kr[h[1]] = t.keyword; kr[h[2]] = t.create;
+            kr[h[3]] = campName; kr[h[4]] = agName;
+            kr[h[14]] = t.enabled; kr[h[19]] = kw.suggestedBid;
+            kr[h[20]] = kw.searchterm; kr[h[21]] = matchTypeMap[kw.matchType] || t.exact;
+            rows.push(kr);
+        });
+    }
+
+    // Existing campaigns: add keywords to them
+    const byCampaign = {};
+    existingCampKeywords.forEach(kw => {
+        if (!byCampaign[kw.targetCampaign]) byCampaign[kw.targetCampaign] = [];
+        byCampaign[kw.targetCampaign].push(kw);
+    });
+
+    Object.entries(byCampaign).forEach(([campName, kws]) => {
+        const camp = bulkCampaigns.find(c => c.name === campName);
+        const agName = camp && camp.adgroups.size > 0 ? [...camp.adgroups][0] : 'HARVEST';
+
+        kws.forEach(kw => {
+            const kr = emptyRow();
+            kr[h[0]] = t.product; kr[h[1]] = t.keyword; kr[h[2]] = t.create;
+            kr[h[3]] = campName; kr[h[4]] = agName;
+            kr[h[14]] = t.enabled; kr[h[19]] = kw.suggestedBid;
+            kr[h[20]] = kw.searchterm; kr[h[21]] = matchTypeMap[kw.matchType] || t.exact;
+            rows.push(kr);
+        });
+    });
+
+    // Auto-Negatives: add harvested keywords as Negative Exact to their source auto campaigns
+    if (document.getElementById('addAutoNegatives').checked) {
+        const negEntity = mp === 'de' ? 'Negatives Kampagnen-Keyword' : mp === 'fr' ? 'Mot-clé négatif de campagne' : mp === 'it' ? 'Parola chiave negativa della campagna' : mp === 'es' ? 'Palabra clave negativa de campaña' : 'Campaign Negative Keyword';
+        const negExact = mp === 'de' ? 'Negativ Genau Passend' : mp === 'fr' ? 'Expression exacte - négatif' : mp === 'it' ? 'Corrispondenza esatta negativa' : mp === 'es' ? 'Coincidencia exacta negativa' : 'Negative Exact';
+
+        selected.forEach(kw => {
+            // Find auto campaigns this search term appeared in
+            const autoCampaigns = new Set();
+            strData.filter(r => r.searchterm.toLowerCase() === kw.searchterm.toLowerCase() && r.isAuto).forEach(r => autoCampaigns.add(r.campaign));
+            autoCampaigns.forEach(campName => {
+                const nr = emptyRow();
+                nr[h[0]] = t.product; nr[h[1]] = negEntity; nr[h[2]] = t.create;
+                nr[h[3]] = campName; nr[h[14]] = t.enabled;
+                nr[h[20]] = kw.searchterm; nr[h[21]] = negExact;
+                rows.push(nr);
+            });
+        });
+    }
+
+    // Mark as harvested in localStorage
+    markAsHarvested(selected.map(r => r.searchterm));
+
+    // Build Excel
+    const wsData = [h, ...rows.map(r => h.map(c => r[c] || ''))];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = h.map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, ws, t.sheet);
+
+    const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    const fileName = 'Harvest-Bulk-Upload ' + dateStr + '.xlsx';
+    XLSX.writeFile(wb, fileName);
+
+    document.getElementById('resultMsg').innerHTML = '<div class="success-msg">"' + fileName + '" erstellt (' + selected.length + ' Keywords, ' + rows.length + ' Zeilen).</div>';
+    setTimeout(() => { const el = document.getElementById('resultMsg').querySelector('.success-msg'); if (el) el.remove(); }, 4000);
+}
+
+// --- Analysis Export ---
+function exportAnalysis() {
+    if (harvestData.length === 0) return;
+    const headers = ['Suchbegriff', 'Typ', 'Bestellungen', 'Umsatz', 'Spend', 'ACoS %', 'ROAS', 'Klicks', 'CPC', 'CTR %', 'Kampagnen'];
+    const rows = harvestData.map(r => [r.searchterm, r.isAsin ? 'ASIN' : 'Keyword', r.orders, r.sales, r.spend, r.acos.toFixed(1), r.roas.toFixed(2), r.clicks, r.cpc.toFixed(2), r.ctr.toFixed(2), r.campaignCount]);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws['!cols'] = headers.map(() => ({ wch: 16 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Harvest Analyse');
+    const d = new Date();
+    XLSX.writeFile(wb, 'Harvest-Analyse ' + d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '.xlsx');
+}
+</script>
+</body>
+</html>
