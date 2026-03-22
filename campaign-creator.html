@@ -1899,9 +1899,9 @@ function generateRows() {
         }
 
         // Add campaign level negative keywords (for keyword campaigns only)
-        function addCampaignNegatives(campName) {
-            campNegKwExactList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negExact));
-            campNegKwPhraseList.forEach(kw => addCampNegKeywordRow(campName, kw, mt.negPhrase));
+        function addCampaignNegatives(campName, adGroupName) {
+            campNegKwExactList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
+            campNegKwPhraseList.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
         }
 
         // ========== AUTO CAMPAIGN ==========
@@ -1931,21 +1931,14 @@ function generateRows() {
                 }
             });
 
-            // Negatives - Auto campaign gets both ad-group level AND campaign level negatives
+            // Negatives - Auto campaign: ad-group level only
             if (document.getElementById('neg-auto').checked) {
-                // Ad-group level negatives (from "Negative Keywords" fields)
-                addAdGroupNegKeywords(campName, adGroupName);
-                // Campaign level negatives (from "Kampagnen Negative Keywords" fields)
-                addCampaignNegatives(campName);
-                // Also add campaign-level negatives from the regular negative fields
-                // (in case user only filled one set of fields)
-                negKwExactList.forEach(kw => {
-                    if (!campNegKwExactList.includes(kw)) addCampNegKeywordRow(campName, kw, mt.negExact);
-                });
-                negKwPhraseList.forEach(kw => {
-                    if (!campNegKwPhraseList.includes(kw)) addCampNegKeywordRow(campName, kw, mt.negPhrase);
-                });
-                // Also add negative product targeting for auto campaigns
+                // Ad-group level negatives from both fields (merged, no duplicates)
+                const allNegExact = [...new Set([...negKwExactList, ...campNegKwExactList])];
+                const allNegPhrase = [...new Set([...negKwPhraseList, ...campNegKwPhraseList])];
+                allNegExact.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negExact));
+                allNegPhrase.forEach(kw => addNegKeywordRow(campName, adGroupName, kw, mt.negPhrase));
+                // Negative product targeting
                 negProdTargetList.forEach(asin => addNegProdTargetingRow(campName, adGroupName, asin));
             }
 
@@ -1983,7 +1976,7 @@ function generateRows() {
 
                 if (useNeg) {
                     addAdGroupNegKeywords(campName, adGroupName);
-                    addCampaignNegatives(campName);
+                    addCampaignNegatives(campName, adGroupName);
                 }
             });
         }
@@ -2081,7 +2074,7 @@ function generateRows() {
 
                 if (useNeg) {
                     addAdGroupNegKeywords(campName, adGroupName);
-                    addCampaignNegatives(campName);
+                    addCampaignNegatives(campName, adGroupName);
                 }
             });
         }
