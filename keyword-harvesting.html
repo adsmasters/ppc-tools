@@ -311,6 +311,7 @@ const CURRENCY_MAP = { '€': 'EUR', '$': 'USD', '£': 'GBP' };
 // --- Column aliases ---
 const COL = {
     campaign: ['campaign name', 'kampagnenname', 'nom de la campagne', 'nombre de la campaña', 'nome campagna'],
+    campaignId: ['campaign id', 'kampagnen-id', 'id de la campagne', 'id de campaña', 'id campagna'],
     adgroup: ['ad group name', 'name der anzeigengruppe', 'nom du groupe d\'annonces', 'ad group'],
     searchterm: ['customer search term', 'suchbegriff des kunden', 'suchbegriff eines kunden', 'search term', 'query'],
     targeting: ['targeting', 'targeting type', 'targeting-typ', 'type de ciblage'],
@@ -404,25 +405,39 @@ function handleFileUpload(file) {
                 else console.log('[Harvest] Sheet', idx, 'SKU column NOT FOUND! Headers:', headers.join(' | '));
             });
 
-            // Pass 1: Extract campaign structure, keywords, product ads, targeting type
-            let _pass1SkuCount = 0;
-            parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }, sheetIdx) => {
-                console.log('[Pass1] Sheet', sheetIdx, 'hasEntity:', hasEntity, 'cm.sku:', cm.sku, 'cm.asin:', cm.asin);
+            // Pass 1a: Build Campaign ID → Name mapping (Amazon only puts name on Campaign entity rows)
+            const campIdToName = {};
+            parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }) => {
                 if (!hasEntity) return;
                 for (let i = headerIdx + 1; i < rows.length; i++) {
                     const r = rows[i];
                     if (!r || r.length < 3) continue;
-                    const campName = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
+                    const entity = cm.entity !== -1 ? String(r[cm.entity] || '').toLowerCase().trim() : '';
+                    if (entity.includes('kampagne') || entity.includes('campaign') || entity.includes('campagne') || entity.includes('campaña')) {
+                        const campId = cm.campaignId !== -1 ? String(r[cm.campaignId] || '').trim() : '';
+                        const campName = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
+                        if (campId && campName) campIdToName[campId] = campName;
+                    }
+                }
+            });
+
+            // Pass 1b: Extract campaign structure, keywords, product ads, targeting type
+            parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }) => {
+                if (!hasEntity) return;
+                for (let i = headerIdx + 1; i < rows.length; i++) {
+                    const r = rows[i];
+                    if (!r || r.length < 3) continue;
+                    // Resolve campaign name: direct name first, fallback via ID→Name mapping
+                    let campName = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
+                    if (!campName && cm.campaignId !== -1) {
+                        const campId = String(r[cm.campaignId] || '').trim();
+                        campName = campIdToName[campId] || '';
+                    }
                     const adgroupName = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
                     const entity = cm.entity !== -1 ? String(r[cm.entity] || '').toLowerCase().trim() : '';
                     const kwText = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim().toLowerCase() : '';
                     const asin = cm.asin !== -1 ? String(r[cm.asin] || '').trim() : '';
                     const sku = cm.sku !== -1 ? String(r[cm.sku] || '').trim() : '';
-                    if (sku && _pass1SkuCount < 3) { console.log('[Pass1] Found SKU:', sku, 'in campaign:', campName, 'entity:', entity); _pass1SkuCount++; }
-                    if (entity.includes('produktanzeige') && _pass1SkuCount < 3) {
-                        console.log('[Pass1] ProductAd row - entity:', entity, 'sku idx:', cm.sku, 'raw value:', r[cm.sku], 'row length:', r.length, 'row[21]:', r[21], 'campName:', campName);
-                        _pass1SkuCount++;
-                    }
 
                     // Collect existing keywords
                     if (kwText && (entity.includes('keyword') || entity.includes('mot-cl') || entity.includes('palabra') || entity.includes('parola'))) {
