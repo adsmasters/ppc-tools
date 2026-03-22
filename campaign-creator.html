@@ -599,32 +599,7 @@
                     </div>
                 </div>
 
-                <!-- SD Section Header -->
-                <div class="section-label" style="margin-top:20px;" data-i18n="sec_sd">Sponsored Display</div>
-
-                <!-- SD Product Targeting - Competitor -->
-                <div class="campaign-option">
-                    <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-sd-pt-comp">
-                        <span class="co-label" data-i18n="camp_sd_pt_comp">SD: Produktausrichtung (Competitor ASIN)</span>
-                    </div>
-                    <div class="campaign-option-fields">
-                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-sd-pt-comp" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-sd-pt-comp" step="0.01" value="1.00"></div>
-                    </div>
-                </div>
-
-                <!-- SD Product Targeting - Brand -->
-                <div class="campaign-option">
-                    <div class="campaign-option-header">
-                        <input type="checkbox" id="chk-sd-pt-brand">
-                        <span class="co-label" data-i18n="camp_sd_pt_brand">SD: Produktausrichtung (Brand ASIN)</span>
-                    </div>
-                    <div class="campaign-option-fields">
-                        <div class="mini-field"><label data-i18n="lbl_bid">Gebot</label><input type="number" id="bid-sd-pt-brand" step="0.01" value="0.50"></div>
-                        <div class="mini-field"><label data-i18n="lbl_daily_budget">Tagesbudget</label><input type="number" id="budget-sd-pt-brand" step="0.01" value="1.00"></div>
-                    </div>
-                </div>
+                <!-- SD removed - only SP campaigns supported -->
             </div>
 
             <!-- Error Container -->
@@ -2078,76 +2053,7 @@ function generateRows() {
             });
         }
 
-        // ========== SPONSORED DISPLAY CAMPAIGNS ==========
-        productLabel = 'Sponsored Display';
-
-        // ========== SD - PRODUCT TARGETING - BRAND ==========
-        if (document.getElementById('chk-sd-pt-brand').checked && brandAsinsList.length > 0) {
-            const bid = parseFloat(document.getElementById('bid-sd-pt-brand').value) || 0.50;
-            const budget = parseFloat(document.getElementById('budget-sd-pt-brand').value) || 1.00;
-            const campName = 'SD: Product Targeting (Brand) - ' + productName;
-            const adGroupName = 'ASIN';
-
-            // SD Campaign Row
-            const cr = emptyRow();
-            cr[hProduct] = productLabel;
-            cr[hEntity] = ent.campaign;
-            cr[hOp] = op;
-            cr[hCampId] = campName;
-            cr[hCampName] = campName;
-            cr[hStartDate] = startDate;
-            if (endDate) cr[hEndDate] = endDate;
-            if (portfolioId) cr[hPortfolioId] = portfolioId;
-            cr[hTargetType] = targetManual;
-            cr[hState] = state;
-            cr[hBudget] = budget;
-            cr[hBiddingStrat] = biddingStrategy;
-            rows.push(cr);
-
-            addAdGroupRow(campName, adGroupName, bid);
-            addProductAdRows(campName, adGroupName);
-
-            brandAsinsList.forEach(asin => {
-                addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
-            });
-        }
-
-        // ========== SD - PRODUCT TARGETING - COMPETITOR ==========
-        if (document.getElementById('chk-sd-pt-comp').checked && compAsinsList.length > 0) {
-            const bid = parseFloat(document.getElementById('bid-sd-pt-comp').value) || 0.50;
-            const budget = parseFloat(document.getElementById('budget-sd-pt-comp').value) || 1.00;
-
-            const chunks = splitIntoChunks(compAsinsList, compAsinAllocNum);
-            const totalChunks = chunks.length;
-
-            chunks.forEach((chunk, idx) => {
-                const splitLabel = totalChunks > 1 ? ' - ' + (idx + 1) + '/' + totalChunks : '';
-                const campName = 'SD: Product Targeting (Competitor)' + splitLabel + ' - ' + productName;
-                const adGroupName = 'ASIN';
-
-                const cr = emptyRow();
-                cr[hProduct] = productLabel;
-                cr[hEntity] = ent.campaign;
-                cr[hOp] = op;
-                cr[hCampId] = campName;
-                cr[hCampName] = campName;
-                cr[hStartDate] = startDate;
-                if (endDate) cr[hEndDate] = endDate;
-                if (portfolioId) cr[hPortfolioId] = portfolioId;
-                cr[hTargetType] = targetManual;
-                cr[hState] = state;
-                cr[hBudget] = budget;
-                cr[hBiddingStrat] = biddingStrategy;
-                rows.push(cr);
-
-                addAdGroupRow(campName, adGroupName, bid);
-                addProductAdRows(campName, adGroupName);
-
-                chunk.forEach(asin => {
-                    addProdTargetingRow(campName, adGroupName, 'asin="' + asin.toUpperCase() + '"', bid);
-                });
-            });
-        }
+        // SD campaigns removed — only SP supported
     } // end single product block
 
     if (rows.length === 0) {
@@ -2275,24 +2181,13 @@ function downloadBulkSheet() {
     });
 
     const spLabel = 'Sponsored Products';
-    const sdLabel = 'Sponsored Display';
-    const spData = dataRows.filter(r => r[0] !== sdLabel);
-    const sdData = dataRows.filter(r => r[0] === sdLabel);
-
     const wb = XLSX.utils.book_new();
 
-    if (spData.length > 0) {
-        const sheetData = [headers, ...spData];
+    if (dataRows.length > 0) {
+        const sheetData = [headers, ...dataRows];
         const ws = XLSX.utils.aoa_to_sheet(sheetData);
         ws['!cols'] = headers.map(() => ({ wch: 20 }));
         XLSX.utils.book_append_sheet(wb, ws, t.sheetSP);
-    }
-
-    if (sdData.length > 0) {
-        const sheetData = [headers, ...sdData];
-        const ws = XLSX.utils.aoa_to_sheet(sheetData);
-        ws['!cols'] = headers.map(() => ({ wch: 20 }));
-        XLSX.utils.book_append_sheet(wb, ws, t.sheetSD);
     }
 
     if (!wb.SheetNames.length) {
