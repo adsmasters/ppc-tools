@@ -78,7 +78,7 @@
     <script>
         if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
         // Theme toggle
-        const savedTheme = localStorage.getItem('ppc_theme') || 'dark';
+        const savedTheme = localStorage.getItem('ppc_theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
         document.getElementById('themeToggle').innerHTML = savedTheme === 'light' ? '&#9790;' : '&#9788;';
         function toggleTheme() {

@@ -57,8 +57,8 @@
         .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
         .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
 
-        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
-        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .theme-toggle { background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; line-height: 1; display: flex; align-items: center; gap: 6px; }
+        .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
         .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
         .page-header { margin-bottom: 24px; }
@@ -216,7 +216,7 @@
         </nav>
     </div>
     <div class="topbar-right">
-        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Theme wechseln">&#9790;</button>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Theme wechseln"><span id="themeIcon">🌙</span> <span id="themeLabel">Dark</span></button>
         <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
     </div>
 </div>
@@ -642,17 +642,19 @@
 <script>
 // --- Theme Toggle ---
 function initTheme() {
-    const saved = localStorage.getItem('ppc_theme') || 'dark';
+    const saved = localStorage.getItem('ppc_theme') || 'light';
     applyTheme(saved);
 }
 function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.innerHTML = theme === 'dark' ? '&#9788;' : '&#9790;';
+    const icon = document.getElementById('themeIcon');
+    const label = document.getElementById('themeLabel');
+    if (icon) icon.textContent = theme === 'light' ? '🌙' : '☀️';
+    if (label) label.textContent = theme === 'light' ? 'Dark' : 'Light';
 }
 function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'light' ? 'dark' : 'light';
     localStorage.setItem('ppc_theme', next);
     applyTheme(next);
 }

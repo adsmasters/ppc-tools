@@ -143,7 +143,7 @@
 <body>
 <script>
     if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
-    document.documentElement.setAttribute('data-theme', localStorage.getItem('ppc_theme') || 'dark');
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('ppc_theme') || 'light');
 </script>
 
 <div class="topbar">
@@ -287,13 +287,13 @@
 <script>
 // --- Theme ---
 function toggleTheme() {
-    const c = document.documentElement.getAttribute('data-theme') || 'dark';
+    const c = document.documentElement.getAttribute('data-theme') || 'light';
     const n = c === 'dark' ? 'light' : 'dark';
     localStorage.setItem('ppc_theme', n);
     document.documentElement.setAttribute('data-theme', n);
     document.getElementById('themeToggle').innerHTML = n === 'dark' ? '&#9788;' : '&#9790;';
 }
-document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'dark') === 'dark' ? '&#9788;' : '&#9790;';
+document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'light') === 'dark' ? '&#9788;' : '&#9790;';
 
 // --- State ---
 let rawItems = [];

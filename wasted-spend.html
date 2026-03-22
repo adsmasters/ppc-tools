@@ -177,7 +177,7 @@
 <script>
     if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
     // Theme
-    const saved = localStorage.getItem('ppc_theme') || 'dark';
+    const saved = localStorage.getItem('ppc_theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
 </script>
 
@@ -351,13 +351,13 @@
 <script>
 // --- Theme ---
 function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
     localStorage.setItem('ppc_theme', next);
     document.documentElement.setAttribute('data-theme', next);
     document.getElementById('themeToggle').innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';
 }
-document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'dark') === 'dark' ? '&#9788;' : '&#9790;';
+document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'light') === 'dark' ? '&#9788;' : '&#9790;';
 
 // --- Currency ---
 let detectedCurrency = 'EUR';

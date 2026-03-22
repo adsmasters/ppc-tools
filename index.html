@@ -29,7 +29,7 @@
     </style>
 </head>
 <body>
-    <button class="theme-toggle-corner" id="themeToggle" onclick="toggleTheme()">&#9788;</button>
+    <button class="theme-toggle-corner" id="themeToggle" onclick="toggleTheme()"><span id="themeIcon">🌙</span> <span id="themeLabel">Dark</span></button>
     <div class="login-card">
         <div class="login-logo">Ads<span>Masters</span> PPC Tools</div>
         <p class="login-sub">Interne Amazon PPC Werkzeuge</p>
@@ -39,7 +39,7 @@
     </div>
     <script>
         // Theme toggle
-        const savedTheme = localStorage.getItem('ppc_theme') || 'dark';
+        const savedTheme = localStorage.getItem('ppc_theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
         document.getElementById('themeToggle').innerHTML = savedTheme === 'light' ? '&#9790;' : '&#9788;';
         function toggleTheme() {
