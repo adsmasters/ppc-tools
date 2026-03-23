@@ -631,8 +631,13 @@ function optimizeBids() {
             }
         }
 
-        // Global clamp
-        newBid = Math.max(minBid, Math.min(maxBid, Math.round(newBid * 100) / 100));
+        // Global clamp – aber nie über das aktuelle Gebot hinaus clampen wenn keine Erhöhung gewollt ist
+        newBid = Math.round(newBid * 100) / 100;
+        newBid = Math.min(maxBid, newBid);
+        if (newBid < minBid) {
+            // Nur auf minBid setzen wenn das nicht höher als das aktuelle Gebot ist
+            newBid = Math.min(minBid, item.currentBid);
+        }
 
         const change = newBid - item.currentBid;
         const changePct = item.currentBid > 0 ? (change / item.currentBid * 100) : 0;
