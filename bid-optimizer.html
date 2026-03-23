@@ -286,7 +286,7 @@
         <div class="btn-row" style="justify-content:flex-start;margin-top:0;">
             <button class="btn btn-primary" onclick="exportBulkSheet()">Optimiertes Bulk Sheet erstellen</button>
         </div>
-        <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;" id="selectedCount">0 Anpassungen ausgewaehlt</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;" id="selectedCount">0 Anpassungen ausgewählt</div>
     </div>
 </div>
 
@@ -381,9 +381,9 @@ function parseNum(v) { if (v == null || v === '') return 0; return parseFloat(St
 const COL = {
     campaignId: ['campaign id', 'kampagnen-id'],
     adgroupId: ['ad group id', 'anzeigengruppen-id'],
-    campaign: ['campaign name', 'kampagnenname', 'kampagnenname (nur zu informationszwecken)'],
+    campaign: ['kampagnenname (nur zu informationszwecken)', 'campaign name (informational only)', 'campaign name', 'kampagnenname'],
     budget: ['daily budget', 'tagesbudget', 'budget quotidien', 'presupuesto diario', 'budget giornaliero'],
-    adgroup: ['ad group name', 'name der anzeigengruppe', 'name der anzeigengruppe (nur zu informationszwecken)'],
+    adgroup: ['name der anzeigengruppe (nur zu informationszwecken)', 'ad group name (informational only)', 'ad group name', 'name der anzeigengruppe'],
     entity: ['entity', 'entität', 'entité', 'entidad', 'entità'],
     keyword: ['keyword text', 'keyword-text', 'texte du mot-clé', 'keyword'],
     matchtype: ['match type', 'übereinstimmungstyp'],
@@ -847,7 +847,7 @@ function selectAll() { optimizedItems.forEach((_, i) => selectedItems.add(i)); r
 function deselectAll() { selectedItems.clear(); renderTable(); }
 function selectFiltered() { getFilteredData().forEach(r => selectedItems.add(r.idx)); renderTable(); }
 function selectOnlyChanges() { selectedItems.clear(); optimizedItems.forEach((item, i) => { if (item.direction !== 'same') selectedItems.add(i); }); renderTable(); }
-function updateSelectedCount() { document.getElementById('selectedCount').textContent = selectedItems.size + ' Anpassungen ausgewaehlt'; }
+function updateSelectedCount() { document.getElementById('selectedCount').textContent = selectedItems.size + ' Anpassungen ausgewählt'; }
 
 // --- Export Bulk Sheet ---
 // All values in English - Amazon accepts English across all marketplaces
@@ -855,7 +855,7 @@ const EXPORT_HEADERS = ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Gro
 
 function exportBulkSheet() {
     const selected = optimizedItems.filter((_, i) => selectedItems.has(i));
-    if (selected.length === 0) { document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Anpassungen ausgewaehlt.</div>'; return; }
+    if (selected.length === 0) { document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Anpassungen ausgewählt.</div>'; return; }
 
     const h = EXPORT_HEADERS;
 
@@ -874,7 +874,9 @@ function exportBulkSheet() {
         if (!item.paused) r[h[19]] = item.newBid;  // Bid (nur wenn nicht pausiert)
         if (item.type === 'Keyword') {
             r[h[20]] = item.label;                 // Keyword Text
-            r[h[21]] = item.matchtype;             // Match Type
+            // Match Type auf Englisch forcieren
+            const mtMap = {'weitgehend':'Broad','genau passend':'Exact','wortgruppe':'Phrase','broad':'Broad','exact':'Exact','phrase':'Phrase'};
+            r[h[21]] = mtMap[item.matchtype.toLowerCase()] || item.matchtype; // Match Type
         } else {
             r[h[25]] = item.label;                 // Product Targeting Expression
         }
