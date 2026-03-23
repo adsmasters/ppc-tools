@@ -318,7 +318,7 @@ let corridors = [
     { from: 0, to: 1, pct: -50, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
     { from: 1, to: 2, pct: -20, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
     { from: 2, to: 3, pct: 0, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
-    { from: 3, to: Infinity, pct: 0, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' }
+    { from: 3, to: '', pct: 0, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' }
 ];
 
 function renderCorridors() {
@@ -329,11 +329,10 @@ function renderCorridors() {
         corridors.map((c, i) => {
         const pauseChecked = c.pause ? ' checked' : '';
         const inputDisabled = c.pause ? ' disabled style="opacity:0.4;text-align:center;"' : ' style="text-align:center;"';
-        const toDisplay = c.to === Infinity ? '' : c.to;
         return '<div class="corridor-row">' +
-            '<input type="number" value="' + c.from + '" step="0.1" min="0" onchange="corridors[' + i + '].from=parseFloat(this.value);syncCorridorBounds()">' +
+            '<input type="number" value="' + (c.from || '') + '" step="0.1" min="0" onchange="corridors[' + i + '].from=this.value?parseFloat(this.value):0;syncCorridorBounds()">' +
             '<span class="arrow">–</span>' +
-            '<input type="number" value="' + toDisplay + '" step="0.1" min="0" placeholder="∞" onchange="corridors[' + i + '].to=this.value?parseFloat(this.value):Infinity;syncCorridorBounds()">' +
+            '<input type="number" value="' + (c.to || '') + '" step="0.1" min="0" placeholder="leer = offen" onchange="corridors[' + i + '].to=this.value?parseFloat(this.value):\'\';syncCorridorBounds()">' +
             '<input type="number" value="' + c.pct + '" step="5" onchange="corridors[' + i + '].pct=parseFloat(this.value)||0"' + inputDisabled + ' placeholder="z.B. -30">' +
             '<input type="number" value="' + (c.minBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].minBid=this.value?parseFloat(this.value):\'\'">' +
             '<input type="number" value="' + (c.maxBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].maxBid=this.value?parseFloat(this.value):\'\'">' +
@@ -348,14 +347,14 @@ function renderCorridors() {
 function syncCorridorBounds() {
     // Auto-adjust: each corridor's from = previous corridor's to
     for (let i = 1; i < corridors.length; i++) {
-        corridors[i].from = corridors[i - 1].to;
+        if (corridors[i - 1].to !== '') corridors[i].from = corridors[i - 1].to;
     }
     renderCorridors();
 }
 
 function addCorridor() {
     const last = corridors[corridors.length - 1];
-    const newFrom = last.from;
+    const newFrom = last.from || 0;
     const newTo = newFrom + 1;
     last.from = newTo;
     corridors.splice(corridors.length - 1, 0, { from: newFrom, to: newTo, pct: 0, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' });
@@ -366,9 +365,9 @@ function removeCorridor(idx) {
     if (corridors.length <= 2) return; // Keep at least 2 corridors
     corridors.splice(idx, 1);
     // Fix bounds
-    corridors[corridors.length - 1].to = Infinity;
+    corridors[corridors.length - 1].to = '';
     for (let i = 1; i < corridors.length; i++) {
-        corridors[i].from = corridors[i - 1].to;
+        corridors[i].from = corridors[i - 1].to || corridors[i].from;
     }
     renderCorridors();
 }
@@ -600,7 +599,7 @@ function optimizeBids() {
 
             let matchedCorridor = null;
             for (const c of corridors) {
-                if (roas >= c.from && (c.to === Infinity ? true : roas < c.to)) {
+                if (roas >= c.from && (c.to === '' || c.to === undefined ? true : roas < c.to)) {
                     matchedCorridor = c;
                     break;
                 }
