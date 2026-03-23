@@ -97,10 +97,6 @@
         .msg-container { margin-bottom: 16px; }
         .hidden { display: none; }
         .live-counter { font-size: 13px; color: var(--accent); font-weight: 600; padding: 8px 0; }
-        .preset-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-        .preset-btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-secondary); }
-        .preset-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
-        .preset-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
         .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 12px; }
         .pagination button { padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
         .pagination button:hover { color: var(--text-primary); }
@@ -168,11 +164,6 @@
         <div class="card-title"><span class="step">2</span> Harvesting-Kriterien definieren</div>
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere, ab wann ein Suchbegriff als profitabel gilt und geerntet werden soll.</p>
 
-        <div class="preset-row">
-            <button class="preset-btn" onclick="applyPreset('strict')">Streng (3+ Bestellungen)</button>
-            <button class="preset-btn active" onclick="applyPreset('moderate')">Moderat (2+ Bestellungen)</button>
-            <button class="preset-btn" onclick="applyPreset('loose')">Locker (1+ Bestellung)</button>
-        </div>
 
         <div class="field-row">
             <div class="field">
@@ -608,17 +599,6 @@ function clearUpload() {
     document.getElementById('stepResults').classList.add('hidden');
     document.getElementById('stepExport').classList.add('hidden');
     document.getElementById('fileInput').value = '';
-}
-
-// --- Presets ---
-function applyPreset(type) {
-    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    const p = { strict: { orders: 3, acos: 25, clicks: 10 }, moderate: { orders: 2, acos: 30, clicks: 5 }, loose: { orders: 1, acos: 50, clicks: 3 } }[type];
-    document.getElementById('minOrders').value = p.orders;
-    document.getElementById('maxAcos').value = p.acos;
-    document.getElementById('minClicks').value = p.clicks;
-    updateLiveCounter();
 }
 
 // --- Live Counter ---
