@@ -39,7 +39,10 @@
 </head>
 <body>
     <div class="topbar">
-        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <div style="display:flex;align-items:center;gap:32px;">
+            <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+            <a href="help.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Hilfe</a>
+        </div>
         <div class="topbar-right">
             <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9788;</button>
             <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
