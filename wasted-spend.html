@@ -146,10 +146,6 @@
         .pagination .page-info { font-size: 12px; color: var(--text-secondary); }
 
         /* Preset buttons */
-        .preset-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-        .preset-btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-secondary); }
-        .preset-btn:hover { color: var(--text-primary); border-color: var(--text-secondary); }
-        .preset-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
         /* Live preview counter */
         .live-counter { font-size: 13px; color: var(--accent); font-weight: 600; padding: 8px 0; }
@@ -229,39 +225,14 @@
         <div class="card-title"><span class="step">2</span> Wasted Ad Spend definieren</div>
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere, ab wann ein Suchbegriff als "Wasted Spend" gilt.</p>
 
-        <div class="preset-row">
-            <button class="preset-btn" onclick="applyPreset('conservative')">Konservativ (50+ Klicks)</button>
-            <button class="preset-btn active" onclick="applyPreset('moderate')">Moderat (20+ Klicks)</button>
-            <button class="preset-btn" onclick="applyPreset('aggressive')">Aggressiv (10+ Klicks)</button>
-        </div>
-
-        <div class="toggle-group" style="max-width:300px;">
-            <button class="toggle-btn active" onclick="setFilterMode('or')">ODER (einer reicht)</button>
-            <button class="toggle-btn" onclick="setFilterMode('and')">UND (alle müssen zutreffen)</button>
-        </div>
-
         <div class="field-row">
             <div class="field">
-                <label><input type="checkbox" id="filterClicks" checked style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;"> Min. Klicks ohne Bestellung <span class="tooltip-icon" data-tip="Suchbegriffe mit mindestens X Klicks und 0 Bestellungen gelten als Wasted Spend.">?</span></label>
+                <label>Min. Klicks <span class="tooltip-icon" data-tip="Suchbegriffe mit mindestens X Klicks werden berücksichtigt.">?</span></label>
                 <input type="number" id="minClicks" value="20" min="1">
             </div>
             <div class="field">
-                <label><input type="checkbox" id="filterRoas" style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;"> Max. ROAS <span class="tooltip-icon" data-tip="Suchbegriffe mit ROAS unter diesem Wert gelten als Wasted Spend. Nur relevant wenn Bestellungen > 0.">?</span></label>
+                <label>Max. ROAS <span class="tooltip-icon" data-tip="Suchbegriffe mit ROAS unter diesem Wert gelten als Wasted Spend. Suchbegriffe mit 0 Bestellungen haben automatisch ROAS 0.">?</span></label>
                 <input type="number" id="maxRoas" value="1.0" step="0.1" min="0">
-            </div>
-            <div class="field">
-                <label><input type="checkbox" id="filterAcos" style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;"> Min. ACoS (%) <span class="tooltip-icon" data-tip="Suchbegriffe mit ACoS über diesem Wert gelten als Wasted Spend.">?</span></label>
-                <input type="number" id="minAcos" value="100" step="1" min="0">
-            </div>
-        </div>
-        <div class="field-row">
-            <div class="field">
-                <label><input type="checkbox" id="filterSpend" style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;"> Min. Spend ohne Bestellung <span class="tooltip-icon" data-tip="Suchbegriffe mit mindestens X EUR Spend und 0 Bestellungen.">?</span></label>
-                <input type="number" id="minSpend" value="10" step="0.5" min="0">
-            </div>
-            <div class="field">
-                <label>Min. Impressionen <span class="tooltip-icon" data-tip="Nur Suchbegriffe mit mindestens X Impressionen berücksichtigen (filtert Noise raus).">?</span></label>
-                <input type="number" id="minImpressions" value="0" min="0">
             </div>
             <div class="field"></div>
         </div>
@@ -419,7 +390,6 @@ let aggregatedData = [];
 let campaignData = [];
 let currentView = 'aggregated';
 let selectedTerms = new Set();
-let filterMode = 'or';
 let sortCol = 'spend';
 let sortDir = 'desc';
 let currentPage = 1;
@@ -647,56 +617,15 @@ function clearFile() {
     fileInput.value = '';
 }
 
-// --- Filter Mode ---
-function setFilterMode(mode) {
-    filterMode = mode;
-    document.querySelectorAll('#stepFilter .toggle-btn').forEach((b, i) => {
-        b.classList.toggle('active', (i === 0 && mode === 'or') || (i === 1 && mode === 'and'));
-    });
-}
-
-// --- Presets ---
-function applyPreset(type) {
-    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    const presets = {
-        conservative: { clicks: 50, roas: 0.5, acos: 150, spend: 20, useClicks: true, useRoas: false, useAcos: false, useSpend: false },
-        moderate: { clicks: 20, roas: 1.0, acos: 100, spend: 10, useClicks: true, useRoas: false, useAcos: false, useSpend: false },
-        aggressive: { clicks: 10, roas: 1.5, acos: 70, spend: 5, useClicks: true, useRoas: false, useAcos: false, useSpend: true }
-    };
-    const p = presets[type];
-    document.getElementById('minClicks').value = p.clicks;
-    document.getElementById('maxRoas').value = p.roas;
-    document.getElementById('minAcos').value = p.acos;
-    document.getElementById('minSpend').value = p.spend;
-    document.getElementById('filterClicks').checked = p.useClicks;
-    document.getElementById('filterRoas').checked = p.useRoas;
-    document.getElementById('filterAcos').checked = p.useAcos;
-    document.getElementById('filterSpend').checked = p.useSpend;
-    updateLiveCounter();
-}
-
 // --- Live Counter ---
 function getFilteredCount() {
-    const useClicks = document.getElementById('filterClicks').checked;
-    const useRoas = document.getElementById('filterRoas').checked;
-    const useAcos = document.getElementById('filterAcos').checked;
-    const useSpend = document.getElementById('filterSpend').checked;
     const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
-    const maxRoas = parseFloat(document.getElementById('maxRoas').value) || 0;
-    const minAcos = parseFloat(document.getElementById('minAcos').value) || 0;
-    const minSpend = parseFloat(document.getElementById('minSpend').value) || 0;
-    const minImpressions = parseInt(document.getElementById('minImpressions').value) || 0;
+    const maxRoas = parseFloat(document.getElementById('maxRoas').value);
 
     return rawData.filter(row => {
-        if (row.impressions < minImpressions) return false;
-        const checks = [];
-        if (useClicks) checks.push(row.clicks >= minClicks && row.orders === 0);
-        if (useRoas && row.orders > 0) checks.push(row.spend > 0 && (row.sales / row.spend) < maxRoas);
-        if (useAcos && row.orders > 0 && row.spend > 0) checks.push((row.spend / row.sales * 100) > minAcos);
-        if (useSpend) checks.push(row.spend >= minSpend && row.orders === 0);
-        if (checks.length === 0) return false;
-        return filterMode === 'or' ? checks.some(c => c) : checks.every(c => c);
+        if (row.clicks < minClicks) return false;
+        const roas = row.spend > 0 ? row.sales / row.spend : 0;
+        return roas < maxRoas;
     }).length;
 }
 
@@ -709,7 +638,7 @@ function updateLiveCounter() {
 
 // Live counter on filter change
 document.addEventListener('DOMContentLoaded', function() {
-    ['filterClicks', 'filterRoas', 'filterAcos', 'filterSpend', 'minClicks', 'maxRoas', 'minAcos', 'minSpend', 'minImpressions'].forEach(id => {
+    ['minClicks', 'maxRoas'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateLiveCounter);
         document.getElementById(id).addEventListener('change', updateLiveCounter);
     });
@@ -717,30 +646,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // --- Analysis ---
 function analyzeData() {
-    const useClicks = document.getElementById('filterClicks').checked;
-    const useRoas = document.getElementById('filterRoas').checked;
-    const useAcos = document.getElementById('filterAcos').checked;
-    const useSpend = document.getElementById('filterSpend').checked;
     const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
-    const maxRoas = parseFloat(document.getElementById('maxRoas').value) || 0;
-    const minAcos = parseFloat(document.getElementById('minAcos').value) || 0;
-    const minSpend = parseFloat(document.getElementById('minSpend').value) || 0;
-    const minImpressions = parseInt(document.getElementById('minImpressions').value) || 0;
+    const maxRoas = parseFloat(document.getElementById('maxRoas').value);
 
     wastedData = rawData.filter(row => {
-        // Base filter: min impressions
-        if (row.impressions < minImpressions) return false;
-
-        const checks = [];
-
-        if (useClicks) checks.push(row.clicks >= minClicks && row.orders === 0);
-        if (useRoas && row.orders > 0) checks.push(row.spend > 0 && (row.sales / row.spend) < maxRoas);
-        if (useAcos && row.orders > 0 && row.spend > 0) checks.push((row.spend / row.sales * 100) > minAcos);
-        if (useSpend) checks.push(row.spend >= minSpend && row.orders === 0);
-
-        if (checks.length === 0) return false;
-
-        return filterMode === 'or' ? checks.some(c => c) : checks.every(c => c);
+        if (row.clicks < minClicks) return false;
+        const roas = row.spend > 0 ? row.sales / row.spend : 0;
+        return roas < maxRoas;
     });
 
     // Build aggregated view
