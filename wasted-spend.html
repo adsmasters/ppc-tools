@@ -203,11 +203,11 @@
 
     <!-- STEP 1: Upload -->
     <div class="card" id="stepUpload">
-        <div class="card-title"><span class="step">1</span> Search Term Reports hochladen</div>
+        <div class="card-title"><span class="step">1</span> Bulk Sheet hochladen</div>
         <div class="upload-zone" id="uploadZone">
             <div class="icon">&#128203;</div>
-            <div class="label">Search Term Report(s) hochladen</div>
-            <div class="hint">CSV oder Excel-Datei(en) hierher ziehen oder klicken — mehrere Dateien möglich</div>
+            <div class="label">Bulk Sheet hochladen</div>
+            <div class="hint">Bulk Sheet (Excel) hierher ziehen oder klicken — aus Amazon Campaign Manager → Bulk-Operationen</div>
             <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.tsv" multiple>
         </div>
         <div id="fileInfoContainer"></div>
@@ -534,7 +534,7 @@ function handleParsedData(rows, file) {
     if (colMap.spend === -1) missing.push('Spend');
 
     if (missing.length > 0) {
-        msgEl.innerHTML = '<div class="error-msg">Fehlende Spalten: ' + missing.join(', ') + '. Bitte einen gültigen Search Term Report hochladen.</div>';
+        msgEl.innerHTML = '<div class="error-msg">Fehlende Spalten: ' + missing.join(', ') + '. Bitte ein Bulk Sheet hochladen (Amazon Campaign Manager → Bulk-Operationen → Bulk Sheets erstellen).</div>';
         return;
     }
 
@@ -588,15 +588,12 @@ function handleParsedData(rows, file) {
         return;
     }
 
-    // Warn if Campaign IDs are missing (Search Term Report instead of Bulk Sheet)
+    // Reject if Campaign IDs are missing (Search Term Report instead of Bulk Sheet)
     const hasIds = rawData.some(r => r.campaignId);
     if (!hasIds) {
-        msgEl.innerHTML = '<div class="warn-msg" style="background:var(--warn-bg);border:1px solid var(--warn);color:var(--warn);padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px;">' +
-            '<strong>Hinweis:</strong> Die hochgeladene Datei enthält keine Campaign IDs / Ad Group IDs. ' +
-            'Das passiert wenn ein Search Term Report aus der Amazon Console statt ein Bulk Sheet verwendet wird. ' +
-            'Das Negatives Bulk Sheet wird ohne IDs erstellt – <strong>Amazon wird diese ablehnen</strong>. ' +
-            'Bitte lade stattdessen ein Bulk Sheet aus dem Amazon Campaign Manager herunter (Bulk-Operationen → Bulk Sheets erstellen).' +
-            '</div>';
+        rawData = [];
+        msgEl.innerHTML = '<div class="error-msg">Diese Datei ist kein Bulk Sheet — Campaign IDs fehlen. Bitte lade ein <strong>Bulk Sheet</strong> hoch (Amazon Campaign Manager → Bulk-Operationen → Bulk Sheets erstellen). Search Term Reports aus der Amazon Console werden nicht unterstützt.</div>';
+        return;
     }
 
     // Track uploaded files
