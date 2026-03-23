@@ -428,8 +428,8 @@ let campaignFilter = '';
 
 // --- Column mapping (auto-detect) ---
 const COL_ALIASES = {
-    campaign: ['campaign name', 'kampagnenname', 'nom de la campagne', 'nombre de la campaña', 'nome campagna', 'campaign'],
-    adgroup: ['ad group name', 'name der anzeigengruppe', 'nom du groupe d\'annonces', 'nombre del grupo de anuncios', 'nome gruppo di annunci', 'ad group'],
+    campaign: ['campaign name', 'kampagnenname', 'kampagnenname (nur zu informationszwecken)', 'campaign name (informational only)', 'nom de la campagne', 'nombre de la campaña', 'nome campagna', 'campaign'],
+    adgroup: ['ad group name', 'name der anzeigengruppe', 'name der anzeigengruppe (nur zu informationszwecken)', 'ad group name (informational only)', 'nom du groupe d\'annonces', 'nombre del grupo de anuncios', 'nome gruppo di annunci', 'ad group'],
     searchterm: ['customer search term', 'suchbegriff des kunden', 'suchbegriff eines kunden', 'terme de recherche client', 'término de búsqueda del cliente', 'termine di ricerca del cliente', 'search term', 'query'],
     impressions: ['impressions', 'impressionen'],
     clicks: ['clicks', 'klicks', 'clics', 'clic'],
@@ -481,9 +481,27 @@ function processFile(file, isMulti) {
         reader.onload = function(evt) {
             const data = new Uint8Array(evt.target.result);
             const wb = XLSX.read(data, { type: 'array' });
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-            handleParsedData(rows, file);
+            // Find the sheet that contains search term data
+            let bestRows = null;
+            for (const sn of wb.SheetNames) {
+                const ws = wb.Sheets[sn];
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                if (rows.length < 2) continue;
+                for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                    const row = rows[i].map(c => String(c).toLowerCase().trim());
+                    if (row.some(c => COL_ALIASES.searchterm.some(a => c.includes(a)))) {
+                        bestRows = rows;
+                        break;
+                    }
+                }
+                if (bestRows) break;
+            }
+            if (!bestRows) {
+                // Fallback: use first sheet
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                bestRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+            }
+            handleParsedData(bestRows, file);
         };
         reader.readAsArrayBuffer(file);
     } else {
