@@ -1119,10 +1119,9 @@ function exportBulkSheet() {
         r[hOp] = t.create;
         if (entry.campaignId) r[hCampId] = entry.campaignId;
         r[hCampName] = entry.campaign;
-        if (level === 'adgroup') {
-            if (entry.adgroupId) r[hAdGroupId] = entry.adgroupId;
-            r[hAdGroupName] = entry.adgroup;
-        }
+        // Negative product targeting ALWAYS requires Ad Group ID
+        if (entry.adgroupId) r[hAdGroupId] = entry.adgroupId;
+        r[hAdGroupName] = entry.adgroup;
         r[hState] = t.enabled;
         r[hPtExpr] = 'asin="' + entry.searchterm.toUpperCase() + '"';
         asinRows.push(r);
