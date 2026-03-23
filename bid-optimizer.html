@@ -49,7 +49,7 @@
         input[type="text"], input[type="number"], select { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; }
         input:focus, select:focus { outline: none; border-color: var(--accent); }
         .field { margin-bottom: 14px; }
-        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
         .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
         .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; white-space: normal; max-width: 300px; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
         .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
@@ -78,12 +78,15 @@
         .stat-value.warn { color: var(--warn); }
         .stat-value.danger { color: var(--error); }
 
-        /* ACoS Target Grid */
-        .acos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
-        .acos-target { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
-        .acos-target .type-label { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
-        .acos-target .type-count { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; }
-        .acos-target input { width: 80px; padding: 6px 8px; font-size: 12px; }
+        /* ROAS Corridor */
+        .corridor-list { margin-bottom: 16px; }
+        .corridor-row { display: grid; grid-template-columns: 80px 16px 80px 1fr 40px; gap: 8px; align-items: center; margin-bottom: 8px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+        .corridor-row input[type="number"] { width: 100%; padding: 6px 8px; font-size: 12px; }
+        .corridor-row select { width: 100%; padding: 6px 8px; font-size: 12px; }
+        .corridor-row .arrow { text-align: center; color: var(--text-secondary); font-size: 13px; }
+        .corridor-row .remove-corridor { background: transparent; border: 1px solid var(--border); color: var(--error); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 14px; font-weight: 700; }
+        .corridor-row .remove-corridor:hover { background: var(--error-bg); }
+        .corridor-buttons { display: flex; gap: 8px; margin-bottom: 16px; }
 
         /* Results table */
         .results-container { overflow-x: auto; max-height: 70vh; }
@@ -136,8 +139,8 @@
         .filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
         .filter-row select { width: auto; min-width: 140px; padding: 6px 10px; font-size: 12px; }
 
-        @media (max-width: 900px) { .field-row { grid-template-columns: 1fr 1fr; } .acos-grid { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } .field-row { grid-template-columns: 1fr; } .acos-grid { grid-template-columns: 1fr; } .btn-row { flex-direction: column; } .btn-row .btn { width: 100%; text-align: center; } }
+        @media (max-width: 900px) { .field-row { grid-template-columns: 1fr 1fr; } .corridor-row { grid-template-columns: 60px 16px 60px 1fr 36px; } }
+        @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } .field-row { grid-template-columns: 1fr; } .corridor-row { grid-template-columns: 1fr; } .btn-row { flex-direction: column; } .btn-row .btn { width: 100%; text-align: center; } }
     </style>
 </head>
 <body>
@@ -167,7 +170,7 @@
 <div class="main">
     <div class="page-header">
         <h1 class="page-title">Bid Optimizer</h1>
-        <p class="page-sub">Optimiere Gebote basierend auf ACoS-Zielen — Keywords und Product Targeting</p>
+        <p class="page-sub">Optimiere Gebote basierend auf ROAS-Korridoren — Keywords und Product Targeting</p>
     </div>
 
     <!-- STEP 1 -->
@@ -185,10 +188,13 @@
 
     <!-- STEP 2 -->
     <div class="card hidden" id="stepTargets">
-        <div class="card-title"><span class="step">2</span> ACoS-Ziele definieren</div>
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Setze für jeden Kampagnentyp ein individuelles ACoS-Ziel. Das Tool berechnet daraus die optimalen Gebote.</p>
+        <div class="card-title"><span class="step">2</span> ROAS-Korridore definieren</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere ROAS-Bereiche und die jeweilige Gebots-Aktion. Das Tool passt die Gebote entsprechend an.</p>
 
-        <div class="acos-grid" id="acosGrid"></div>
+        <div class="corridor-list" id="corridorList"></div>
+        <div class="corridor-buttons">
+            <button class="btn-sm" onclick="addCorridor()" style="color:var(--success);border-color:var(--success);">+ Korridor hinzufuegen</button>
+        </div>
 
         <div class="field-row">
             <div class="field">
@@ -196,16 +202,20 @@
                 <input type="number" id="minBid" value="0.05" step="0.01" min="0.02">
             </div>
             <div class="field">
-                <label>Max. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird über diesen Wert erhöht.">?</span></label>
+                <label>Max. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird ueber diesen Wert erhoeht.">?</span></label>
                 <input type="number" id="maxBid" value="5.00" step="0.1" min="0.10">
             </div>
             <div class="field">
-                <label>Keywords ohne Sales <span class="tooltip-icon" data-tip="Wie sollen Keywords ohne Bestellungen behandelt werden?">?</span></label>
-                <select id="noSalesAction">
+                <label>Min. Klicks <span class="tooltip-icon" data-tip="Korridor-Regeln gelten nur fuer Items mit mindestens X Klicks. Items mit weniger Klicks werden uebersprungen.">?</span></label>
+                <input type="number" id="minClicks" value="10" step="1" min="0">
+            </div>
+            <div class="field">
+                <label>Keywords ohne Klicks <span class="tooltip-icon" data-tip="Wie sollen Keywords ohne Klicks behandelt werden?">?</span></label>
+                <select id="noClicksAction">
+                    <option value="keep">Gebot beibehalten</option>
+                    <option value="reduce20">Gebot um 20% senken</option>
                     <option value="reduce30">Gebot um 30% senken</option>
                     <option value="reduce50">Gebot um 50% senken</option>
-                    <option value="reduce20">Gebot um 20% senken</option>
-                    <option value="keep">Gebot beibehalten</option>
                     <option value="min">Auf Min. Gebot setzen</option>
                 </select>
             </div>
@@ -218,7 +228,7 @@
 
     <!-- STEP 3 -->
     <div class="card hidden" id="stepResults">
-        <div class="card-title"><span class="step">3</span> Optimierungsvorschläge</div>
+        <div class="card-title"><span class="step">3</span> Optimierungsvorschlaege</div>
         <div class="stats-row" id="statsRow"></div>
 
         <div class="comparison-grid" id="comparisonGrid"></div>
@@ -230,10 +240,10 @@
                 <option value="">Alle Typen</option>
             </select>
             <select id="filterDirection" onchange="currentPage=1;renderTable()">
-                <option value="">Alle Änderungen</option>
-                <option value="up">Nur Erhöhungen</option>
+                <option value="">Alle Aenderungen</option>
+                <option value="up">Nur Erhoehungen</option>
                 <option value="down">Nur Senkungen</option>
-                <option value="same">Keine Änderung</option>
+                <option value="same">Keine Aenderung</option>
             </select>
             <select id="filterCampaign" onchange="currentPage=1;renderTable()">
                 <option value="">Alle Kampagnen</option>
@@ -249,7 +259,7 @@
                 <button class="btn-sm" onclick="selectAll()">Alle</button>
                 <button class="btn-sm" onclick="deselectAll()">Keine</button>
                 <button class="btn-sm" onclick="selectFiltered()">Gefilterte</button>
-                <button class="btn-sm" onclick="selectOnlyChanges()">Nur Änderungen</button>
+                <button class="btn-sm" onclick="selectOnlyChanges()">Nur Aenderungen</button>
                 <button class="btn-sm" onclick="exportAnalysis()">Analyse exportieren</button>
             </div>
         </div>
@@ -267,23 +277,10 @@
     <!-- STEP 4 -->
     <div class="card hidden" id="stepExport">
         <div class="card-title"><span class="step">4</span> Optimiertes Bulk Sheet erstellen</div>
-        <div class="field-row" style="grid-template-columns:1fr 1fr;">
-            <div class="field">
-                <label>Marketplace</label>
-                <select id="exportMarketplace">
-                    <option value="de">Deutschland (DE)</option>
-                    <option value="en">USA / UK (EN)</option>
-                    <option value="fr">Frankreich (FR)</option>
-                    <option value="it">Italien (IT)</option>
-                    <option value="es">Spanien (ES)</option>
-                </select>
-            </div>
-            <div class="field">
-                <label>&nbsp;</label>
-                <button class="btn btn-primary" onclick="exportBulkSheet()" style="width:100%;">Optimiertes Bulk Sheet erstellen</button>
-            </div>
+        <div class="btn-row" style="justify-content:flex-start;margin-top:0;">
+            <button class="btn btn-primary" onclick="exportBulkSheet()">Optimiertes Bulk Sheet erstellen</button>
         </div>
-        <div style="font-size:12px;color:var(--text-secondary);" id="selectedCount">0 Anpassungen ausgewählt</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;" id="selectedCount">0 Anpassungen ausgewaehlt</div>
     </div>
 </div>
 
@@ -309,7 +306,88 @@ let sortDir = 'desc';
 let currentPage = 1;
 const PAGE_SIZE = 100;
 let detectedCurrency = 'EUR';
-const CURRENCY_MAP = { '€': 'EUR', '$': 'USD', '£': 'GBP' };
+const CURRENCY_MAP = { '\u20AC': 'EUR', '$': 'USD', '\u00A3': 'GBP' };
+
+// --- ROAS Corridors ---
+let corridors = [
+    { from: 0, to: 1, action: 'reduce50' },
+    { from: 1, to: 2, action: 'reduce20' },
+    { from: 2, to: 3, action: 'keep' },
+    { from: 3, to: Infinity, action: 'increase20' }
+];
+
+const CORRIDOR_ACTIONS = [
+    { value: 'reduce50', label: 'Gebot um 50% senken', factor: 0.50 },
+    { value: 'reduce40', label: 'Gebot um 40% senken', factor: 0.60 },
+    { value: 'reduce30', label: 'Gebot um 30% senken', factor: 0.70 },
+    { value: 'reduce20', label: 'Gebot um 20% senken', factor: 0.80 },
+    { value: 'reduce10', label: 'Gebot um 10% senken', factor: 0.90 },
+    { value: 'keep', label: 'Gebot beibehalten', factor: 1.00 },
+    { value: 'increase10', label: 'Gebot um 10% erhoehen', factor: 1.10 },
+    { value: 'increase20', label: 'Gebot um 20% erhoehen', factor: 1.20 },
+    { value: 'increase30', label: 'Gebot um 30% erhoehen', factor: 1.30 },
+    { value: 'increase50', label: 'Gebot um 50% erhoehen', factor: 1.50 },
+    { value: 'setMin', label: 'Auf Min. Gebot setzen', factor: 0 }
+];
+
+function getActionFactor(actionValue) {
+    const a = CORRIDOR_ACTIONS.find(a => a.value === actionValue);
+    return a ? a.factor : 1;
+}
+
+function getActionLabel(actionValue) {
+    const a = CORRIDOR_ACTIONS.find(a => a.value === actionValue);
+    return a ? a.label : actionValue;
+}
+
+function renderCorridors() {
+    const list = document.getElementById('corridorList');
+    list.innerHTML = corridors.map((c, i) => {
+        const isLast = i === corridors.length - 1;
+        const toVal = isLast ? '\u221E' : c.to;
+        const optionsHtml = CORRIDOR_ACTIONS.map(a =>
+            '<option value="' + a.value + '"' + (c.action === a.value ? ' selected' : '') + '>' + a.label + '</option>'
+        ).join('');
+        return '<div class="corridor-row">' +
+            '<input type="number" value="' + c.from + '" step="0.1" min="0" onchange="corridors[' + i + '].from=parseFloat(this.value);syncCorridorBounds()">' +
+            '<span class="arrow">-</span>' +
+            (isLast
+                ? '<input type="text" value="\u221E" disabled style="text-align:center;color:var(--text-secondary)">'
+                : '<input type="number" value="' + c.to + '" step="0.1" min="0" onchange="corridors[' + i + '].to=parseFloat(this.value);syncCorridorBounds()">') +
+            '<select onchange="corridors[' + i + '].action=this.value">' + optionsHtml + '</select>' +
+            '<button class="remove-corridor" onclick="removeCorridor(' + i + ')" title="Korridor entfernen">&times;</button>' +
+            '</div>';
+    }).join('');
+}
+
+function syncCorridorBounds() {
+    // Auto-adjust: each corridor's from = previous corridor's to
+    for (let i = 1; i < corridors.length; i++) {
+        corridors[i].from = corridors[i - 1].to;
+    }
+    renderCorridors();
+}
+
+function addCorridor() {
+    const last = corridors[corridors.length - 1];
+    // Insert before the last (infinity) corridor
+    const newFrom = last.from;
+    const newTo = newFrom + 1;
+    last.from = newTo;
+    corridors.splice(corridors.length - 1, 0, { from: newFrom, to: newTo, action: 'keep' });
+    renderCorridors();
+}
+
+function removeCorridor(idx) {
+    if (corridors.length <= 2) return; // Keep at least 2 corridors
+    corridors.splice(idx, 1);
+    // Fix bounds
+    corridors[corridors.length - 1].to = Infinity;
+    for (let i = 1; i < corridors.length; i++) {
+        corridors[i].from = corridors[i - 1].to;
+    }
+    renderCorridors();
+}
 
 function formatCurrency(v) { return v.toLocaleString('de-DE', { style: 'currency', currency: detectedCurrency }); }
 function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -317,21 +395,23 @@ function parseNum(v) { if (v == null || v === '') return 0; return parseFloat(St
 
 // --- Column detection ---
 const COL = {
-    campaign: ['campaign name', 'kampagnenname', 'nom de la campagne', 'nombre de la campaña', 'nome campagna'],
+    campaignId: ['campaign id', 'kampagnen-id'],
+    adgroupId: ['ad group id', 'anzeigengruppen-id'],
+    campaign: ['campaign name', 'kampagnenname', 'kampagnenname (nur zu informationszwecken)'],
     budget: ['daily budget', 'tagesbudget', 'budget quotidien', 'presupuesto diario', 'budget giornaliero'],
-    adgroup: ['ad group name', 'name der anzeigengruppe', 'ad group'],
-    entity: ['entity', 'entität', 'entité', 'entidad', 'entità'],
-    keyword: ['keyword text', 'keyword-text', 'texte du mot-clé', 'keyword'],
-    matchtype: ['match type', 'übereinstimmungstyp'],
-    bid: ['bid', 'gebot', 'enchère', 'offerta', 'puja'],
+    adgroup: ['ad group name', 'name der anzeigengruppe', 'name der anzeigengruppe (nur zu informationszwecken)'],
+    entity: ['entity', 'entitaet', 'entite', 'entidad', 'entita'],
+    keyword: ['keyword text', 'keyword-text', 'texte du mot-cle', 'keyword'],
+    matchtype: ['match type', 'uebereinstimmungstyp'],
+    bid: ['bid', 'gebot', 'standardgebot fuer die anzeigengruppe (nur zu informationszwecken)'],
     impressions: ['impressions', 'impressionen'],
     clicks: ['clicks', 'klicks', 'clics'],
-    spend: ['spend', 'ausgaben', 'cost', 'dépenses'],
-    sales: ['7 day total sales', 'total sales', 'sales', 'umsatz'],
-    orders: ['7 day total orders', 'total orders', 'orders', 'bestellungen'],
+    spend: ['spend', 'ausgaben', 'cost', 'depenses'],
+    sales: ['7 day total sales', '7-day total sales', 'total sales', 'sales', 'umsatz', 'verkaeufe'],
+    orders: ['7 day total orders', '7-day total orders', 'total orders', 'orders', 'bestellungen'],
     targeting: ['targeting type', 'targeting-typ', 'type de ciblage'],
-    ptExpr: ['product targeting expression', 'ausdruck für produkt-targeting'],
-    state: ['state', 'zustand', 'état']
+    ptExpr: ['product targeting expression', 'ausdruck fuer produkt-targeting'],
+    state: ['state', 'zustand', 'etat']
 };
 
 function findCol(headers, key) {
@@ -388,16 +468,19 @@ function handleUpload(file) {
             const campaign = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
 
             // Extract campaign budgets
-            const isCampaignRow = entity.includes('kampagne') || entity.includes('campaign') || entity.includes('campagne') || entity.includes('campaña') || entity.includes('campagna');
+            const isCampaignRow = entity.includes('kampagne') || entity.includes('campaign') || entity.includes('campagne') || entity.includes('campana') || entity.includes('campagna');
             if (isCampaignRow && campaign && cm.budget !== -1) {
                 const budgetVal = parseNum(r[cm.budget]);
                 if (budgetVal > 0) campaignBudgets[campaign] = budgetVal;
             }
 
             const isKeyword = entity.includes('keyword') || entity.includes('mot-cl') || entity.includes('palabra') || entity.includes('parola');
-            const isPT = entity.includes('targeting') || entity.includes('ciblage') || entity.includes('segmentación');
+            const isPT = entity.includes('targeting') || entity.includes('ciblage') || entity.includes('segmentacion');
             if (!isKeyword && !isPT) continue;
             if (entity.includes('negat')) continue;
+
+            const campaignId = cm.campaignId !== -1 ? String(r[cm.campaignId] || '').trim() : '';
+            const adgroupId = cm.adgroupId !== -1 ? String(r[cm.adgroupId] || '').trim() : '';
             const adgroup = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
             const keyword = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim() : '';
             const ptExpr = cm.ptExpr !== -1 ? String(r[cm.ptExpr] || '').trim() : '';
@@ -414,7 +497,8 @@ function handleUpload(file) {
             if (currentBid <= 0) continue;
 
             rawItems.push({
-                campaign, adgroup, label: label || keyword, matchtype,
+                campaign, campaignId, adgroup, adgroupId,
+                label: label || keyword, matchtype,
                 type: isKeyword ? 'Keyword' : 'Product Targeting',
                 campType: detectType(campaign),
                 currentBid, impressions, clicks, spend, sales, orders,
@@ -459,7 +543,7 @@ function handleUpload(file) {
 function finishUpload(file) {
     const msgEl = document.getElementById('uploadMsg');
     if (rawItems.length === 0) {
-        msgEl.innerHTML = '<div class="error-msg">Keine Keywords oder Product Targeting Einträge mit Geboten gefunden.</div>';
+        msgEl.innerHTML = '<div class="error-msg">Keine Keywords oder Product Targeting Eintraege mit Geboten gefunden.</div>';
         return;
     }
 
@@ -472,9 +556,9 @@ function finishUpload(file) {
         campaignTypes[item.campType].sales += item.sales;
     });
 
-    document.getElementById('fileInfoContainer').innerHTML = `<div class="file-info"><span class="name">${escapeHtml(file.name)}</span><span class="meta">${rawItems.length} Keywords/Targets, ${Object.keys(campaignTypes).length} Kampagnentypen</span><span class="remove" onclick="clearUpload()">&times;</span></div>`;
+    document.getElementById('fileInfoContainer').innerHTML = '<div class="file-info"><span class="name">' + escapeHtml(file.name) + '</span><span class="meta">' + rawItems.length + ' Keywords/Targets, ' + Object.keys(campaignTypes).length + ' Kampagnentypen</span><span class="remove" onclick="clearUpload()">&times;</span></div>';
 
-    renderAcosGrid();
+    renderCorridors();
     document.getElementById('stepTargets').classList.remove('hidden');
     document.getElementById('stepResults').classList.add('hidden');
     document.getElementById('stepExport').classList.add('hidden');
@@ -492,57 +576,64 @@ function clearUpload() {
     fileInput.value = '';
 }
 
-// --- ACoS Target Grid ---
-function renderAcosGrid() {
-    const defaults = { 'Auto': 25, 'Brand': 15, 'Generic': 25, 'Competitor': 30, 'Harvest': 25, 'Single Keyword': 20, 'Product Targeting': 30, 'Sponsored Display': 35, 'Sonstige': 25 };
-    const grid = document.getElementById('acosGrid');
-    grid.innerHTML = Object.entries(campaignTypes).sort((a, b) => b[1].count - a[1].count).map(([type, data]) => {
-        const def = defaults[type] || 25;
-        const currentAcos = data.sales > 0 ? (data.spend / data.sales * 100).toFixed(1) : '–';
-        return `<div class="acos-target">
-            <div class="type-label">${escapeHtml(type)}</div>
-            <div class="type-count">${data.count} Einträge · Aktueller ACoS: ${currentAcos}%</div>
-            <label style="font-size:11px;">Ziel-ACoS (%)</label>
-            <input type="number" class="acos-input" data-type="${escapeHtml(type)}" value="${def}" step="1" min="1" max="200">
-        </div>`;
-    }).join('');
-}
-
 // --- Optimization ---
 function optimizeBids() {
     const minBid = parseFloat(document.getElementById('minBid').value) || 0.02;
     const maxBid = parseFloat(document.getElementById('maxBid').value) || 10;
-    const noSalesAction = document.getElementById('noSalesAction').value;
-
-    // Collect ACoS targets per type
-    const acosTargets = {};
-    document.querySelectorAll('.acos-input').forEach(input => {
-        acosTargets[input.dataset.type] = parseFloat(input.value) / 100;
-    });
+    const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
+    const noClicksAction = document.getElementById('noClicksAction').value;
 
     optimizedItems = rawItems.map(item => {
-        const targetAcos = acosTargets[item.campType] || 0.25;
         let newBid = item.currentBid;
         let reason = '';
 
-        if (item.orders > 0 && item.clicks > 0) {
-            // Formula: New Bid = Target ACoS × Revenue per Click
-            const rpc = item.sales / item.clicks;
-            newBid = targetAcos * rpc;
-            reason = 'ACoS-Optimierung';
-        } else if (item.clicks > 0 && item.orders === 0) {
-            // No conversions
-            switch (noSalesAction) {
-                case 'reduce20': newBid = item.currentBid * 0.8; reason = 'Keine Sales (−20%)'; break;
-                case 'reduce30': newBid = item.currentBid * 0.7; reason = 'Keine Sales (−30%)'; break;
-                case 'reduce50': newBid = item.currentBid * 0.5; reason = 'Keine Sales (−50%)'; break;
-                case 'min': newBid = minBid; reason = 'Keine Sales (Min.)'; break;
-                case 'keep': newBid = item.currentBid; reason = 'Keine Sales (beibehalten)'; break;
-            }
-        } else {
+        if (item.clicks === 0) {
             // No clicks at all
+            switch (noClicksAction) {
+                case 'reduce20': newBid = item.currentBid * 0.8; reason = 'Keine Klicks (\u221220%)'; break;
+                case 'reduce30': newBid = item.currentBid * 0.7; reason = 'Keine Klicks (\u221230%)'; break;
+                case 'reduce50': newBid = item.currentBid * 0.5; reason = 'Keine Klicks (\u221250%)'; break;
+                case 'min': newBid = minBid; reason = 'Keine Klicks (Min.)'; break;
+                case 'keep': default: newBid = item.currentBid; reason = 'Keine Klicks (beibehalten)'; break;
+            }
+        } else if (item.clicks < minClicks) {
+            // Not enough data
             newBid = item.currentBid;
-            reason = 'Keine Klicks';
+            reason = 'Zu wenig Daten (' + item.clicks + ' Klicks)';
+        } else {
+            // Calculate ROAS
+            let roas = 0;
+            if (item.clicks > 0 && item.orders > 0 && item.spend > 0) {
+                roas = item.sales / item.spend;
+            }
+            // roas = 0 when orders === 0 and clicks > 0
+
+            // Find matching corridor
+            let matchedCorridor = null;
+            for (const c of corridors) {
+                const upperBound = c.to === Infinity ? Infinity : c.to;
+                if (roas >= c.from && roas < upperBound) {
+                    matchedCorridor = c;
+                    break;
+                }
+            }
+            // Fallback: last corridor if ROAS exactly matches upper bound
+            if (!matchedCorridor && corridors.length > 0) {
+                matchedCorridor = corridors[corridors.length - 1];
+            }
+
+            if (matchedCorridor) {
+                const factor = getActionFactor(matchedCorridor.action);
+                if (matchedCorridor.action === 'setMin') {
+                    newBid = minBid;
+                } else {
+                    newBid = item.currentBid * factor;
+                }
+                const pctLabel = matchedCorridor.action === 'keep' ? '0%'
+                    : matchedCorridor.action === 'setMin' ? 'Min.'
+                    : (factor > 1 ? '+' : '') + Math.round((factor - 1) * 100) + '%';
+                reason = 'ROAS ' + roas.toFixed(2) + ' \u2192 ' + pctLabel;
+            }
         }
 
         // Clamp
@@ -580,13 +671,12 @@ function renderStats() {
     const sames = optimizedItems.filter(i => i.direction === 'same');
     const avgChange = optimizedItems.length > 0 ? (optimizedItems.reduce((s, i) => s + i.changePct, 0) / optimizedItems.length).toFixed(1) : 0;
 
-    document.getElementById('statsRow').innerHTML = `
-        <div class="stat-card"><div class="stat-label">Gesamt Keywords/Targets</div><div class="stat-value">${optimizedItems.length}</div></div>
-        <div class="stat-card"><div class="stat-label">Gebote erhöhen</div><div class="stat-value success">${ups.length}</div></div>
-        <div class="stat-card"><div class="stat-label">Gebote senken</div><div class="stat-value danger">${downs.length}</div></div>
-        <div class="stat-card"><div class="stat-label">Keine Änderung</div><div class="stat-value">${sames.length}</div></div>
-        <div class="stat-card"><div class="stat-label">Ø Änderung</div><div class="stat-value ${parseFloat(avgChange)>0?'success':parseFloat(avgChange)<0?'danger':''}">${avgChange}%</div></div>
-    `;
+    document.getElementById('statsRow').innerHTML =
+        '<div class="stat-card"><div class="stat-label">Gesamt Keywords/Targets</div><div class="stat-value">' + optimizedItems.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Gebote erhoehen</div><div class="stat-value success">' + ups.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Gebote senken</div><div class="stat-value danger">' + downs.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Keine Aenderung</div><div class="stat-value">' + sames.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">\u00D8 Aenderung</div><div class="stat-value ' + (parseFloat(avgChange) > 0 ? 'success' : parseFloat(avgChange) < 0 ? 'danger' : '') + '">' + avgChange + '%</div></div>';
 }
 
 // --- Vorher/Nachher Vergleich ---
@@ -596,12 +686,10 @@ function renderComparison() {
 
     const totalSpend = items.reduce((s, i) => s + i.spend, 0);
     const totalSales = items.reduce((s, i) => s + i.sales, 0);
-    const totalClicks = items.reduce((s, i) => s + i.clicks, 0);
     const currentAcos = totalSales > 0 ? (totalSpend / totalSales * 100) : 0;
     const currentRoas = totalSpend > 0 ? (totalSales / totalSpend) : 0;
     const avgBid = items.reduce((s, i) => s + i.currentBid, 0) / items.length;
 
-    // Estimate new metrics: new spend ≈ old spend × (newBid / oldBid) for each item
     let estNewSpend = 0;
     items.forEach(i => {
         const ratio = i.currentBid > 0 ? i.newBid / i.currentBid : 1;
@@ -616,32 +704,29 @@ function renderComparison() {
     function cls(val) { return val > 0.1 ? 'up' : val < -0.1 ? 'down' : ''; }
     function sign(val) { return val > 0 ? '+' : ''; }
 
-    document.getElementById('comparisonGrid').innerHTML = `
-        <div class="comparison-box">
-            <div class="box-title">Aktuell</div>
-            <div class="box-row"><span class="label">Ø Gebot</span><span class="value">${formatCurrency(avgBid)}</span></div>
-            <div class="box-row"><span class="label">Gesamtspend</span><span class="value">${formatCurrency(totalSpend)}</span></div>
-            <div class="box-row"><span class="label">ACoS</span><span class="value">${currentAcos.toFixed(1)}%</span></div>
-            <div class="box-row"><span class="label">ROAS</span><span class="value">${currentRoas.toFixed(2)}x</span></div>
-        </div>
-        <div class="comparison-box after">
-            <div class="box-title">Nach Optimierung (geschätzt)</div>
-            <div class="box-row"><span class="label">Ø Gebot</span><span class="value ${cls(newAvgBid - avgBid)}">${formatCurrency(newAvgBid)} (${sign(newAvgBid - avgBid)}${((newAvgBid - avgBid) / avgBid * 100).toFixed(1)}%)</span></div>
-            <div class="box-row"><span class="label">Gesamtspend</span><span class="value ${cls(spendDiff)}">${formatCurrency(estNewSpend)} (${sign(spendDiff)}${formatCurrency(spendDiff)})</span></div>
-            <div class="box-row"><span class="label">ACoS</span><span class="value ${cls(-acosDiff)}">${estNewAcos.toFixed(1)}% (${sign(acosDiff)}${acosDiff.toFixed(1)}pp)</span></div>
-            <div class="box-row"><span class="label">ROAS</span><span class="value ${cls(estNewRoas - currentRoas)}">${estNewRoas.toFixed(2)}x</span></div>
-        </div>
-    `;
+    document.getElementById('comparisonGrid').innerHTML =
+        '<div class="comparison-box">' +
+            '<div class="box-title">Aktuell</div>' +
+            '<div class="box-row"><span class="label">\u00D8 Gebot</span><span class="value">' + formatCurrency(avgBid) + '</span></div>' +
+            '<div class="box-row"><span class="label">Gesamtspend</span><span class="value">' + formatCurrency(totalSpend) + '</span></div>' +
+            '<div class="box-row"><span class="label">ACoS</span><span class="value">' + currentAcos.toFixed(1) + '%</span></div>' +
+            '<div class="box-row"><span class="label">ROAS</span><span class="value">' + currentRoas.toFixed(2) + 'x</span></div>' +
+        '</div>' +
+        '<div class="comparison-box after">' +
+            '<div class="box-title">Nach Optimierung (geschaetzt)</div>' +
+            '<div class="box-row"><span class="label">\u00D8 Gebot</span><span class="value ' + cls(newAvgBid - avgBid) + '">' + formatCurrency(newAvgBid) + ' (' + sign(newAvgBid - avgBid) + ((newAvgBid - avgBid) / avgBid * 100).toFixed(1) + '%)</span></div>' +
+            '<div class="box-row"><span class="label">Gesamtspend</span><span class="value ' + cls(spendDiff) + '">' + formatCurrency(estNewSpend) + ' (' + sign(spendDiff) + formatCurrency(spendDiff) + ')</span></div>' +
+            '<div class="box-row"><span class="label">ACoS</span><span class="value ' + cls(-acosDiff) + '">' + estNewAcos.toFixed(1) + '% (' + sign(acosDiff) + acosDiff.toFixed(1) + 'pp)</span></div>' +
+            '<div class="box-row"><span class="label">ROAS</span><span class="value ' + cls(estNewRoas - currentRoas) + '">' + estNewRoas.toFixed(2) + 'x</span></div>' +
+        '</div>';
 }
 
 // --- Budget Check ---
 function renderBudgetWarnings() {
     const warnings = [];
-    // Group optimized items by campaign, sum up new bids × estimated clicks
     const campData = {};
     optimizedItems.forEach(item => {
         if (!campData[item.campaign]) campData[item.campaign] = { totalNewBidSpend: 0, totalOldBidSpend: 0, budget: campaignBudgets[item.campaign] || 0 };
-        // Estimate daily spend: use ratio of new/old bid
         const ratio = item.currentBid > 0 ? item.newBid / item.currentBid : 1;
         const estDailySpend = item.spend * ratio;
         campData[item.campaign].totalNewBidSpend += estDailySpend;
@@ -650,25 +735,23 @@ function renderBudgetWarnings() {
 
     Object.entries(campData).forEach(([campName, data]) => {
         if (data.budget > 0 && data.totalNewBidSpend > data.budget * 30) {
-            // Rough check: if estimated monthly spend exceeds 30x daily budget
-            const dailyEst = data.totalNewBidSpend / 30; // rough daily
+            const dailyEst = data.totalNewBidSpend / 30;
             if (dailyEst > data.budget * 1.5) {
-                warnings.push('Kampagne "' + campName + '": Geschätzter Tages-Spend (' + formatCurrency(dailyEst) + ') könnte das Tagesbudget (' + formatCurrency(data.budget) + ') übersteigen.');
+                warnings.push('Kampagne "' + campName + '": Geschaetzter Tages-Spend (' + formatCurrency(dailyEst) + ') koennte das Tagesbudget (' + formatCurrency(data.budget) + ') uebersteigen.');
             }
         }
     });
 
-    const el = document.getElementById('budgetWarnings');
-    el.innerHTML = warnings.map(w => '<div class="warn-msg">' + w + '</div>').join('');
+    document.getElementById('budgetWarnings').innerHTML = warnings.map(w => '<div class="warn-msg">' + w + '</div>').join('');
 }
 
 // --- Filters ---
 function renderFilters() {
     const types = [...new Set(optimizedItems.map(i => i.campType))].sort();
-    document.getElementById('filterType').innerHTML = '<option value="">Alle Typen</option>' + types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    document.getElementById('filterType').innerHTML = '<option value="">Alle Typen</option>' + types.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('');
 
     const campaigns = [...new Set(optimizedItems.map(i => i.campaign))].sort();
-    document.getElementById('filterCampaign').innerHTML = '<option value="">Alle Kampagnen (' + campaigns.length + ')</option>' + campaigns.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    document.getElementById('filterCampaign').innerHTML = '<option value="">Alle Kampagnen (' + campaigns.length + ')</option>' + campaigns.map(c => '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>').join('');
 }
 
 // --- Table ---
@@ -693,7 +776,7 @@ function renderTable() {
     // Sort
     data.sort((a, b) => {
         let va = a[sortCol], vb = b[sortCol];
-        if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb||'').toLowerCase(); }
+        if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb || '').toLowerCase(); }
         return sortDir === 'asc' ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
     });
 
@@ -708,18 +791,19 @@ function renderTable() {
         { id: 'campaign', label: 'Kampagne', sort: true },
         { id: 'currentBid', label: 'Aktuell', sort: true, num: true },
         { id: 'newBid', label: 'Neu', sort: true, num: true },
-        { id: 'changePct', label: 'Änderung', sort: true, num: true },
+        { id: 'changePct', label: 'Aenderung', sort: true, num: true },
         { id: 'acos', label: 'ACoS', sort: true, num: true },
+        { id: 'roas', label: 'ROAS', sort: true, num: true },
         { id: 'orders', label: 'Orders', sort: true, num: true },
         { id: 'clicks', label: 'Klicks', sort: true, num: true },
         { id: 'spend', label: 'Spend', sort: true, num: true },
-        { id: 'reason', label: 'Grund', sort: true }
+        { id: 'reason', label: 'Korridor / Grund', sort: true }
     ];
 
     document.getElementById('tableHead').innerHTML = '<tr>' + cols.map(c => {
         const arrow = c.id === sortCol ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
-        const click = c.sort ? ` onclick="sortTable('${c.id}')"` : '';
-        return `<th${click}>${c.label}${arrow}</th>`;
+        const click = c.sort ? ' onclick="sortTable(\'' + c.id + '\')"' : '';
+        return '<th' + click + '>' + c.label + arrow + '</th>';
     }).join('') + '</tr>';
 
     document.getElementById('tableBody').innerHTML = pageData.map(row => {
@@ -727,8 +811,8 @@ function renderTable() {
         const cls = selectedItems.has(row.idx) ? ' class="selected"' : '';
         const dirClass = row.direction === 'up' ? 'bid-up' : row.direction === 'down' ? 'bid-down' : 'bid-same';
         const arrow = row.direction === 'up' ? '&#9650; ' : row.direction === 'down' ? '&#9660; ' : '';
-        const changeTxt = Math.abs(row.changePct) < 1 ? '–' : (row.changePct > 0 ? '+' : '') + row.changePct.toFixed(1) + '%';
-        const acosDisplay = row.acos === Infinity ? '–' : row.acos.toFixed(1) + '%';
+        const changeTxt = Math.abs(row.changePct) < 1 ? '\u2013' : (row.changePct > 0 ? '+' : '') + row.changePct.toFixed(1) + '%';
+        const acosDisplay = row.acos === Infinity ? '\u2013' : row.acos.toFixed(1) + '%';
         let acosColor = 'var(--text-primary)';
         if (row.acos !== Infinity && row.acos > 0) {
             if (row.acos > 50) acosColor = 'var(--error)';
@@ -736,20 +820,29 @@ function renderTable() {
             else if (row.acos <= 20) acosColor = 'var(--success)';
         }
 
-        return `<tr${cls}>
-            <td><input type="checkbox" ${checked} onchange="toggleItem(${row.idx},this.checked)"></td>
-            <td>${escapeHtml(row.label)}</td>
-            <td><span style="font-size:10px;padding:2px 6px;border-radius:3px;background:var(--bg-hover);color:var(--text-secondary)">${escapeHtml(row.campType)}</span></td>
-            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(row.campaign)}">${escapeHtml(row.campaign)}</td>
-            <td class="num">${formatCurrency(row.currentBid)}</td>
-            <td class="num"><input type="number" value="${row.newBid.toFixed(2)}" step="0.01" min="0.02" onchange="optimizedItems[${row.idx}].newBid=parseFloat(this.value);recalcChange(${row.idx});"></td>
-            <td class="num"><span class="bid-change ${dirClass}">${arrow}${changeTxt}</span></td>
-            <td class="num" style="color:${acosColor}">${acosDisplay}</td>
-            <td class="num">${row.orders}</td>
-            <td class="num">${row.clicks.toLocaleString('de-DE')}</td>
-            <td class="num">${formatCurrency(row.spend)}</td>
-            <td style="font-size:11px;color:var(--text-secondary)">${escapeHtml(row.reason)}</td>
-        </tr>`;
+        // ROAS color coding
+        const roasDisplay = row.roas.toFixed(2);
+        let roasColor = 'var(--text-primary)';
+        if (row.roas === 0) roasColor = 'var(--error)';
+        else if (row.roas < 1) roasColor = '#e5832a';  // orange
+        else if (row.roas < 2) roasColor = 'var(--warn)';
+        else roasColor = 'var(--success)';
+
+        return '<tr' + cls + '>' +
+            '<td><input type="checkbox" ' + checked + ' onchange="toggleItem(' + row.idx + ',this.checked)"></td>' +
+            '<td>' + escapeHtml(row.label) + '</td>' +
+            '<td><span style="font-size:10px;padding:2px 6px;border-radius:3px;background:var(--bg-hover);color:var(--text-secondary)">' + escapeHtml(row.campType) + '</span></td>' +
+            '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(row.campaign) + '">' + escapeHtml(row.campaign) + '</td>' +
+            '<td class="num">' + formatCurrency(row.currentBid) + '</td>' +
+            '<td class="num"><input type="number" value="' + row.newBid.toFixed(2) + '" step="0.01" min="0.02" onchange="optimizedItems[' + row.idx + '].newBid=parseFloat(this.value);recalcChange(' + row.idx + ');"></td>' +
+            '<td class="num"><span class="bid-change ' + dirClass + '">' + arrow + changeTxt + '</span></td>' +
+            '<td class="num" style="color:' + acosColor + '">' + acosDisplay + '</td>' +
+            '<td class="num" style="color:' + roasColor + '">' + roasDisplay + '</td>' +
+            '<td class="num">' + row.orders + '</td>' +
+            '<td class="num">' + row.clicks.toLocaleString('de-DE') + '</td>' +
+            '<td class="num">' + formatCurrency(row.spend) + '</td>' +
+            '<td style="font-size:11px;color:var(--text-secondary)">' + escapeHtml(row.reason) + '</td>' +
+            '</tr>';
     }).join('');
 
     document.getElementById('tableCount').textContent = data.length + ' von ' + optimizedItems.length;
@@ -769,19 +862,19 @@ function recalcChange(idx) {
 function renderPagination(totalPages) {
     const c = document.getElementById('pagination');
     if (totalPages <= 1) { c.innerHTML = ''; return; }
-    let h = '<button ' + (currentPage<=1?'disabled':'') + ' onclick="currentPage--;renderTable();">&laquo;</button>';
-    const s = Math.max(1,currentPage-3), e = Math.min(totalPages,currentPage+3);
-    if (s>1) h+='<button onclick="currentPage=1;renderTable();">1</button><span class="page-info">...</span>';
-    for (let i=s;i<=e;i++) h+='<button class="'+(i===currentPage?'active':'')+'" onclick="currentPage='+i+';renderTable();">'+i+'</button>';
-    if (e<totalPages) h+='<span class="page-info">...</span><button onclick="currentPage='+totalPages+';renderTable();">'+totalPages+'</button>';
-    h+='<button '+(currentPage>=totalPages?'disabled':'')+' onclick="currentPage++;renderTable();">&raquo;</button>';
-    h+='<span class="page-info">Seite '+currentPage+' von '+totalPages+'</span>';
-    c.innerHTML=h;
+    let h = '<button ' + (currentPage <= 1 ? 'disabled' : '') + ' onclick="currentPage--;renderTable();">&laquo;</button>';
+    const s = Math.max(1, currentPage - 3), e = Math.min(totalPages, currentPage + 3);
+    if (s > 1) h += '<button onclick="currentPage=1;renderTable();">1</button><span class="page-info">...</span>';
+    for (let i = s; i <= e; i++) h += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="currentPage=' + i + ';renderTable();">' + i + '</button>';
+    if (e < totalPages) h += '<span class="page-info">...</span><button onclick="currentPage=' + totalPages + ';renderTable();">' + totalPages + '</button>';
+    h += '<button ' + (currentPage >= totalPages ? 'disabled' : '') + ' onclick="currentPage++;renderTable();">&raquo;</button>';
+    h += '<span class="page-info">Seite ' + currentPage + ' von ' + totalPages + '</span>';
+    c.innerHTML = h;
 }
 
 function sortTable(col) {
-    if (sortCol===col) sortDir=sortDir==='asc'?'desc':'asc';
-    else { sortCol=col; sortDir=col==='label'||col==='campaign'||col==='campType'||col==='reason'?'asc':'desc'; }
+    if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortCol = col; sortDir = col === 'label' || col === 'campaign' || col === 'campType' || col === 'reason' ? 'asc' : 'desc'; }
     renderTable();
 }
 
@@ -790,42 +883,36 @@ function selectAll() { optimizedItems.forEach((_, i) => selectedItems.add(i)); r
 function deselectAll() { selectedItems.clear(); renderTable(); }
 function selectFiltered() { getFilteredData().forEach(r => selectedItems.add(r.idx)); renderTable(); }
 function selectOnlyChanges() { selectedItems.clear(); optimizedItems.forEach((item, i) => { if (item.direction !== 'same') selectedItems.add(i); }); renderTable(); }
-function updateSelectedCount() { document.getElementById('selectedCount').textContent = selectedItems.size + ' Anpassungen ausgewählt'; }
+function updateSelectedCount() { document.getElementById('selectedCount').textContent = selectedItems.size + ' Anpassungen ausgewaehlt'; }
 
-// --- Marketplace Translations ---
-const T = {
-    de: { keyword: 'Keyword', prodTargeting: 'Produkt-Targeting', update: 'Aktualisieren', enabled: 'Aktiviert', product: 'Gesponserte Produkte', headers: ['Produkt','Entität','Operation','Kampagnen-ID','Anzeigengruppen-ID','Portfolio-ID','Anzeigen-ID','Keyword-ID','Produkt-Targeting-ID','Kampagnenname','Name der Anzeigengruppe','Startdatum','Enddatum','Targeting-Typ','Zustand','Tagesbudget','SKU','ASIN','Standardgebot für die Anzeigengruppe','Gebot','Keyword-Text','Übereinstimmungstyp','Gebotsstrategie','Platzierung','Prozentsatz','Ausdruck für Produkt-Targeting'], sheet: 'Bid Optimization' },
-    en: { keyword: 'Keyword', prodTargeting: 'Product Targeting', update: 'Update', enabled: 'Enabled', product: 'Sponsored Products', headers: ['Product','Entity','Operation','Campaign ID','Ad Group ID','Portfolio ID','Ad ID','Keyword ID','Product Targeting ID','Campaign Name','Ad Group Name','Start Date','End Date','Targeting Type','State','Daily Budget','SKU','ASIN','Ad Group Default Bid','Bid','Keyword Text','Match Type','Bidding Strategy','Placement','Percentage','Product Targeting Expression'], sheet: 'Bid Optimization' },
-    fr: { keyword: 'Mot-clé', prodTargeting: 'Ciblage de produit', update: 'Mettre à jour', enabled: 'Activé', product: 'Produits sponsorisés', headers: ['Produit','Entité','Opération','ID de la campagne','ID du groupe d\'annonces','ID du portefeuille','ID de l\'annonce','ID du mot-clé','ID du ciblage de produit','Nom de la campagne','Nom du groupe d\'annonces','Date de début','Date de fin','Type de ciblage','État','Budget quotidien','SKU','ASIN','Enchère par défaut du groupe d\'annonces','Enchère','Texte du mot-clé','Type de correspondance','Stratégie d\'enchères','Emplacement','Pourcentage','Expression de ciblage de produit'], sheet: 'Bid Optimization' },
-    it: { keyword: 'Parola chiave', prodTargeting: 'Targeting di prodotto', update: 'Aggiorna', enabled: 'Abilitato', product: 'Prodotti sponsorizzati', headers: ['Prodotto','Entità','Operazione','ID campagna','ID gruppo di annunci','ID portafoglio','ID annuncio','ID parola chiave','ID targeting di prodotto','Nome campagna','Nome gruppo di annunci','Data di inizio','Data di fine','Tipo di targeting','Stato','Budget giornaliero','SKU','ASIN','Offerta predefinita del gruppo di annunci','Offerta','Testo parola chiave','Tipo di corrispondenza','Strategia di offerta','Posizionamento','Percentuale','Espressione di targeting di prodotto'], sheet: 'Bid Optimization' },
-    es: { keyword: 'Palabra clave', prodTargeting: 'Segmentación de producto', update: 'Actualizar', enabled: 'Habilitado', product: 'Productos patrocinados', headers: ['Producto','Entidad','Operación','ID de campaña','ID de grupo de anuncios','ID de portafolio','ID de anuncio','ID de palabra clave','ID de segmentación de producto','Nombre de la campaña','Nombre del grupo de anuncios','Fecha de inicio','Fecha de fin','Tipo de segmentación','Estado','Presupuesto diario','SKU','ASIN','Puja predeterminada del grupo de anuncios','Puja','Texto de palabra clave','Tipo de coincidencia','Estrategia de pujas','Ubicación','Porcentaje','Expresión de segmentación de producto'], sheet: 'Bid Optimization' }
-};
+// --- Export Bulk Sheet ---
+// All values in English - Amazon accepts English across all marketplaces
+const EXPORT_HEADERS = ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'];
 
-// --- Export ---
 function exportBulkSheet() {
     const selected = optimizedItems.filter((_, i) => selectedItems.has(i));
-    if (selected.length === 0) { document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Anpassungen ausgewählt.</div>'; return; }
+    if (selected.length === 0) { document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Anpassungen ausgewaehlt.</div>'; return; }
 
-    const mp = document.getElementById('exportMarketplace').value;
-    const t = T[mp] || T['de'];
-    const h = t.headers;
+    const h = EXPORT_HEADERS;
 
     function emptyRow() { const r = {}; h.forEach(c => r[c] = ''); return r; }
 
     const rows = selected.map(item => {
         const r = emptyRow();
-        r[h[0]] = t.product;
-        r[h[1]] = item.type === 'Keyword' ? t.keyword : t.prodTargeting;
-        r[h[2]] = t.update;
-        r[h[3]] = item.campaign;
-        r[h[4]] = item.adgroup;
-        r[h[14]] = t.enabled;
-        r[h[19]] = item.newBid;
+        r[h[0]] = 'Sponsored Products';           // Product
+        r[h[1]] = item.type === 'Keyword' ? 'Keyword' : 'Product Targeting'; // Entity
+        r[h[2]] = 'Update';                        // Operation
+        if (item.campaignId) r[h[3]] = item.campaignId; // Campaign ID
+        if (item.adgroupId) r[h[4]] = item.adgroupId;   // Ad Group ID
+        r[h[9]] = item.campaign;                   // Campaign Name
+        r[h[10]] = item.adgroup;                   // Ad Group Name
+        r[h[14]] = 'Enabled';                      // State
+        r[h[19]] = item.newBid;                    // Bid
         if (item.type === 'Keyword') {
-            r[h[20]] = item.label;
-            r[h[21]] = item.matchtype;
+            r[h[20]] = item.label;                 // Keyword Text
+            r[h[21]] = item.matchtype;             // Match Type
         } else {
-            r[h[25]] = item.label;
+            r[h[25]] = item.label;                 // Product Targeting Expression
         }
         return r;
     });
@@ -834,10 +921,10 @@ function exportBulkSheet() {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = h.map(() => ({ wch: 20 }));
-    XLSX.utils.book_append_sheet(wb, ws, t.sheet);
+    XLSX.utils.book_append_sheet(wb, ws, 'Sponsored Products Campaigns');
 
     const today = new Date();
-    const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
     const fileName = 'Bid-Optimization ' + dateStr + '.xlsx';
     XLSX.writeFile(wb, fileName);
 
@@ -847,14 +934,14 @@ function exportBulkSheet() {
 
 // --- Analysis Export ---
 function exportAnalysis() {
-    const headers = ['Keyword/Target', 'Typ', 'Kampagnentyp', 'Kampagne', 'Anzeigengruppe', 'Aktuelles Gebot', 'Neues Gebot', 'Änderung %', 'ACoS %', 'ROAS', 'Orders', 'Klicks', 'Spend', 'Sales', 'CPC', 'Grund'];
+    const headers = ['Keyword/Target', 'Typ', 'Kampagnentyp', 'Kampagne', 'Anzeigengruppe', 'Aktuelles Gebot', 'Neues Gebot', 'Aenderung %', 'ACoS %', 'ROAS', 'Orders', 'Klicks', 'Spend', 'Sales', 'CPC', 'Grund'];
     const rows = optimizedItems.map(r => [r.label, r.type, r.campType, r.campaign, r.adgroup, r.currentBid, r.newBid, r.changePct.toFixed(1), r.acos === Infinity ? '' : r.acos.toFixed(1), r.roas.toFixed(2), r.orders, r.clicks, r.spend, r.sales, r.cpc.toFixed(2), r.reason]);
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     ws['!cols'] = headers.map(() => ({ wch: 16 }));
     XLSX.utils.book_append_sheet(wb, ws, 'Bid Analyse');
     const d = new Date();
-    XLSX.writeFile(wb, 'Bid-Analyse ' + d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '.xlsx');
+    XLSX.writeFile(wb, 'Bid-Analyse ' + d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + '.xlsx');
 }
 </script>
 </body>
