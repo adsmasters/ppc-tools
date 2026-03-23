@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit - AdsMasters PPC Tools</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-hover: #1c2129;
+            --border: #30363d; --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #f85149; --error-bg: #f8514911;
+            --warn: #d29922; --warn-bg: #d2992211;
+            --success: #3fb950; --success-bg: #3fb95011;
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff; --bg-secondary: #f6f8fa; --bg-hover: #eef1f5;
+            --border: #d0d7de; --text-primary: #1f2328; --text-secondary: #656d76;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #cf222e; --error-bg: #cf222e11;
+            --warn: #9a6700; --warn-bg: #9a670011;
+            --success: #1a7f37; --success-bg: #1a7f3711;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar-left { display: flex; align-items: center; gap: 32px; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-nav { display: flex; gap: 16px; }
+        .topbar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+        .topbar-nav a:hover { color: var(--text-primary); }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title .step { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        .card-title .section-label { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary)); }
+        .upload-zone .icon { font-size: 28px; margin-bottom: 6px; }
+        .upload-zone .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone .hint { font-size: 12px; color: var(--text-secondary); }
+        .upload-zone input { display: none; }
+        .file-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; margin-top: 12px; font-size: 13px; }
+        .file-info .name { flex: 1; font-weight: 600; }
+        .file-info .meta { color: var(--text-secondary); }
+        .file-info .remove { color: var(--error); cursor: pointer; font-weight: 700; }
+        .btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .stat-value { font-size: 22px; font-weight: 700; }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warn { color: var(--warn); }
+        .stat-value.danger { color: var(--error); }
+        .error-msg { color: var(--error); font-size: 13px; padding: 8px 12px; border: 1px solid var(--error); border-radius: 6px; margin-bottom: 6px; background: var(--error-bg); }
+        .success-msg { color: var(--success); font-size: 13px; padding: 8px 12px; border: 1px solid var(--success); border-radius: 6px; margin-bottom: 6px; background: var(--success-bg); }
+        .msg-container { margin-bottom: 16px; }
+        .hidden { display: none; }
+
+        /* Format cards grid */
+        .format-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; }
+        .format-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+        .format-card-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .format-card-title .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; color: #fff; }
+        .badge-sp { background: #3551FF; }
+        .badge-sb { background: #9a6700; }
+        .badge-sd { background: #1a7f37; }
+        .format-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .format-stat { }
+        .format-stat .fs-label { font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; }
+        .format-stat .fs-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+
+        /* Results table */
+        .results-container { overflow-x: auto; max-height: 70vh; }
+        .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; z-index: 2; }
+        .results-table th:hover { color: var(--text-primary); }
+        .results-table th.sorted-asc::after { content: ' \u25B2'; font-size: 9px; }
+        .results-table th.sorted-desc::after { content: ' \u25BC'; font-size: 9px; }
+        .results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .results-table tr:hover td { background: var(--bg-hover); }
+        .results-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+        .chart-container { max-width: 700px; margin: 20px auto 0; }
+
+        @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } .format-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<script>
+    if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('ppc_theme') || 'light');
+</script>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <nav class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="campaign-creator.html">Kampagnen Ersteller</a>
+            <a href="keyword-harvesting.html">Keyword Harvesting</a>
+            <a href="wasted-spend.html">Wasted Ad Spend</a>
+            <a href="bid-optimizer.html">Bid Optimizer</a>
+            <a href="audit.html">Audit</a>
+            <a href="help.html">Hilfe</a>
+        </nav>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9790;</button>
+        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <h1 class="page-title">PPC Audit</h1>
+        <p class="page-sub">Umfassende Analyse deiner Amazon PPC Kampagnen - Werbeformate, Kampagnentypen, Top Placements und Platzierungen</p>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div class="card" id="stepUpload">
+        <div class="card-title"><span class="step">1</span> Bulk Sheet hochladen</div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="icon">&#128203;</div>
+            <div class="label">Bulk Sheet mit Performance-Daten</div>
+            <div class="hint">Excel/CSV mit Kampagnen, Keywords, Spend, Sales, Orders</div>
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.tsv">
+        </div>
+        <div id="fileInfoContainer"></div>
+        <div class="msg-container" id="uploadMsg"></div>
+    </div>
+
+    <!-- STEP 2: Audit Dashboard (hidden until upload) -->
+    <div id="auditDashboard" class="hidden">
+
+        <!-- Section A: Übersicht nach Werbeformat -->
+        <div class="card" id="sectionA">
+            <div class="card-title"><span class="section-label">A</span> Übersicht nach Werbeformat</div>
+            <div class="format-grid" id="formatGrid"></div>
+        </div>
+
+        <!-- Section B: SP Kampagnentyp-Analyse -->
+        <div class="card hidden" id="sectionB">
+            <div class="card-title"><span class="section-label">B</span> SP Kampagnentyp-Analyse</div>
+            <div class="results-container">
+                <table class="results-table" id="campTypeTable">
+                    <thead id="campTypeHead"></thead>
+                    <tbody id="campTypeBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section C: Top Placements (Keywords/Targets) -->
+        <div class="card hidden" id="sectionC">
+            <div class="card-title"><span class="section-label">C</span> Top Placements (Keywords/Targets nach Sales)</div>
+            <div class="results-container">
+                <table class="results-table" id="topKeywordsTable">
+                    <thead id="topKeywordsHead"></thead>
+                    <tbody id="topKeywordsBody"></tbody>
+                </table>
+            </div>
+            <div class="chart-container">
+                <canvas id="cumulativeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Section D: Platzierungsanalyse -->
+        <div class="card hidden" id="sectionD">
+            <div class="card-title"><span class="section-label">D</span> Platzierungsanalyse</div>
+            <div class="results-container">
+                <table class="results-table" id="placementTable">
+                    <thead id="placementHead"></thead>
+                    <tbody id="placementBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- Theme ---
+function toggleTheme() {
+    const c = document.documentElement.getAttribute('data-theme') || 'light';
+    const n = c === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('ppc_theme', n);
+    document.documentElement.setAttribute('data-theme', n);
+    document.getElementById('themeToggle').innerHTML = n === 'dark' ? '&#9788;' : '&#9790;';
+}
+document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'light') === 'dark' ? '&#9788;' : '&#9790;';
+
+// --- State ---
+let allRows = [];
+let detectedCurrency = 'EUR';
+const CURRENCY_MAP = { '\u20AC': 'EUR', '$': 'USD', '\u00A3': 'GBP' };
+
+// --- Column aliases (with proper German umlauts!) ---
+const COL = {
+    product: ['product', 'produkt'],
+    entity: ['entity', 'entität', 'entité', 'entidad', 'entità'],
+    campaign: ['kampagnenname (nur zu informationszwecken)', 'campaign name (informational only)', 'campaign name', 'kampagnenname'],
+    adgroup: ['name der anzeigengruppe (nur zu informationszwecken)', 'ad group name (informational only)', 'ad group name', 'name der anzeigengruppe'],
+    keyword: ['keyword text', 'keyword-text', 'texte du mot-clé', 'keyword'],
+    matchtype: ['match type', 'übereinstimmungstyp'],
+    bid: ['bid', 'gebot'],
+    impressions: ['impressions', 'impressionen'],
+    clicks: ['clicks', 'klicks', 'clics'],
+    spend: ['spend', 'ausgaben', 'cost', 'dépenses'],
+    sales: ['7 day total sales', '7-day total sales', 'total sales', 'sales', 'umsatz', 'verkäufe'],
+    orders: ['7 day total orders', '7-day total orders', 'total orders', 'orders', 'bestellungen'],
+    targeting: ['targeting type', 'targeting-typ', 'type de ciblage'],
+    ptExpr: ['product targeting expression', 'ausdruck für produkt-targeting'],
+    state: ['state', 'zustand', 'état'],
+    placement: ['placement', 'platzierung'],
+    campaignId: ['campaign id', 'kampagnen-id'],
+    adgroupId: ['ad group id', 'anzeigengruppen-id'],
+    searchterm: ['customer search term', 'suchbegriff des kunden', 'suchbegriff eines kunden', 'search term', 'query'],
+};
+
+function findCol(headers, key) {
+    const aliases = COL[key] || [];
+    const lower = headers.map(h => h.toLowerCase().trim());
+    for (const a of aliases) { const i = lower.indexOf(a); if (i !== -1) return i; }
+    for (const a of aliases) { const i = lower.findIndex(h => h.includes(a)); if (i !== -1) return i; }
+    return -1;
+}
+
+function parseNum(v) { if (v == null || v === '') return 0; return parseFloat(String(v).replace(/[^0-9.,\-]/g, '').replace(',', '.')) || 0; }
+function formatCurrency(v) { return v.toLocaleString('de-DE', { style: 'currency', currency: detectedCurrency }); }
+function formatPct(v) { return (v * 100).toFixed(1) + '%'; }
+function formatPctDirect(v) { return v.toFixed(1) + '%'; }
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// --- Detect campaign type (same as bid-optimizer) ---
+function detectType(campName) {
+    const l = campName.toLowerCase();
+    if (l.includes('auto')) return 'Auto';
+    if (l.includes('brand') || l.includes('eigenmarke')) return 'Brand';
+    if (l.includes('competitor') || l.includes('wettbewerb')) return 'Competitor';
+    if (l.includes('product targeting') || l.includes('produktausrichtung') || l.includes('pt:') || l.includes('pt ')) return 'Product Targeting';
+    if (l.includes('harvest')) return 'Harvest';
+    if (l.includes('single') || l.includes('kw "')) return 'Single Keyword';
+    if (l.includes('generic') || l.includes('generisch')) return 'Generic';
+    if (l.includes('sd:') || l.includes('sponsored display')) return 'Sponsored Display';
+    return 'Sonstige';
+}
+
+// --- Detect ad format from "Product" column ---
+function detectFormat(productVal) {
+    if (!productVal) return null;
+    const l = productVal.toLowerCase().trim();
+    if (l.includes('sponsored products') || l.includes('gesponserte produkte')) return 'SP';
+    if (l.includes('sponsored brands') || l.includes('gesponserte marken')) return 'SB';
+    if (l.includes('sponsored display') || l.includes('gesponserte anzeige')) return 'SD';
+    return null;
+}
+
+// --- Upload ---
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleUpload(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleUpload(e.target.files[0]); });
+
+function handleUpload(file) {
+    const msgEl = document.getElementById('uploadMsg');
+    msgEl.innerHTML = '';
+    allRows = [];
+
+    function processSheet(rows, sheetName) {
+        if (rows.length < 2) return;
+        let headerIdx = 0;
+        for (let i = 0; i < Math.min(rows.length, 10); i++) {
+            const row = rows[i].map(c => String(c).toLowerCase().trim());
+            if (row.some(c => COL.entity.some(a => c.includes(a))) || row.some(c => COL.campaign.some(a => c.includes(a)))) { headerIdx = i; break; }
+        }
+        const headers = rows[headerIdx].map(c => String(c));
+        const cm = {};
+        for (const key of Object.keys(COL)) cm[key] = findCol(headers, key);
+
+        headers.forEach(h => { for (const [sym, code] of Object.entries(CURRENCY_MAP)) { if (h.includes(sym)) detectedCurrency = code; } });
+
+        console.log('[Audit] Sheet:', sheetName, '| Headers:', headers.join(', '));
+        console.log('[Audit] Column mapping:', JSON.stringify(Object.fromEntries(Object.entries(cm).map(([k, v]) => [k, v !== -1 ? headers[v] : 'NOT FOUND']))));
+
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+            const r = rows[i];
+            if (!r || r.length < 3) continue;
+
+            const product = cm.product !== -1 ? String(r[cm.product] || '').trim() : '';
+            const entity = cm.entity !== -1 ? String(r[cm.entity] || '').toLowerCase().trim() : '';
+            const campaign = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
+            const adgroup = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
+            const keyword = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim() : '';
+            const ptExpr = cm.ptExpr !== -1 ? String(r[cm.ptExpr] || '').trim() : '';
+            const matchtype = cm.matchtype !== -1 ? String(r[cm.matchtype] || '').trim() : '';
+            const impressions = parseNum(r[cm.impressions]);
+            const clicks = parseNum(r[cm.clicks]);
+            const spend = parseNum(r[cm.spend]);
+            const sales = cm.sales !== -1 ? parseNum(r[cm.sales]) : 0;
+            const orders = cm.orders !== -1 ? parseNum(r[cm.orders]) : 0;
+            const targetingType = cm.targeting !== -1 ? String(r[cm.targeting] || '').trim() : '';
+            const placement = cm.placement !== -1 ? String(r[cm.placement] || '').trim() : '';
+            const format = detectFormat(product);
+
+            // Skip rows without campaign or with no meaningful data
+            if (!campaign && !keyword && !ptExpr) continue;
+            // Skip negative keywords
+            if (entity.includes('negat')) continue;
+
+            allRows.push({
+                product, entity, campaign, adgroup,
+                keyword: keyword || ptExpr,
+                matchtype, impressions, clicks, spend, sales, orders,
+                targetingType, placement, format,
+                campType: detectType(campaign),
+                cpc: clicks > 0 ? spend / clicks : 0,
+                acos: sales > 0 ? (spend / sales * 100) : (spend > 0 ? Infinity : 0),
+                roas: spend > 0 ? sales / spend : 0,
+                sheetName
+            });
+        }
+    }
+
+    if (file.name.match(/\.(xlsx|xls)$/i)) {
+        const reader = new FileReader();
+        reader.onload = evt => {
+            const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+            console.log('[Audit] Sheets found:', wb.SheetNames.join(', '));
+            wb.SheetNames.forEach(sn => {
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+                processSheet(rows, sn);
+            });
+            finishUpload(file);
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        const reader = new FileReader();
+        reader.onload = evt => {
+            const sep = evt.target.result.includes('\t') ? '\t' : ',';
+            const rows = evt.target.result.split(/\r?\n/).filter(l => l.trim()).map(l => {
+                const res = []; let cur = '', q = false;
+                for (let i = 0; i < l.length; i++) { if (l[i]==='"'){q=!q;continue;} if (l[i]===sep&&!q){res.push(cur.trim());cur='';continue;} cur+=l[i]; }
+                res.push(cur.trim()); return res;
+            });
+            processSheet(rows, 'CSV');
+            finishUpload(file);
+        };
+        reader.readAsText(file);
+    }
+}
+
+function finishUpload(file) {
+    const msgEl = document.getElementById('uploadMsg');
+    if (allRows.length === 0) {
+        msgEl.innerHTML = '<div class="error-msg">Keine Daten gefunden. Bitte ein Bulk Sheet mit Performance-Daten hochladen.</div>';
+        return;
+    }
+
+    const formats = new Set(allRows.filter(r => r.format).map(r => r.format));
+    document.getElementById('fileInfoContainer').innerHTML = '<div class="file-info"><span class="name">' + escapeHtml(file.name) + '</span><span class="meta">' + allRows.length + ' Zeilen, Formate: ' + (formats.size > 0 ? [...formats].join(', ') : 'nicht erkannt') + '</span><span class="remove" onclick="clearUpload()">&times;</span></div>';
+
+    console.log('[Audit] Total rows parsed:', allRows.length);
+    console.log('[Audit] Formats detected:', [...formats]);
+    console.log('[Audit] Sample rows:', allRows.slice(0, 5));
+
+    buildDashboard();
+}
+
+function clearUpload() {
+    allRows = [];
+    document.getElementById('fileInfoContainer').innerHTML = '';
+    document.getElementById('uploadMsg').innerHTML = '';
+    document.getElementById('auditDashboard').classList.add('hidden');
+    fileInput.value = '';
+}
+
+// --- Build Dashboard ---
+function buildDashboard() {
+    document.getElementById('auditDashboard').classList.remove('hidden');
+    buildSectionA();
+    buildSectionB();
+    buildSectionC();
+    buildSectionD();
+}
+
+// --- Section A: Übersicht nach Werbeformat ---
+function buildSectionA() {
+    const grid = document.getElementById('formatGrid');
+    grid.innerHTML = '';
+
+    const formatMap = {};
+    allRows.forEach(r => {
+        if (!r.format) return;
+        if (!formatMap[r.format]) formatMap[r.format] = { spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+        formatMap[r.format].spend += r.spend;
+        formatMap[r.format].sales += r.sales;
+        formatMap[r.format].orders += r.orders;
+        formatMap[r.format].clicks += r.clicks;
+        formatMap[r.format].impressions += r.impressions;
+    });
+
+    const formatLabels = { SP: 'Sponsored Products', SB: 'Sponsored Brands', SD: 'Sponsored Display' };
+    const badgeClasses = { SP: 'badge-sp', SB: 'badge-sb', SD: 'badge-sd' };
+
+    for (const fmt of ['SP', 'SB', 'SD']) {
+        if (!formatMap[fmt]) continue;
+        const d = formatMap[fmt];
+        const roas = d.spend > 0 ? (d.sales / d.spend) : 0;
+        const acos = d.sales > 0 ? (d.spend / d.sales * 100) : 0;
+
+        const card = document.createElement('div');
+        card.className = 'format-card';
+        card.innerHTML = '<div class="format-card-title"><span class="badge ' + badgeClasses[fmt] + '">' + fmt + '</span> ' + formatLabels[fmt] + '</div>' +
+            '<div class="format-stats">' +
+            statHtml('Spend', formatCurrency(d.spend)) +
+            statHtml('Sales', formatCurrency(d.sales)) +
+            statHtml('ROAS', roas.toFixed(2)) +
+            statHtml('ACoS', acos.toFixed(1) + '%') +
+            statHtml('Orders', d.orders.toLocaleString('de-DE')) +
+            statHtml('Clicks', d.clicks.toLocaleString('de-DE')) +
+            '</div>';
+        grid.appendChild(card);
+    }
+
+    if (Object.keys(formatMap).length === 0) {
+        grid.innerHTML = '<p style="color:var(--text-secondary);font-size:13px;">Keine Werbeformat-Informationen in der "Product"-Spalte gefunden.</p>';
+    }
+}
+
+function statHtml(label, value) {
+    return '<div class="format-stat"><div class="fs-label">' + label + '</div><div class="fs-value">' + value + '</div></div>';
+}
+
+// --- Section B: SP Kampagnentyp-Analyse ---
+function buildSectionB() {
+    const section = document.getElementById('sectionB');
+    const spRows = allRows.filter(r => r.format === 'SP');
+    if (spRows.length === 0) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+
+    // Group by campaign type
+    const typeMap = {};
+    const campaignSeen = {};
+    spRows.forEach(r => {
+        // Determine type: Auto vs Manual subtypes
+        let type;
+        const tgtType = r.targetingType.toLowerCase();
+        if (tgtType.includes('auto') || tgtType.includes('automatisch')) {
+            type = 'Auto';
+        } else {
+            type = detectType(r.campaign);
+            if (type === 'Auto' && !tgtType.includes('auto')) {
+                // Campaign name says auto but targeting type says manual - trust targeting type if available
+                if (tgtType.includes('manual') || tgtType.includes('manuell')) type = detectType(r.campaign);
+            }
+        }
+
+        if (!typeMap[type]) typeMap[type] = { campaigns: new Set(), keywords: 0, spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+        typeMap[type].campaigns.add(r.campaign);
+        typeMap[type].keywords++;
+        typeMap[type].spend += r.spend;
+        typeMap[type].sales += r.sales;
+        typeMap[type].orders += r.orders;
+        typeMap[type].clicks += r.clicks;
+        typeMap[type].impressions += r.impressions;
+    });
+
+    // Sort by spend descending
+    const sorted = Object.entries(typeMap).sort((a, b) => b[1].spend - a[1].spend);
+
+    const head = document.getElementById('campTypeHead');
+    const body = document.getElementById('campTypeBody');
+    head.innerHTML = '<tr><th>Typ</th><th>Kampagnen</th><th>Keywords/Targets</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th></tr>';
+    body.innerHTML = sorted.map(([type, d]) => {
+        const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '-';
+        const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : (d.spend > 0 ? '---' : '-');
+        return '<tr>' +
+            '<td><strong>' + escapeHtml(type) + '</strong></td>' +
+            '<td class="num">' + d.campaigns.size + '</td>' +
+            '<td class="num">' + d.keywords.toLocaleString('de-DE') + '</td>' +
+            '<td class="num">' + formatCurrency(d.spend) + '</td>' +
+            '<td class="num">' + formatCurrency(d.sales) + '</td>' +
+            '<td class="num">' + roas + '</td>' +
+            '<td class="num">' + acos + '</td>' +
+            '<td class="num">' + d.orders.toLocaleString('de-DE') + '</td>' +
+            '</tr>';
+    }).join('');
+
+    // Add total row
+    const total = sorted.reduce((acc, [, d]) => {
+        acc.campaigns += d.campaigns.size; acc.keywords += d.keywords;
+        acc.spend += d.spend; acc.sales += d.sales; acc.orders += d.orders;
+        return acc;
+    }, { campaigns: 0, keywords: 0, spend: 0, sales: 0, orders: 0 });
+    const totalRoas = total.spend > 0 ? (total.sales / total.spend).toFixed(2) : '-';
+    const totalAcos = total.sales > 0 ? (total.spend / total.sales * 100).toFixed(1) + '%' : '-';
+    body.innerHTML += '<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Gesamt</td><td class="num">' + total.campaigns + '</td><td class="num">' + total.keywords.toLocaleString('de-DE') + '</td><td class="num">' + formatCurrency(total.spend) + '</td><td class="num">' + formatCurrency(total.sales) + '</td><td class="num">' + totalRoas + '</td><td class="num">' + totalAcos + '</td><td class="num">' + total.orders.toLocaleString('de-DE') + '</td></tr>';
+
+    // Make sortable
+    makeSortable('campTypeTable', sorted.map(([type, d]) => ({
+        type, campaigns: d.campaigns.size, keywords: d.keywords,
+        spend: d.spend, sales: d.sales,
+        roas: d.spend > 0 ? d.sales / d.spend : 0,
+        acos: d.sales > 0 ? d.spend / d.sales * 100 : Infinity,
+        orders: d.orders
+    })));
+}
+
+// --- Section C: Top Placements (Keywords/Targets by sales) ---
+function buildSectionC() {
+    const section = document.getElementById('sectionC');
+    // Use SP rows with keyword data
+    const kwRows = allRows.filter(r => r.keyword && r.sales > 0);
+    if (kwRows.length === 0) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+
+    // Aggregate by keyword+campaign
+    const kwMap = {};
+    kwRows.forEach(r => {
+        const key = r.keyword + '|||' + r.campaign;
+        if (!kwMap[key]) kwMap[key] = { keyword: r.keyword, campaign: r.campaign, spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+        kwMap[key].spend += r.spend;
+        kwMap[key].sales += r.sales;
+        kwMap[key].orders += r.orders;
+        kwMap[key].clicks += r.clicks;
+        kwMap[key].impressions += r.impressions;
+    });
+
+    const sorted = Object.values(kwMap).sort((a, b) => b.sales - a.sales);
+    const top20 = sorted.slice(0, 20);
+    const totalSPsales = allRows.filter(r => r.format === 'SP').reduce((s, r) => s + r.sales, 0);
+
+    const head = document.getElementById('topKeywordsHead');
+    const body = document.getElementById('topKeywordsBody');
+    head.innerHTML = '<tr><th>#</th><th>Keyword/Target</th><th>Campaign</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Clicks</th><th>CPC</th></tr>';
+    body.innerHTML = top20.map((d, idx) => {
+        const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '-';
+        const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '-';
+        const cpc = d.clicks > 0 ? formatCurrency(d.spend / d.clicks) : '-';
+        return '<tr>' +
+            '<td>' + (idx + 1) + '</td>' +
+            '<td><strong>' + escapeHtml(d.keyword) + '</strong></td>' +
+            '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(d.campaign) + '">' + escapeHtml(d.campaign) + '</td>' +
+            '<td class="num">' + formatCurrency(d.spend) + '</td>' +
+            '<td class="num">' + formatCurrency(d.sales) + '</td>' +
+            '<td class="num">' + roas + '</td>' +
+            '<td class="num">' + acos + '</td>' +
+            '<td class="num">' + d.orders.toLocaleString('de-DE') + '</td>' +
+            '<td class="num">' + d.clicks.toLocaleString('de-DE') + '</td>' +
+            '<td class="num">' + cpc + '</td>' +
+            '</tr>';
+    }).join('');
+
+    // Build cumulative chart
+    buildCumulativeChart(sorted, totalSPsales);
+}
+
+function buildCumulativeChart(sorted, totalSales) {
+    const canvas = document.getElementById('cumulativeChart');
+    if (!canvas) return;
+
+    // Destroy existing chart
+    if (window.cumulativeChartInstance) window.cumulativeChartInstance.destroy();
+
+    const labels = [];
+    const data = [];
+    let cumulative = 0;
+    const maxItems = Math.min(sorted.length, 20);
+
+    for (let i = 0; i < maxItems; i++) {
+        cumulative += sorted[i].sales;
+        labels.push('Top ' + (i + 1));
+        data.push(totalSales > 0 ? (cumulative / totalSales * 100) : 0);
+    }
+
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+    const textColor = isDark ? '#8b949e' : '#656d76';
+
+    window.cumulativeChartInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Kumulativer Anteil an SP Sales (%)',
+                data: data,
+                backgroundColor: '#3551FF44',
+                borderColor: '#3551FF',
+                borderWidth: 2,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { color: textColor } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.parsed.y.toFixed(1) + '% der SP Sales'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { color: textColor, callback: v => v + '%' },
+                    grid: { color: gridColor }
+                },
+                x: {
+                    ticks: { color: textColor },
+                    grid: { color: gridColor }
+                }
+            }
+        }
+    });
+
+    // Log key insights
+    if (data.length >= 10) console.log('[Audit] Top 10 keywords make ' + data[9].toFixed(1) + '% of SP sales');
+    if (data.length >= 20) console.log('[Audit] Top 20 keywords make ' + data[19].toFixed(1) + '% of SP sales');
+}
+
+// --- Section D: Platzierungsanalyse ---
+function buildSectionD() {
+    const section = document.getElementById('sectionD');
+    const placementRows = allRows.filter(r => r.placement && r.placement.trim() !== '');
+    if (placementRows.length === 0) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+
+    const placementMap = {};
+    placementRows.forEach(r => {
+        const p = r.placement.trim();
+        if (!placementMap[p]) placementMap[p] = { spend: 0, sales: 0, clicks: 0, impressions: 0, orders: 0 };
+        placementMap[p].spend += r.spend;
+        placementMap[p].sales += r.sales;
+        placementMap[p].clicks += r.clicks;
+        placementMap[p].impressions += r.impressions;
+        placementMap[p].orders += r.orders;
+    });
+
+    const placementOrder = ['Top of Search (first page)', 'Rest of Search', 'Product Pages'];
+    const sorted = Object.entries(placementMap).sort((a, b) => {
+        const ia = placementOrder.indexOf(a[0]);
+        const ib = placementOrder.indexOf(b[0]);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return b[1].spend - a[1].spend;
+    });
+
+    const head = document.getElementById('placementHead');
+    const body = document.getElementById('placementBody');
+    head.innerHTML = '<tr><th>Platzierung</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Clicks</th><th>CPC</th></tr>';
+    body.innerHTML = sorted.map(([p, d]) => {
+        const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '-';
+        const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : (d.spend > 0 ? '---' : '-');
+        const cpc = d.clicks > 0 ? formatCurrency(d.spend / d.clicks) : '-';
+        return '<tr>' +
+            '<td><strong>' + escapeHtml(p) + '</strong></td>' +
+            '<td class="num">' + formatCurrency(d.spend) + '</td>' +
+            '<td class="num">' + formatCurrency(d.sales) + '</td>' +
+            '<td class="num">' + roas + '</td>' +
+            '<td class="num">' + acos + '</td>' +
+            '<td class="num">' + d.clicks.toLocaleString('de-DE') + '</td>' +
+            '<td class="num">' + cpc + '</td>' +
+            '</tr>';
+    }).join('');
+}
+
+// --- Sortable tables (generic) ---
+function makeSortable(tableId, data) {
+    // Simple: clicking headers re-sorts the table
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const ths = table.querySelectorAll('th');
+    ths.forEach((th, colIdx) => {
+        th.addEventListener('click', () => {
+            const keys = Object.keys(data[0] || {});
+            if (colIdx >= keys.length) return;
+            const key = keys[colIdx];
+            const currentDir = th.classList.contains('sorted-asc') ? 'asc' : (th.classList.contains('sorted-desc') ? 'desc' : 'none');
+            const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+
+            // Remove sort classes from all headers
+            ths.forEach(h => { h.classList.remove('sorted-asc', 'sorted-desc'); });
+            th.classList.add('sorted-' + newDir);
+
+            data.sort((a, b) => {
+                const va = a[key], vb = b[key];
+                if (typeof va === 'string') return newDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+                return newDir === 'asc' ? va - vb : vb - va;
+            });
+
+            // Re-render body
+            const body = table.querySelector('tbody');
+            body.innerHTML = data.map(d => {
+                const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '-';
+                const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : (d.spend > 0 ? '---' : '-');
+                return '<tr><td><strong>' + escapeHtml(d.type) + '</strong></td><td class="num">' + d.campaigns + '</td><td class="num">' + d.keywords.toLocaleString('de-DE') + '</td><td class="num">' + formatCurrency(d.spend) + '</td><td class="num">' + formatCurrency(d.sales) + '</td><td class="num">' + roas + '</td><td class="num">' + acos + '</td><td class="num">' + d.orders.toLocaleString('de-DE') + '</td></tr>';
+            }).join('');
+        });
+    });
+}
+</script>
+</body>
+</html>
