@@ -80,8 +80,8 @@
 
         /* ROAS Corridor */
         .corridor-list { margin-bottom: 16px; }
-        .corridor-header { display: grid; grid-template-columns: 80px 16px 80px 100px 100px 100px 40px; gap: 8px; padding: 0 14px 4px; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
-        .corridor-row { display: grid; grid-template-columns: 80px 16px 80px 100px 100px 100px 40px; gap: 8px; align-items: center; margin-bottom: 8px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+        .corridor-header { display: grid; grid-template-columns: 70px 16px 70px 90px 90px 90px 75px 75px 45px 36px; gap: 6px; padding: 0 14px 4px; font-size: 10px; color: var(--text-secondary); font-weight: 600; }
+        .corridor-row { display: grid; grid-template-columns: 70px 16px 70px 90px 90px 90px 75px 75px 45px 36px; gap: 6px; align-items: center; margin-bottom: 8px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
         .corridor-row input[type="number"], .corridor-row input[type="text"] { width: 100%; padding: 6px 8px; font-size: 12px; }
         .corridor-row select { width: 100%; padding: 6px 8px; font-size: 12px; }
         .corridor-row .arrow { text-align: center; color: var(--text-secondary); font-size: 13px; }
@@ -255,10 +255,11 @@
                 <option value="">Alle Typen</option>
             </select>
             <select id="filterDirection" onchange="currentPage=1;renderTable()">
-                <option value="">Alle Aenderungen</option>
-                <option value="up">Nur Erhoehungen</option>
+                <option value="">Alle Änderungen</option>
+                <option value="up">Nur Erhöhungen</option>
                 <option value="down">Nur Senkungen</option>
-                <option value="same">Keine Aenderung</option>
+                <option value="pause">Nur Pausiert</option>
+                <option value="same">Keine Änderung</option>
             </select>
             <select id="filterCampaign" onchange="currentPage=1;renderTable()">
                 <option value="">Alle Kampagnen</option>
@@ -325,28 +326,33 @@ const CURRENCY_MAP = { '\u20AC': 'EUR', '$': 'USD', '\u00A3': 'GBP' };
 
 // --- ROAS Corridors ---
 let corridors = [
-    { from: 0, to: 1, pct: -50, minBid: '', maxBid: '' },
-    { from: 1, to: 2, pct: -20, minBid: '', maxBid: '' },
-    { from: 2, to: 3, pct: 0, minBid: '', maxBid: '' },
-    { from: 3, to: Infinity, pct: 20, minBid: '', maxBid: '' }
+    { from: 0, to: 1, pct: -50, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
+    { from: 1, to: 2, pct: -20, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
+    { from: 2, to: 3, pct: 0, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
+    { from: 3, to: Infinity, pct: 20, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' }
 ];
 
 function renderCorridors() {
     const list = document.getElementById('corridorList');
     list.innerHTML = '<div class="corridor-header">' +
-        '<span>ROAS von</span><span></span><span>ROAS bis</span><span>Änderung (%)</span><span>Min. Gebot</span><span>Max. Gebot</span><span></span>' +
+        '<span>ROAS von</span><span></span><span>ROAS bis</span><span>Änderung (%)</span><span>Min. Gebot</span><span>Max. Gebot</span><span>Min. Klicks</span><span>Min. Orders</span><span>Pause</span><span></span>' +
         '</div>' +
         corridors.map((c, i) => {
         const isLast = i === corridors.length - 1;
+        const pauseChecked = c.pause ? ' checked' : '';
+        const inputDisabled = c.pause ? ' disabled style="opacity:0.4;text-align:center;"' : ' style="text-align:center;"';
         return '<div class="corridor-row">' +
             '<input type="number" value="' + c.from + '" step="0.1" min="0" onchange="corridors[' + i + '].from=parseFloat(this.value);syncCorridorBounds()">' +
             '<span class="arrow">–</span>' +
             (isLast
                 ? '<input type="text" value="∞" disabled style="text-align:center;color:var(--text-secondary)">'
                 : '<input type="number" value="' + c.to + '" step="0.1" min="0" onchange="corridors[' + i + '].to=parseFloat(this.value);syncCorridorBounds()">') +
-            '<input type="number" value="' + c.pct + '" step="5" onchange="corridors[' + i + '].pct=parseFloat(this.value)||0" style="text-align:center;" placeholder="z.B. -30">' +
-            '<input type="number" value="' + (c.minBid || '') + '" step="0.01" min="0" placeholder="optional" onchange="corridors[' + i + '].minBid=this.value?parseFloat(this.value):\'\'">' +
-            '<input type="number" value="' + (c.maxBid || '') + '" step="0.01" min="0" placeholder="optional" onchange="corridors[' + i + '].maxBid=this.value?parseFloat(this.value):\'\'">' +
+            '<input type="number" value="' + c.pct + '" step="5" onchange="corridors[' + i + '].pct=parseFloat(this.value)||0"' + inputDisabled + ' placeholder="z.B. -30">' +
+            '<input type="number" value="' + (c.minBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].minBid=this.value?parseFloat(this.value):\'\'">' +
+            '<input type="number" value="' + (c.maxBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].maxBid=this.value?parseFloat(this.value):\'\'">' +
+            '<input type="number" value="' + (c.minClicks || '') + '" step="1" min="0" placeholder="opt." onchange="corridors[' + i + '].minClicks=this.value?parseInt(this.value):\'\'">' +
+            '<input type="number" value="' + (c.minOrders || '') + '" step="1" min="0" placeholder="opt." onchange="corridors[' + i + '].minOrders=this.value?parseInt(this.value):\'\'">' +
+            '<label style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer;" title="Keywords/Targets deaktivieren"><input type="checkbox"' + pauseChecked + ' style="width:16px;height:16px;accent-color:var(--error);cursor:pointer;" onchange="corridors[' + i + '].pause=this.checked;renderCorridors()"></label>' +
             '<button class="remove-corridor" onclick="removeCorridor(' + i + ')" title="Korridor entfernen">&times;</button>' +
             '</div>';
     }).join('');
@@ -365,7 +371,7 @@ function addCorridor() {
     const newFrom = last.from;
     const newTo = newFrom + 1;
     last.from = newTo;
-    corridors.splice(corridors.length - 1, 0, { from: newFrom, to: newTo, pct: 0, minBid: '', maxBid: '' });
+    corridors.splice(corridors.length - 1, 0, { from: newFrom, to: newTo, pct: 0, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' });
     renderCorridors();
 }
 
@@ -617,17 +623,25 @@ function optimizeBids() {
             }
 
             if (matchedCorridor) {
-                const pct = matchedCorridor.pct;
-                const factor = 1 + (pct / 100);
-                newBid = item.currentBid * factor;
+                // Check corridor-specific min clicks/orders thresholds
+                const cMinClicks = matchedCorridor.minClicks !== '' ? matchedCorridor.minClicks : 0;
+                const cMinOrders = matchedCorridor.minOrders !== '' ? matchedCorridor.minOrders : 0;
+                if ((cMinClicks > 0 && item.clicks < cMinClicks) || (cMinOrders > 0 && item.orders < cMinOrders)) {
+                    reason = 'ROAS ' + roas.toFixed(2) + ' → Schwelle nicht erreicht';
+                } else if (matchedCorridor.pause) {
+                    reason = 'ROAS ' + roas.toFixed(2) + ' → Pausiert';
+                } else {
+                    const pct = matchedCorridor.pct;
+                    const factor = 1 + (pct / 100);
+                    newBid = item.currentBid * factor;
 
-                // Apply corridor-specific min/max
-                const cMin = matchedCorridor.minBid !== '' ? matchedCorridor.minBid : minBid;
-                const cMax = matchedCorridor.maxBid !== '' ? matchedCorridor.maxBid : maxBid;
-                newBid = Math.max(cMin, Math.min(cMax, newBid));
+                    const cMin = matchedCorridor.minBid !== '' ? matchedCorridor.minBid : minBid;
+                    const cMax = matchedCorridor.maxBid !== '' ? matchedCorridor.maxBid : maxBid;
+                    newBid = Math.max(cMin, Math.min(cMax, newBid));
 
-                const pctLabel = pct === 0 ? '0%' : (pct > 0 ? '+' : '') + pct + '%';
-                reason = 'ROAS ' + roas.toFixed(2) + ' → ' + pctLabel;
+                    const pctLabel = pct === 0 ? '0%' : (pct > 0 ? '+' : '') + pct + '%';
+                    reason = 'ROAS ' + roas.toFixed(2) + ' → ' + pctLabel;
+                }
             }
         }
 
@@ -636,9 +650,10 @@ function optimizeBids() {
 
         const change = newBid - item.currentBid;
         const changePct = item.currentBid > 0 ? (change / item.currentBid * 100) : 0;
-        const direction = isExcluded ? 'same' : (Math.abs(changePct) < 1 ? 'same' : (change > 0 ? 'up' : 'down'));
+        const isPaused = reason.includes('Pausiert');
+        const direction = isExcluded ? 'same' : isPaused ? 'pause' : (Math.abs(changePct) < 1 ? 'same' : (change > 0 ? 'up' : 'down'));
 
-        return { ...item, newBid, change, changePct, direction, reason, excluded: isExcluded };
+        return { ...item, newBid, change, changePct, direction, reason, excluded: isExcluded, paused: isPaused };
     });
 
     // Select all with changes by default
@@ -663,14 +678,16 @@ function optimizeBids() {
 function renderStats() {
     const ups = optimizedItems.filter(i => i.direction === 'up');
     const downs = optimizedItems.filter(i => i.direction === 'down');
+    const pauses = optimizedItems.filter(i => i.direction === 'pause');
     const sames = optimizedItems.filter(i => i.direction === 'same');
     const avgChange = optimizedItems.length > 0 ? (optimizedItems.reduce((s, i) => s + i.changePct, 0) / optimizedItems.length).toFixed(1) : 0;
 
     document.getElementById('statsRow').innerHTML =
         '<div class="stat-card"><div class="stat-label">Gesamt Keywords/Targets</div><div class="stat-value">' + optimizedItems.length + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Gebote erhoehen</div><div class="stat-value success">' + ups.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Gebote erhöhen</div><div class="stat-value success">' + ups.length + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Gebote senken</div><div class="stat-value danger">' + downs.length + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Keine Aenderung</div><div class="stat-value">' + sames.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Pausieren</div><div class="stat-value warn">' + pauses.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Keine Änderung</div><div class="stat-value">' + sames.length + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">\u00D8 Aenderung</div><div class="stat-value ' + (parseFloat(avgChange) > 0 ? 'success' : parseFloat(avgChange) < 0 ? 'danger' : '') + '">' + avgChange + '%</div></div>';
 }
 
@@ -804,8 +821,8 @@ function renderTable() {
     document.getElementById('tableBody').innerHTML = pageData.map(row => {
         const checked = selectedItems.has(row.idx) ? 'checked' : '';
         const cls = selectedItems.has(row.idx) ? ' class="selected"' : '';
-        const dirClass = row.direction === 'up' ? 'bid-up' : row.direction === 'down' ? 'bid-down' : 'bid-same';
-        const arrow = row.direction === 'up' ? '&#9650; ' : row.direction === 'down' ? '&#9660; ' : '';
+        const dirClass = row.direction === 'up' ? 'bid-up' : row.direction === 'down' ? 'bid-down' : row.direction === 'pause' ? 'bid-down' : 'bid-same';
+        const arrow = row.direction === 'up' ? '&#9650; ' : row.direction === 'down' ? '&#9660; ' : row.direction === 'pause' ? '&#10074;&#10074; ' : '';
         const changeTxt = Math.abs(row.changePct) < 1 ? '\u2013' : (row.changePct > 0 ? '+' : '') + row.changePct.toFixed(1) + '%';
         const acosDisplay = row.acos === Infinity ? '\u2013' : row.acos.toFixed(1) + '%';
         let acosColor = 'var(--text-primary)';
@@ -901,8 +918,8 @@ function exportBulkSheet() {
         if (item.adgroupId) r[h[4]] = item.adgroupId;   // Ad Group ID
         r[h[9]] = item.campaign;                   // Campaign Name
         r[h[10]] = item.adgroup;                   // Ad Group Name
-        r[h[14]] = 'Enabled';                      // State
-        r[h[19]] = item.newBid;                    // Bid
+        r[h[14]] = item.paused ? 'Paused' : 'Enabled'; // State
+        if (!item.paused) r[h[19]] = item.newBid;  // Bid (nur wenn nicht pausiert)
         if (item.type === 'Keyword') {
             r[h[20]] = item.label;                 // Keyword Text
             r[h[21]] = item.matchtype;             // Match Type
