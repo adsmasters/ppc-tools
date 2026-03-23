@@ -396,20 +396,10 @@ function handleFileUpload(file) {
                 if (p) parsedSheets.push(p);
             });
 
-            // Debug: log column detection per sheet
-            parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity, hasSearchTerm }, idx) => {
-                const headers = rows[headerIdx].map(c => String(c));
-                console.log('[Harvest] Sheet', idx, 'headers:', headers.slice(0, 30));
-                console.log('[Harvest] Sheet', idx, 'cm.sku:', cm.sku, 'cm.asin:', cm.asin, 'cm.entity:', cm.entity, 'hasEntity:', hasEntity);
-                if (cm.sku !== -1) console.log('[Harvest] Sheet', idx, 'SKU column found at index', cm.sku, '=', headers[cm.sku]);
-                else console.log('[Harvest] Sheet', idx, 'SKU column NOT FOUND! Headers:', headers.join(' | '));
-            });
-
             // Pass 1a: Build Campaign ID → Name mapping (Amazon only puts name on Campaign entity rows)
             const campIdToName = {};
             parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }) => {
                 if (!hasEntity) return;
-                console.log('[Pass1a] cm.campaignId:', cm.campaignId, 'cm.campaign:', cm.campaign);
                 for (let i = headerIdx + 1; i < rows.length; i++) {
                     const r = rows[i];
                     if (!r || r.length < 3) continue;
@@ -421,7 +411,6 @@ function handleFileUpload(file) {
                     }
                 }
             });
-            console.log('[Pass1a] campIdToName entries:', Object.keys(campIdToName).length, Object.entries(campIdToName).slice(0, 5));
 
             // Pass 1b: Extract campaign structure, keywords, product ads, targeting type
             parsedSheets.forEach(({ rows, cm, headerIdx, hasEntity }) => {
@@ -517,10 +506,6 @@ function handleFileUpload(file) {
             bulkCampaigns = Object.values(campMap).map(c => ({
                 name: c.name, asins: [...c.asins], skus: [...c.skus], adgroups: [...c.adgroups]
             }));
-
-            console.log('[Harvest] campMap SKUs:', Object.entries(campMap).map(([k,v]) => k + ' SKUs:[' + [...v.skus].join(',') + '] ASINs:[' + [...v.asins].join(',') + ']').filter(s => !s.includes('SKUs:[] ASINs:[]')));
-            console.log('[Harvest] bulkCampaigns with SKUs:', bulkCampaigns.filter(c => c.skus.length > 0).map(c => c.name + ': ' + c.skus.join(',')));
-            console.log('[Harvest] isVendor will be:', !bulkCampaigns.some(c => c.skus && c.skus.length > 0));
 
             finishUpload(file);
         };
@@ -1037,11 +1022,6 @@ function exportBulkSheet() {
             });
         }
         bySourceCampaign[sourceCamp].productItems = [...items];
-    });
-
-    console.log('[Export] isVendor:', isVendor);
-    Object.entries(bySourceCampaign).forEach(([k, v]) => {
-        console.log('[Export] source:', k, 'productItems:', v.productItems, 'keywords:', v.keywords.length, 'asinTargets:', v.asinTargets.length);
     });
 
     // --- addProductAdRows: identical to Campaign Creator ---
