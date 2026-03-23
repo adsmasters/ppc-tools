@@ -234,7 +234,10 @@
                 <label>Max. ROAS <span class="tooltip-icon" data-tip="Suchbegriffe mit ROAS unter diesem Wert gelten als Wasted Spend. Suchbegriffe mit 0 Bestellungen haben automatisch ROAS 0.">?</span></label>
                 <input type="number" id="maxRoas" value="1.0" step="0.1" min="0">
             </div>
-            <div class="field"></div>
+            <div class="field">
+                <label>Min. Spend (optional) <span class="tooltip-icon" data-tip="Wenn ausgefüllt: Nur Suchbegriffe mit mindestens X € Spend berücksichtigen. Leer lassen um alle zu sehen.">?</span></label>
+                <input type="number" id="minSpend" value="" step="0.5" min="0" placeholder="z.B. 5,00">
+            </div>
         </div>
 
         <div class="live-counter" id="liveCounter"></div>
@@ -621,9 +624,12 @@ function clearFile() {
 function getFilteredCount() {
     const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
     const maxRoas = parseFloat(document.getElementById('maxRoas').value);
+    const minSpendVal = document.getElementById('minSpend').value.trim();
+    const minSpend = minSpendVal ? parseFloat(minSpendVal) : 0;
 
     return rawData.filter(row => {
         if (row.clicks < minClicks) return false;
+        if (minSpend > 0 && row.spend < minSpend) return false;
         const roas = row.spend > 0 ? row.sales / row.spend : 0;
         return roas < maxRoas;
     }).length;
@@ -638,7 +644,7 @@ function updateLiveCounter() {
 
 // Live counter on filter change
 document.addEventListener('DOMContentLoaded', function() {
-    ['minClicks', 'maxRoas'].forEach(id => {
+    ['minClicks', 'maxRoas', 'minSpend'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateLiveCounter);
         document.getElementById(id).addEventListener('change', updateLiveCounter);
     });
@@ -648,9 +654,12 @@ document.addEventListener('DOMContentLoaded', function() {
 function analyzeData() {
     const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
     const maxRoas = parseFloat(document.getElementById('maxRoas').value);
+    const minSpendVal = document.getElementById('minSpend').value.trim();
+    const minSpend = minSpendVal ? parseFloat(minSpendVal) : 0;
 
     wastedData = rawData.filter(row => {
         if (row.clicks < minClicks) return false;
+        if (minSpend > 0 && row.spend < minSpend) return false;
         const roas = row.spend > 0 ? row.sales / row.spend : 0;
         return roas < maxRoas;
     });
