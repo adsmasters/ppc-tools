@@ -190,12 +190,12 @@
 
         <div class="field-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
             <div class="field">
-                <label>Globales Min. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird unter diesen Wert gesenkt (Fallback wenn kein Korridor-Min definiert).">?</span></label>
-                <input type="number" id="minBid" value="0.05" step="0.01" min="0.02">
+                <label><input type="checkbox" id="useMinBid" style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;" onchange="document.getElementById('minBid').disabled=!this.checked"> Globales Min. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird unter diesen Wert gesenkt.">?</span></label>
+                <input type="number" id="minBid" value="" step="0.01" min="0.02" placeholder="z.B. 0,05" disabled>
             </div>
             <div class="field">
-                <label>Globales Max. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird über diesen Wert erhöht (Fallback wenn kein Korridor-Max definiert).">?</span></label>
-                <input type="number" id="maxBid" value="5.00" step="0.1" min="0.10">
+                <label><input type="checkbox" id="useMaxBid" style="width:14px;height:14px;accent-color:var(--accent);vertical-align:middle;margin-right:4px;" onchange="document.getElementById('maxBid').disabled=!this.checked"> Globales Max. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird über diesen Wert erhöht.">?</span></label>
+                <input type="number" id="maxBid" value="" step="0.1" min="0.10" placeholder="z.B. 5,00" disabled>
             </div>
             <div class="field">
                 <label>Min. Klicks <span class="tooltip-icon" data-tip="Korridor-Regeln gelten nur für Items mit mindestens X Klicks.">?</span></label>
@@ -561,8 +561,10 @@ function clearUpload() {
 
 // --- Optimization ---
 function optimizeBids() {
-    const minBid = parseFloat(document.getElementById('minBid').value) || 0.02;
-    const maxBid = parseFloat(document.getElementById('maxBid').value) || 10;
+    const useMinBid = document.getElementById('useMinBid').checked;
+    const useMaxBid = document.getElementById('useMaxBid').checked;
+    const minBid = useMinBid ? (parseFloat(document.getElementById('minBid').value) || 0) : 0;
+    const maxBid = useMaxBid ? (parseFloat(document.getElementById('maxBid').value) || Infinity) : Infinity;
     const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
     const noClicksAction = document.getElementById('noClicksAction').value;
 
@@ -631,11 +633,10 @@ function optimizeBids() {
             }
         }
 
-        // Global clamp – aber nie über das aktuelle Gebot hinaus clampen wenn keine Erhöhung gewollt ist
+        // Global clamp – nur wenn aktiviert
         newBid = Math.round(newBid * 100) / 100;
-        newBid = Math.min(maxBid, newBid);
-        if (newBid < minBid) {
-            // Nur auf minBid setzen wenn das nicht höher als das aktuelle Gebot ist
+        if (useMaxBid && maxBid > 0) newBid = Math.min(maxBid, newBid);
+        if (useMinBid && minBid > 0 && newBid < minBid) {
             newBid = Math.min(minBid, item.currentBid);
         }
 
