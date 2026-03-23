@@ -80,8 +80,9 @@
 
         /* ROAS Corridor */
         .corridor-list { margin-bottom: 16px; }
-        .corridor-row { display: grid; grid-template-columns: 80px 16px 80px 1fr 40px; gap: 8px; align-items: center; margin-bottom: 8px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
-        .corridor-row input[type="number"] { width: 100%; padding: 6px 8px; font-size: 12px; }
+        .corridor-header { display: grid; grid-template-columns: 80px 16px 80px 100px 100px 100px 40px; gap: 8px; padding: 0 14px 4px; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+        .corridor-row { display: grid; grid-template-columns: 80px 16px 80px 100px 100px 100px 40px; gap: 8px; align-items: center; margin-bottom: 8px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+        .corridor-row input[type="number"], .corridor-row input[type="text"] { width: 100%; padding: 6px 8px; font-size: 12px; }
         .corridor-row select { width: 100%; padding: 6px 8px; font-size: 12px; }
         .corridor-row .arrow { text-align: center; color: var(--text-secondary); font-size: 13px; }
         .corridor-row .remove-corridor { background: transparent; border: 1px solid var(--border); color: var(--error); cursor: pointer; padding: 4px 8px; border-radius: 4px; font-size: 14px; font-weight: 700; }
@@ -196,17 +197,17 @@
             <button class="btn-sm" onclick="addCorridor()" style="color:var(--success);border-color:var(--success);">+ Korridor hinzufuegen</button>
         </div>
 
-        <div class="field-row">
+        <div class="field-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
             <div class="field">
-                <label>Min. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird unter diesen Wert gesenkt.">?</span></label>
+                <label>Globales Min. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird unter diesen Wert gesenkt (Fallback wenn kein Korridor-Min definiert).">?</span></label>
                 <input type="number" id="minBid" value="0.05" step="0.01" min="0.02">
             </div>
             <div class="field">
-                <label>Max. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird ueber diesen Wert erhoeht.">?</span></label>
+                <label>Globales Max. Gebot <span class="tooltip-icon" data-tip="Kein Gebot wird über diesen Wert erhöht (Fallback wenn kein Korridor-Max definiert).">?</span></label>
                 <input type="number" id="maxBid" value="5.00" step="0.1" min="0.10">
             </div>
             <div class="field">
-                <label>Min. Klicks <span class="tooltip-icon" data-tip="Korridor-Regeln gelten nur fuer Items mit mindestens X Klicks. Items mit weniger Klicks werden uebersprungen.">?</span></label>
+                <label>Min. Klicks <span class="tooltip-icon" data-tip="Korridor-Regeln gelten nur für Items mit mindestens X Klicks.">?</span></label>
                 <input type="number" id="minClicks" value="10" step="1" min="0">
             </div>
             <div class="field">
@@ -218,6 +219,20 @@
                     <option value="reduce50">Gebot um 50% senken</option>
                     <option value="min">Auf Min. Gebot setzen</option>
                 </select>
+            </div>
+        </div>
+
+        <div style="margin-top:16px;margin-bottom:16px;">
+            <label>Ausschlüsse <span class="tooltip-icon" data-tip="Keywords oder Kampagnen die NICHT optimiert werden sollen. Kommagetrennt. Z.B. 'redbull, energy drink' oder Kampagnennamen-Muster wie 'Eigenmarken, Brand'.">?</span></label>
+            <div class="field-row" style="grid-template-columns:1fr 1fr;">
+                <div class="field">
+                    <label style="font-size:11px;">Keywords ausschließen (kommagetrennt)</label>
+                    <input type="text" id="excludeKeywords" placeholder="z.B. redbull, energy drink, markenname">
+                </div>
+                <div class="field">
+                    <label style="font-size:11px;">Kampagnennamen ausschließen (kommagetrennt)</label>
+                    <input type="text" id="excludeCampaigns" placeholder="z.B. Eigenmarken, Brand, Single Keyword">
+                </div>
             </div>
         </div>
 
@@ -310,51 +325,28 @@ const CURRENCY_MAP = { '\u20AC': 'EUR', '$': 'USD', '\u00A3': 'GBP' };
 
 // --- ROAS Corridors ---
 let corridors = [
-    { from: 0, to: 1, action: 'reduce50' },
-    { from: 1, to: 2, action: 'reduce20' },
-    { from: 2, to: 3, action: 'keep' },
-    { from: 3, to: Infinity, action: 'increase20' }
+    { from: 0, to: 1, pct: -50, minBid: '', maxBid: '' },
+    { from: 1, to: 2, pct: -20, minBid: '', maxBid: '' },
+    { from: 2, to: 3, pct: 0, minBid: '', maxBid: '' },
+    { from: 3, to: Infinity, pct: 20, minBid: '', maxBid: '' }
 ];
-
-const CORRIDOR_ACTIONS = [
-    { value: 'reduce50', label: 'Gebot um 50% senken', factor: 0.50 },
-    { value: 'reduce40', label: 'Gebot um 40% senken', factor: 0.60 },
-    { value: 'reduce30', label: 'Gebot um 30% senken', factor: 0.70 },
-    { value: 'reduce20', label: 'Gebot um 20% senken', factor: 0.80 },
-    { value: 'reduce10', label: 'Gebot um 10% senken', factor: 0.90 },
-    { value: 'keep', label: 'Gebot beibehalten', factor: 1.00 },
-    { value: 'increase10', label: 'Gebot um 10% erhoehen', factor: 1.10 },
-    { value: 'increase20', label: 'Gebot um 20% erhoehen', factor: 1.20 },
-    { value: 'increase30', label: 'Gebot um 30% erhoehen', factor: 1.30 },
-    { value: 'increase50', label: 'Gebot um 50% erhoehen', factor: 1.50 },
-    { value: 'setMin', label: 'Auf Min. Gebot setzen', factor: 0 }
-];
-
-function getActionFactor(actionValue) {
-    const a = CORRIDOR_ACTIONS.find(a => a.value === actionValue);
-    return a ? a.factor : 1;
-}
-
-function getActionLabel(actionValue) {
-    const a = CORRIDOR_ACTIONS.find(a => a.value === actionValue);
-    return a ? a.label : actionValue;
-}
 
 function renderCorridors() {
     const list = document.getElementById('corridorList');
-    list.innerHTML = corridors.map((c, i) => {
+    list.innerHTML = '<div class="corridor-header">' +
+        '<span>ROAS von</span><span></span><span>ROAS bis</span><span>Änderung (%)</span><span>Min. Gebot</span><span>Max. Gebot</span><span></span>' +
+        '</div>' +
+        corridors.map((c, i) => {
         const isLast = i === corridors.length - 1;
-        const toVal = isLast ? '\u221E' : c.to;
-        const optionsHtml = CORRIDOR_ACTIONS.map(a =>
-            '<option value="' + a.value + '"' + (c.action === a.value ? ' selected' : '') + '>' + a.label + '</option>'
-        ).join('');
         return '<div class="corridor-row">' +
             '<input type="number" value="' + c.from + '" step="0.1" min="0" onchange="corridors[' + i + '].from=parseFloat(this.value);syncCorridorBounds()">' +
-            '<span class="arrow">-</span>' +
+            '<span class="arrow">–</span>' +
             (isLast
-                ? '<input type="text" value="\u221E" disabled style="text-align:center;color:var(--text-secondary)">'
+                ? '<input type="text" value="∞" disabled style="text-align:center;color:var(--text-secondary)">'
                 : '<input type="number" value="' + c.to + '" step="0.1" min="0" onchange="corridors[' + i + '].to=parseFloat(this.value);syncCorridorBounds()">') +
-            '<select onchange="corridors[' + i + '].action=this.value">' + optionsHtml + '</select>' +
+            '<input type="number" value="' + c.pct + '" step="5" onchange="corridors[' + i + '].pct=parseFloat(this.value)||0" style="text-align:center;" placeholder="z.B. -30">' +
+            '<input type="number" value="' + (c.minBid || '') + '" step="0.01" min="0" placeholder="optional" onchange="corridors[' + i + '].minBid=this.value?parseFloat(this.value):\'\'">' +
+            '<input type="number" value="' + (c.maxBid || '') + '" step="0.01" min="0" placeholder="optional" onchange="corridors[' + i + '].maxBid=this.value?parseFloat(this.value):\'\'">' +
             '<button class="remove-corridor" onclick="removeCorridor(' + i + ')" title="Korridor entfernen">&times;</button>' +
             '</div>';
     }).join('');
@@ -370,11 +362,10 @@ function syncCorridorBounds() {
 
 function addCorridor() {
     const last = corridors[corridors.length - 1];
-    // Insert before the last (infinity) corridor
     const newFrom = last.from;
     const newTo = newFrom + 1;
     last.from = newTo;
-    corridors.splice(corridors.length - 1, 0, { from: newFrom, to: newTo, action: 'keep' });
+    corridors.splice(corridors.length - 1, 0, { from: newFrom, to: newTo, pct: 0, minBid: '', maxBid: '' });
     renderCorridors();
 }
 
@@ -583,67 +574,71 @@ function optimizeBids() {
     const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
     const noClicksAction = document.getElementById('noClicksAction').value;
 
+    // Parse exclusions
+    const excludeKwRaw = document.getElementById('excludeKeywords').value.trim();
+    const excludeCampRaw = document.getElementById('excludeCampaigns').value.trim();
+    const excludeKws = excludeKwRaw ? excludeKwRaw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
+    const excludeCamps = excludeCampRaw ? excludeCampRaw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
+
     optimizedItems = rawItems.map(item => {
         let newBid = item.currentBid;
         let reason = '';
 
-        if (item.clicks === 0) {
-            // No clicks at all
+        // Check exclusions
+        const kwLower = item.label.toLowerCase();
+        const campLower = item.campaign.toLowerCase();
+        const isExcluded = excludeKws.some(ex => kwLower.includes(ex)) || excludeCamps.some(ex => campLower.includes(ex));
+
+        if (isExcluded) {
+            reason = 'Ausgeschlossen';
+        } else if (item.clicks === 0) {
             switch (noClicksAction) {
-                case 'reduce20': newBid = item.currentBid * 0.8; reason = 'Keine Klicks (\u221220%)'; break;
-                case 'reduce30': newBid = item.currentBid * 0.7; reason = 'Keine Klicks (\u221230%)'; break;
-                case 'reduce50': newBid = item.currentBid * 0.5; reason = 'Keine Klicks (\u221250%)'; break;
+                case 'reduce20': newBid = item.currentBid * 0.8; reason = 'Keine Klicks (−20%)'; break;
+                case 'reduce30': newBid = item.currentBid * 0.7; reason = 'Keine Klicks (−30%)'; break;
+                case 'reduce50': newBid = item.currentBid * 0.5; reason = 'Keine Klicks (−50%)'; break;
                 case 'min': newBid = minBid; reason = 'Keine Klicks (Min.)'; break;
                 case 'keep': default: newBid = item.currentBid; reason = 'Keine Klicks (beibehalten)'; break;
             }
         } else if (item.clicks < minClicks) {
-            // Not enough data
-            newBid = item.currentBid;
             reason = 'Zu wenig Daten (' + item.clicks + ' Klicks)';
         } else {
-            // Calculate ROAS
             let roas = 0;
-            if (item.clicks > 0 && item.orders > 0 && item.spend > 0) {
-                roas = item.sales / item.spend;
-            }
-            // roas = 0 when orders === 0 and clicks > 0
+            if (item.orders > 0 && item.spend > 0) roas = item.sales / item.spend;
 
-            // Find matching corridor
             let matchedCorridor = null;
             for (const c of corridors) {
-                const upperBound = c.to === Infinity ? Infinity : c.to;
-                if (roas >= c.from && roas < upperBound) {
+                if (roas >= c.from && (c.to === Infinity ? true : roas < c.to)) {
                     matchedCorridor = c;
                     break;
                 }
             }
-            // Fallback: last corridor if ROAS exactly matches upper bound
             if (!matchedCorridor && corridors.length > 0) {
                 matchedCorridor = corridors[corridors.length - 1];
             }
 
             if (matchedCorridor) {
-                const factor = getActionFactor(matchedCorridor.action);
-                if (matchedCorridor.action === 'setMin') {
-                    newBid = minBid;
-                } else {
-                    newBid = item.currentBid * factor;
-                }
-                const pctLabel = matchedCorridor.action === 'keep' ? '0%'
-                    : matchedCorridor.action === 'setMin' ? 'Min.'
-                    : (factor > 1 ? '+' : '') + Math.round((factor - 1) * 100) + '%';
-                reason = 'ROAS ' + roas.toFixed(2) + ' \u2192 ' + pctLabel;
+                const pct = matchedCorridor.pct;
+                const factor = 1 + (pct / 100);
+                newBid = item.currentBid * factor;
+
+                // Apply corridor-specific min/max
+                const cMin = matchedCorridor.minBid !== '' ? matchedCorridor.minBid : minBid;
+                const cMax = matchedCorridor.maxBid !== '' ? matchedCorridor.maxBid : maxBid;
+                newBid = Math.max(cMin, Math.min(cMax, newBid));
+
+                const pctLabel = pct === 0 ? '0%' : (pct > 0 ? '+' : '') + pct + '%';
+                reason = 'ROAS ' + roas.toFixed(2) + ' → ' + pctLabel;
             }
         }
 
-        // Clamp
+        // Global clamp
         newBid = Math.max(minBid, Math.min(maxBid, Math.round(newBid * 100) / 100));
 
         const change = newBid - item.currentBid;
         const changePct = item.currentBid > 0 ? (change / item.currentBid * 100) : 0;
-        const direction = Math.abs(changePct) < 1 ? 'same' : (change > 0 ? 'up' : 'down');
+        const direction = isExcluded ? 'same' : (Math.abs(changePct) < 1 ? 'same' : (change > 0 ? 'up' : 'down'));
 
-        return { ...item, newBid, change, changePct, direction, reason };
+        return { ...item, newBid, change, changePct, direction, reason, excluded: isExcluded };
     });
 
     // Select all with changes by default
