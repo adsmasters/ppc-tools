@@ -381,6 +381,8 @@ function parseNum(v) { if (v == null || v === '') return 0; return parseFloat(St
 const COL = {
     campaignId: ['campaign id', 'kampagnen-id'],
     adgroupId: ['ad group id', 'anzeigengruppen-id'],
+    keywordId: ['keyword id', 'keyword-id'],
+    ptId: ['product targeting id', 'produkt-targeting-id'],
     campaign: ['kampagnenname (nur zu informationszwecken)', 'campaign name (informational only)', 'campaign name', 'kampagnenname'],
     budget: ['daily budget', 'tagesbudget', 'budget quotidien', 'presupuesto diario', 'budget giornaliero'],
     adgroup: ['name der anzeigengruppe (nur zu informationszwecken)', 'ad group name (informational only)', 'ad group name', 'name der anzeigengruppe'],
@@ -465,6 +467,8 @@ function handleUpload(file) {
 
             const campaignId = cm.campaignId !== -1 ? String(r[cm.campaignId] || '').trim() : '';
             const adgroupId = cm.adgroupId !== -1 ? String(r[cm.adgroupId] || '').trim() : '';
+            const keywordId = cm.keywordId !== -1 ? String(r[cm.keywordId] || '').trim() : '';
+            const ptId = cm.ptId !== -1 ? String(r[cm.ptId] || '').trim() : '';
             const adgroup = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
             const keyword = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim() : '';
             const ptExpr = cm.ptExpr !== -1 ? String(r[cm.ptExpr] || '').trim() : '';
@@ -481,7 +485,7 @@ function handleUpload(file) {
             if (currentBid <= 0) continue;
 
             rawItems.push({
-                campaign, campaignId, adgroup, adgroupId,
+                campaign, campaignId, adgroup, adgroupId, keywordId, ptId,
                 label: label || keyword, matchtype,
                 type: isKeyword ? 'Keyword' : 'Product Targeting',
                 campType: detectType(campaign),
@@ -868,6 +872,8 @@ function exportBulkSheet() {
         r[h[2]] = 'Update';                        // Operation
         if (item.campaignId) r[h[3]] = item.campaignId; // Campaign ID
         if (item.adgroupId) r[h[4]] = item.adgroupId;   // Ad Group ID
+        if (item.keywordId) r[h[7]] = item.keywordId;   // Keyword ID
+        if (item.ptId) r[h[8]] = item.ptId;             // Product Targeting ID
         r[h[9]] = item.campaign;                   // Campaign Name
         r[h[10]] = item.adgroup;                   // Ad Group Name
         r[h[14]] = item.paused ? 'Paused' : 'Enabled'; // State
