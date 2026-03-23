@@ -244,7 +244,8 @@
                 <option value="">Alle Typen</option>
             </select>
             <select id="filterDirection" onchange="currentPage=1;renderTable()">
-                <option value="">Alle Änderungen</option>
+                <option value="changed">Nur Änderungen</option>
+                <option value="">Alle anzeigen</option>
                 <option value="up">Nur Erhöhungen</option>
                 <option value="down">Nur Senkungen</option>
                 <option value="pause">Nur Pausiert</option>
@@ -659,6 +660,8 @@ function optimizeBids() {
     renderStats();
     renderBudgetWarnings();
     renderFilters();
+    // Standardmäßig nur Änderungen anzeigen
+    document.getElementById('filterDirection').value = 'changed';
     renderTable();
     document.getElementById('stepResults').classList.remove('hidden');
     document.getElementById('stepExport').classList.remove('hidden');
@@ -725,7 +728,8 @@ function getFilteredData() {
     return optimizedItems.map((item, idx) => ({ ...item, idx })).filter(item => {
         if (search && !item.label.toLowerCase().includes(search) && !item.campaign.toLowerCase().includes(search)) return false;
         if (typeFilter && item.campType !== typeFilter) return false;
-        if (dirFilter && item.direction !== dirFilter) return false;
+        if (dirFilter === 'changed' && item.direction === 'same') return false;
+        else if (dirFilter && dirFilter !== 'changed' && item.direction !== dirFilter) return false;
         if (campFilter && item.campaign !== campFilter) return false;
         return true;
     });
