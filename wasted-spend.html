@@ -588,6 +588,17 @@ function handleParsedData(rows, file) {
         return;
     }
 
+    // Warn if Campaign IDs are missing (Search Term Report instead of Bulk Sheet)
+    const hasIds = rawData.some(r => r.campaignId);
+    if (!hasIds) {
+        msgEl.innerHTML = '<div class="warn-msg" style="background:var(--warn-bg);border:1px solid var(--warn);color:var(--warn);padding:12px 16px;border-radius:8px;font-size:13px;margin-top:12px;">' +
+            '<strong>Hinweis:</strong> Die hochgeladene Datei enthält keine Campaign IDs / Ad Group IDs. ' +
+            'Das passiert wenn ein Search Term Report aus der Amazon Console statt ein Bulk Sheet verwendet wird. ' +
+            'Das Negatives Bulk Sheet wird ohne IDs erstellt – <strong>Amazon wird diese ablehnen</strong>. ' +
+            'Bitte lade stattdessen ein Bulk Sheet aus dem Amazon Campaign Manager herunter (Bulk-Operationen → Bulk Sheets erstellen).' +
+            '</div>';
+    }
+
     // Track uploaded files
     uploadedFiles.push({ name: file.name, count: newCount });
     document.getElementById('fileInfoContainer').innerHTML = uploadedFiles.map((f, i) =>
