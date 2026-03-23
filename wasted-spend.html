@@ -679,12 +679,14 @@ function analyzeData() {
         aggMap[key].campaigns.add(row.campaign);
     });
     aggregatedData = Object.values(aggMap).map(a => ({
-        ...a, campaignCount: a.campaigns.size, campaignList: [...a.campaigns].join(', ')
+        ...a, campaignCount: a.campaigns.size, campaignList: [...a.campaigns].join(', '),
+        roas: a.spend > 0 ? a.sales / a.spend : 0
     }));
 
     campaignData = wastedData.map(row => ({
         ...row,
-        key: row.campaign + '|' + row.adgroup + '|' + row.searchterm
+        key: row.campaign + '|' + row.adgroup + '|' + row.searchterm,
+        roas: row.spend > 0 ? row.sales / row.spend : 0
     }));
 
     // Mark existing negatives
@@ -813,6 +815,7 @@ function renderTable() {
             { id: 'impressions', label: 'Impressionen', sortable: true, num: true },
             { id: 'orders', label: 'Bestellungen', sortable: true, num: true },
             { id: 'sales', label: 'Umsatz', sortable: true, num: true },
+            { id: 'roas', label: 'ROAS', sortable: true, num: true },
             { id: 'campaignCount', label: 'Kampagnen', sortable: true, num: true },
         ];
         data = aggregatedData.filter(r => !search || r.searchterm.toLowerCase().includes(search));
@@ -828,6 +831,7 @@ function renderTable() {
             { id: 'impressions', label: 'Impressionen', sortable: true, num: true },
             { id: 'orders', label: 'Bestellungen', sortable: true, num: true },
             { id: 'sales', label: 'Umsatz', sortable: true, num: true },
+            { id: 'roas', label: 'ROAS', sortable: true, num: true },
         ];
         data = campaignData.filter(r => !search || r.searchterm.toLowerCase().includes(search) || r.campaign.toLowerCase().includes(search));
         keyFn = r => r.key;
@@ -889,6 +893,11 @@ function renderTable() {
                 return `<td class="num"${style}>${formatCurrency(row.spend)}</td>`;
             }
             if (col.id === 'sales') return `<td class="num">${formatCurrency(row[col.id])}</td>`;
+            if (col.id === 'roas') {
+                const rVal = row.roas;
+                const color = rVal === 0 ? 'var(--error)' : rVal < 1 ? 'var(--warn)' : 'var(--success)';
+                return `<td class="num" style="color:${color};font-weight:600">${rVal.toFixed(2)}x</td>`;
+            }
             if (col.id === 'searchterm') {
                 const badge = row.isAsin ? ' <span style="font-size:10px;background:var(--warn-bg);color:var(--warn);padding:1px 5px;border-radius:3px;">ASIN</span>' : '';
                 const negBadge = row.alreadyNegated ? ' <span style="font-size:10px;background:var(--success-bg);color:var(--success);padding:1px 5px;border-radius:3px;">Negiert</span>' : '';
