@@ -1068,6 +1068,7 @@ function exportBulkSheet() {
         // For aggregated: add negative to each campaign the search term appeared in
         aggregatedData.forEach(agg => {
             if (!selectedTerms.has(agg.searchterm.toLowerCase())) return;
+            if (agg.isAsin) return; // ASINs werden als Negative Product Targeting behandelt, nicht als Keywords
             // Find all campaign/adgroup combos for this search term
             const entries = wastedData.filter(r => r.searchterm.toLowerCase() === agg.searchterm.toLowerCase());
             const seen = new Set();
@@ -1097,6 +1098,7 @@ function exportBulkSheet() {
         // Per campaign view
         campaignData.forEach(row => {
             if (!selectedTerms.has(row.key)) return;
+            if (row.isAsin) return; // ASINs werden als Negative Product Targeting behandelt
             matchTypes.forEach(mt => {
                 const r = emptyRow();
                 r[hProduct] = t.product;
