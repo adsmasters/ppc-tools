@@ -35,12 +35,14 @@
 
         .toc { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 20px 24px; margin-bottom: 32px; }
         .toc-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
-        .toc a { display: block; color: var(--accent); text-decoration: none; font-size: 13px; padding: 3px 0; }
+        .toc-group { margin-bottom: 8px; }
+        .toc-group-title { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .toc a { display: block; color: var(--accent); text-decoration: none; font-size: 13px; padding: 2px 0 2px 12px; }
         .toc a:hover { text-decoration: underline; }
 
-        .section { margin-bottom: 32px; }
-        .section h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-        .section h3 { font-size: 14px; font-weight: 700; margin: 16px 0 8px; }
+        .tool-header { font-size: 20px; font-weight: 700; margin: 40px 0 8px; padding: 12px 0; border-bottom: 2px solid var(--accent); color: var(--accent); }
+        .section { margin-bottom: 28px; }
+        .section h3 { font-size: 15px; font-weight: 700; margin: 16px 0 8px; }
         .section p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 10px; }
         .section ul { margin: 8px 0 12px 20px; }
         .section li { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
@@ -48,8 +50,6 @@
 
         .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 10px 0; }
         .card-label { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
-
-        kbd { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; font-size: 12px; font-family: monospace; }
 
         @media (max-width: 600px) {
             .topbar { padding: 0 12px; height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
@@ -60,7 +60,6 @@
 <body>
 <script>
     if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
-    // Theme
     const saved = localStorage.getItem('ppc_theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
     function toggleTheme() {
@@ -78,6 +77,9 @@
         <nav class="topbar-nav">
             <a href="dashboard.html">Dashboard</a>
             <a href="campaign-creator.html">Kampagnen Ersteller</a>
+            <a href="keyword-harvesting.html">Keyword Harvesting</a>
+            <a href="wasted-spend.html">Wasted Ad Spend</a>
+            <a href="bid-optimizer.html">Bid Optimizer</a>
             <a href="help.html" class="active">Hilfe</a>
         </nav>
     </div>
@@ -90,100 +92,99 @@
 
 <div class="main">
     <h1 class="page-title">Hilfe & Dokumentation</h1>
-    <p class="page-sub">Anleitung zum Kampagnen Ersteller und allen Features</p>
+    <p class="page-sub">Anleitung zu allen vier PPC Tools</p>
 
     <div class="toc">
         <div class="toc-title">Inhaltsverzeichnis</div>
-        <a href="#workflow">1. Workflow-Übersicht</a>
-        <a href="#step1">2. Step 1: Beworbene Produkte</a>
-        <a href="#step2">3. Step 2: Keywords & Targeting</a>
-        <a href="#step3">4. Step 3: Kampagnen-Einstellungen</a>
-        <a href="#step4">5. Step 4: Kampagnen-Vorlagen</a>
-        <a href="#marketplace">6. Marketplace-Auswahl</a>
-        <a href="#presets">7. Presets (Konfigurationen)</a>
-        <a href="#import">8. Import-Funktionen</a>
-        <a href="#preview">9. Vorschau & Download</a>
-        <a href="#shortcuts">10. Tastenkürzel</a>
-        <a href="#tips">11. Tipps & Best Practices</a>
+        <div class="toc-group">
+            <div class="toc-group-title">1. Kampagnen Ersteller</div>
+            <a href="#cc-overview">Übersicht & Workflow</a>
+            <a href="#cc-products">Beworbene Produkte (Vendor / Seller)</a>
+            <a href="#cc-keywords">Keywords & Targeting</a>
+            <a href="#cc-settings">Kampagnen-Einstellungen</a>
+            <a href="#cc-templates">Kampagnen-Vorlagen</a>
+            <a href="#cc-tips">Tipps</a>
+        </div>
+        <div class="toc-group">
+            <div class="toc-group-title">2. Keyword Harvesting</div>
+            <a href="#kh-overview">Übersicht</a>
+            <a href="#kh-upload">Bulk Sheet hochladen</a>
+            <a href="#kh-filter">Filter & Kriterien</a>
+            <a href="#kh-export">Harvest Bulk Sheet erstellen</a>
+        </div>
+        <div class="toc-group">
+            <div class="toc-group-title">3. Wasted Ad Spend</div>
+            <a href="#ws-overview">Übersicht</a>
+            <a href="#ws-filter">Filter definieren</a>
+            <a href="#ws-results">Ergebnisse & Negatives Bulk Sheet</a>
+        </div>
+        <div class="toc-group">
+            <div class="toc-group-title">4. Bid Optimizer</div>
+            <a href="#bo-overview">Übersicht</a>
+            <a href="#bo-corridors">ROAS-Korridore</a>
+            <a href="#bo-exclusions">Ausschlüsse</a>
+            <a href="#bo-export">Optimiertes Bulk Sheet</a>
+        </div>
+        <div class="toc-group">
+            <div class="toc-group-title">Allgemein</div>
+            <a href="#general-bulksheet">Bulk Sheet Format</a>
+            <a href="#general-upload">Datei hochladen</a>
+        </div>
     </div>
 
-    <div class="section" id="workflow">
-        <h2>1. Workflow-Übersicht</h2>
-        <p>Der Kampagnen Ersteller generiert Amazon Advertising Bulk Upload Sheets im Excel-Format. Der Workflow ist in 4 Schritte aufgeteilt:</p>
+    <!-- ==================== KAMPAGNEN ERSTELLER ==================== -->
+    <h2 class="tool-header" id="cc">1. Kampagnen Ersteller</h2>
+
+    <div class="section" id="cc-overview">
+        <h3>Übersicht & Workflow</h3>
+        <p>Der Kampagnen Ersteller generiert Amazon Sponsored Products Bulk Upload Sheets im Excel-Format. Produkte werden einzeln hinzugefügt und zu einem kombinierten Bulk Sheet zusammengeführt.</p>
         <ul>
             <li><strong>Step 1:</strong> Produkte und ASINs/SKUs definieren</li>
             <li><strong>Step 2:</strong> Keywords und Targeting-ASINs eingeben</li>
             <li><strong>Step 3:</strong> Gebote, Budget und Einstellungen festlegen</li>
             <li><strong>Step 4:</strong> Kampagnentypen auswählen und konfigurieren</li>
         </ul>
-        <p>Nach dem Generieren erscheint eine Vorschau mit Zusammenfassung. Erst nach Bestätigung wird die Excel-Datei heruntergeladen.</p>
+        <p>Nach dem Generieren erscheint eine Vorschau. Die Excel-Datei wird erst nach Bestätigung heruntergeladen.</p>
     </div>
 
-    <div class="section" id="step1">
-        <h2>2. Step 1: Beworbene Produkte</h2>
-        <h3>Vendor vs. Seller Modus</h3>
+    <div class="section" id="cc-products">
+        <h3>Beworbene Produkte (Vendor / Seller)</h3>
         <p>Wähle den passenden Modus je nach Kontotyp:</p>
         <ul>
             <li><strong>Vendor (ASIN):</strong> Produkte werden über ASINs identifiziert. ASINs müssen 10 Zeichen lang sein und mit B0 beginnen.</li>
-            <li><strong>Seller (SKU):</strong> Produkte werden über SKUs identifiziert. Jede SKU muss ausgefüllt sein.</li>
+            <li><strong>Seller (SKU):</strong> Produkte werden über SKUs identifiziert.</li>
         </ul>
-        <h3>Mehrere Produkte</h3>
-        <p>Du kannst beliebig viele Produktgruppen anlegen. Jede Produktgruppe erhält eigene Kampagnen. Der Produktname wird für die Kampagnenbenennung verwendet.</p>
-        <h3>Produkt-Import</h3>
-        <p>Nutze den "Produkte importieren" Button, um Produkte aus einer Excel/CSV-Datei zu laden. Format: Spalte A = Produktname, Spalte B+ = ASINs. Eine Vorlage kannst du über "Vorlage herunterladen" bekommen.</p>
+        <p>Jede Produktgruppe erhält eigene Kampagnen. Der Produktname wird für die Kampagnenbenennung verwendet.</p>
     </div>
 
-    <div class="section" id="step2">
-        <h2>3. Step 2: Keywords & Targeting</h2>
-        <h3>Generische Keywords</h3>
-        <p>Allgemeine Suchbegriffe für dein Produkt. Werden in Exact- und Broad-Match-Kampagnen aufgeteilt.</p>
+    <div class="section" id="cc-keywords">
+        <h3>Keywords & Targeting</h3>
+        <ul>
+            <li><strong>Generische Keywords:</strong> Allgemeine Suchbegriffe. Werden in Exact- und Broad-Match-Kampagnen aufgeteilt.</li>
+            <li><strong>Eigenmarken Keywords:</strong> Keywords mit Markennamen. Exact, Broad und Phrase Kampagnen.</li>
+            <li><strong>Wettbewerber Keywords:</strong> Fremdmarken-Keywords. Exact und Broad Kampagnen.</li>
+            <li><strong>Einzelne Keywords:</strong> Jedes Keyword wird als eigene Kampagne angelegt (Exact Match).</li>
+            <li><strong>Produktausrichtung:</strong> Eigene und Wettbewerber-ASINs für Product Targeting Kampagnen.</li>
+        </ul>
         <div class="card">
             <div class="card-label">Keyword Allocation</div>
-            <p>Bestimmt, wie viele Keywords pro Kampagne gruppiert werden. Beispiel: 50 Keywords mit Allocation 10 = 5 Kampagnen mit je 10 Keywords. So kannst du Budgets gleichmäßig verteilen.</p>
+            <p>Bestimmt, wie viele Keywords pro Kampagne gruppiert werden. Beispiel: 50 Keywords mit Allocation 10 = 5 Kampagnen mit je 10 Keywords.</p>
         </div>
-        <h3>Eigenmarken Keywords</h3>
-        <p>Keywords die deinen Markennamen enthalten. Werden in Exact, Broad und Phrase Kampagnen angelegt.</p>
-        <h3>Wettbewerber Keywords</h3>
-        <p>Keywords von Wettbewerbern. Werden in Exact und Broad Kampagnen mit eigener Allocation aufgeteilt.</p>
-        <h3>Einzelne Keywords</h3>
-        <p>Jedes Keyword wird als eigene Kampagne mit Exact Match angelegt. Ideal für Top-Performer Keywords, die ein eigenes Budget benötigen.</p>
-        <h3>Produktausrichtung (ASIN Targeting)</h3>
-        <p>Eigene und Wettbewerber-ASINs für Product Targeting Kampagnen. Wettbewerber-ASINs können über die Allocation auf mehrere Kampagnen aufgeteilt werden.</p>
-        <h3>Import</h3>
-        <p>Alle Felder unterstützen CSV/Excel-Import über den "CSV/Excel Import" Button oder per Drag & Drop einer Datei direkt auf das Textfeld.</p>
     </div>
 
-    <div class="section" id="step3">
-        <h2>4. Step 3: Kampagnen-Einstellungen</h2>
-        <h3>Gebotsstrategie</h3>
+    <div class="section" id="cc-settings">
+        <h3>Kampagnen-Einstellungen</h3>
         <ul>
-            <li><strong>Nur senken:</strong> Amazon senkt Gebote bei geringer Conversion-Wahrscheinlichkeit</li>
-            <li><strong>Erhöhen und senken:</strong> Amazon passt Gebote in beide Richtungen an</li>
-            <li><strong>Fest:</strong> Gebote bleiben unverändert</li>
-        </ul>
-        <h3>Standardgebot & Tagesbudget</h3>
-        <p>Diese Werte werden automatisch in alle Kampagnen-Vorlagen (Step 4) übernommen. Wenn du einen Wert in Step 4 manuell änderst, wird dieser nicht mehr automatisch überschrieben.</p>
-        <h3>Portfolio-ID</h3>
-        <p>Optional. Weist alle Kampagnen einem Amazon Portfolio zu.</p>
-        <h3>Placement-Anpassungen</h3>
-        <p>Prozentuale Gebotserhöhung für bestimmte Platzierungen. Z.B. 50% bei Top of Search = dein Gebot wird um 50% erhöht für die oberste Position.</p>
-        <h3>Negative Keywords</h3>
-        <ul>
-            <li><strong>Negative Keywords (Exact/Phrase):</strong> Werden auf Anzeigengruppen-Ebene eingefügt</li>
-            <li><strong>Kampagnen Negative Keywords:</strong> Werden auf Kampagnen-Ebene eingefügt</li>
-            <li><strong>Negatives Produkt-Targeting:</strong> ASINs die von Product Targeting ausgeschlossen werden</li>
+            <li><strong>Gebotsstrategie:</strong> Nur senken / Erhöhen und senken / Fest</li>
+            <li><strong>Standardgebot & Tagesbudget:</strong> Werden in alle Kampagnen-Vorlagen übernommen</li>
+            <li><strong>Negative Keywords:</strong> Auf Anzeigengruppen- oder Kampagnen-Ebene. Auch negatives Produkt-Targeting möglich.</li>
+            <li><strong>Cross-Negation:</strong> Wenn aktiviert, werden manuelle Keywords als Negatives in die Auto-Kampagne eingefügt um Kannibalisierung zu verhindern.</li>
         </ul>
     </div>
 
-    <div class="section" id="step4">
-        <h2>5. Step 4: Kampagnen-Vorlagen</h2>
-        <p>Hier wählst du aus, welche Kampagnentypen erstellt werden sollen. Jeder Typ kann individuell konfiguriert werden:</p>
-        <ul>
-            <li><strong>Gebot:</strong> Standardgebot für die Anzeigengruppe</li>
-            <li><strong>Tagesbudget:</strong> Budget pro Tag für diese Kampagne</li>
-            <li><strong>Negative KW:</strong> Ob negative Keywords für diesen Kampagnentyp eingefügt werden</li>
-        </ul>
-        <h3>Sponsored Products Kampagnen</h3>
+    <div class="section" id="cc-templates">
+        <h3>Kampagnen-Vorlagen</h3>
+        <p>Wähle aus, welche Kampagnentypen erstellt werden sollen:</p>
         <ul>
             <li><strong>Auto-Kampagne:</strong> Mit Sub-Targeting (Enge/Entfernte Übereinstimmung, Ersatz, Ergänzungen)</li>
             <li><strong>Generic Keywords:</strong> Exact & Broad Match</li>
@@ -192,87 +193,166 @@
             <li><strong>Produktausrichtung:</strong> Brand & Competitor ASINs</li>
             <li><strong>Einzelnes Keyword:</strong> Eine Kampagne pro Keyword (Exact)</li>
         </ul>
-        <h3>Sponsored Display Kampagnen</h3>
-        <ul>
-            <li><strong>SD Produktausrichtung (Competitor):</strong> Anzeigen auf Wettbewerber-Produktseiten</li>
-            <li><strong>SD Produktausrichtung (Brand):</strong> Anzeigen auf eigenen Produktseiten (Cross-Selling)</li>
-        </ul>
-        <h3>Cross-Negation</h3>
-        <p>Wenn aktiviert, werden Brand Keywords als Negative Phrase und generische Keywords als Negative Exact automatisch in die Auto-Kampagne eingefügt. Das verhindert Keyword-Kannibalisierung zwischen Auto- und manuellen Kampagnen.</p>
     </div>
 
-    <div class="section" id="marketplace">
-        <h2>6. Marketplace-Auswahl</h2>
-        <p>Wähle den Ziel-Marktplatz aus. Alle Spaltenüberschriften, Match Types und Entitäten im Bulk Sheet werden in die passende Sprache übersetzt:</p>
+    <div class="section" id="cc-tips">
+        <h3>Tipps</h3>
         <ul>
-            <li><strong>Deutschland (DE):</strong> Deutsch</li>
-            <li><strong>USA / UK (EN):</strong> Englisch</li>
-            <li><strong>Frankreich (FR):</strong> Französisch</li>
-            <li><strong>Italien (IT):</strong> Italienisch</li>
-            <li><strong>Spanien (ES):</strong> Spanisch</li>
+            <li><strong>Cross-Negation aktivieren:</strong> Verhindert Keyword-Kannibalisierung zwischen Auto- und manuellen Kampagnen</li>
+            <li><strong>Keyword Allocation nutzen:</strong> Bei vielen Keywords auf 10-15 pro Kampagne aufteilen</li>
+            <li><strong>Presets speichern:</strong> Grundkonfigurationen als Preset speichern und nur Keywords/ASINs anpassen</li>
         </ul>
-        <p>Die Kampagnennamen bleiben sprachneutral (Englisch) für konsistentes Kampagnen-Management über Marktplätze hinweg.</p>
     </div>
 
-    <div class="section" id="presets">
-        <h2>7. Presets (Konfigurationen)</h2>
-        <p>Du kannst die komplette Formular-Konfiguration als Preset speichern und später wieder laden.</p>
-        <ul>
-            <li><strong>Speichern:</strong> Speichert alle aktuellen Einstellungen unter einem Namen</li>
-            <li><strong>Laden:</strong> Stellt ein gespeichertes Preset wieder her</li>
-            <li><strong>Löschen:</strong> Entfernt das ausgewählte Preset</li>
-            <li><strong>Export:</strong> Exportiert alle Presets als JSON-Datei (zum Teilen mit Kollegen)</li>
-            <li><strong>Import:</strong> Importiert Presets aus einer JSON-Datei</li>
-        </ul>
-        <p>Presets werden im Browser (localStorage) gespeichert und bleiben zwischen Sitzungen erhalten.</p>
-    </div>
+    <!-- ==================== KEYWORD HARVESTING ==================== -->
+    <h2 class="tool-header" id="kh">2. Keyword Harvesting</h2>
 
-    <div class="section" id="import">
-        <h2>8. Import-Funktionen</h2>
-        <h3>Keyword/ASIN Import</h3>
-        <p>Jedes Textfeld unterstützt zwei Import-Methoden:</p>
-        <ul>
-            <li><strong>Button:</strong> Klicke "CSV/Excel Import" und wähle eine Datei</li>
-            <li><strong>Drag & Drop:</strong> Ziehe eine CSV/Excel-Datei direkt auf das Textfeld</li>
-        </ul>
-        <p>Unterstützte Formate: .csv, .tsv, .xlsx, .xls. Importierte Werte werden an bestehende Einträge angehängt.</p>
-        <h3>Produkt-Import</h3>
-        <p>Importiere mehrere Produkte gleichzeitig aus einer Excel/CSV-Datei. Format:</p>
+    <div class="section" id="kh-overview">
+        <h3>Übersicht</h3>
+        <p>Findet profitable Suchbegriffe aus Auto-Kampagnen, die noch nicht in manuellen Kampagnen als Keywords existieren. Erstellt daraus neue manuelle Kampagnen als Bulk Sheet.</p>
         <div class="card">
-            <div class="card-label">Tabellenformat</div>
-            <p>Spalte A: Produktname | Spalte B: ASIN 1 | Spalte C: ASIN 2 | ...</p>
-            <p>Die erste Zeile kann optional eine Kopfzeile sein (wird automatisch erkannt).</p>
+            <div class="card-label">Wie funktioniert es?</div>
+            <p>1. Suchbegriffe aus Auto-Kampagnen werden gesammelt.<br>
+            2. Abgleich gegen bestehende Keywords in manuellen Kampagnen.<br>
+            3. Nur Suchbegriffe die noch NICHT als Keyword existieren werden als Harvest-Kandidaten angezeigt.<br>
+            4. ASIN-Suchbegriffe (B0...) werden automatisch als Product Targeting Kampagnen erstellt.</p>
         </div>
     </div>
 
-    <div class="section" id="preview">
-        <h2>9. Vorschau & Download</h2>
-        <p>Nach dem Klick auf "Bulk Sheet erstellen" erscheint eine Vorschau mit:</p>
+    <div class="section" id="kh-upload">
+        <h3>Bulk Sheet hochladen</h3>
+        <p>Lade ein Amazon Bulk Sheet (Excel) hoch. Das Tool erkennt automatisch:</p>
         <ul>
-            <li>Zusammenfassung: Anzahl Kampagnen, Anzeigengruppen, Keywords, Targeting</li>
-            <li>Tabellenvorschau der ersten 50 Zeilen</li>
-            <li>Warnungen bei Duplikaten oder doppelten Kampagnennamen</li>
+            <li><strong>Seller vs. Vendor:</strong> Anhand der SKU/ASIN-Spalte</li>
+            <li><strong>Auto vs. Manuelle Kampagnen:</strong> Anhand der Targeting-Typ Spalte</li>
+            <li><strong>Alle Sheets:</strong> Kampagnen-Sheet und Search Term Report werden automatisch erkannt</li>
         </ul>
-        <p>SP und SD Kampagnen werden in separate Tabellenblätter innerhalb derselben Excel-Datei geschrieben.</p>
     </div>
 
-    <div class="section" id="shortcuts">
-        <h2>10. Tastenkürzel</h2>
+    <div class="section" id="kh-filter">
+        <h3>Filter & Kriterien</h3>
+        <ul>
+            <li><strong>Min. Bestellungen:</strong> Nur Suchbegriffe mit mindestens X Bestellungen</li>
+            <li><strong>Max. ACoS:</strong> Nur Suchbegriffe unter einem bestimmten ACoS-Wert</li>
+            <li><strong>Nur Auto-Kampagnen:</strong> Nur Suchbegriffe aus Auto-Targeting Kampagnen berücksichtigen</li>
+        </ul>
+    </div>
+
+    <div class="section" id="kh-export">
+        <h3>Harvest Bulk Sheet erstellen</h3>
+        <p>Das Tool erstellt pro Produkt eine eigene Harvest-Kampagne mit:</p>
+        <ul>
+            <li><strong>Campaign + Ad Group + Product Ads:</strong> Vollständige Kampagnenstruktur wie beim Kampagnen Ersteller</li>
+            <li><strong>Keywords (Exact):</strong> Für Text-Suchbegriffe</li>
+            <li><strong>Product Targeting:</strong> Für ASIN-Suchbegriffe (B0...)</li>
+            <li><strong>SKU/ASIN:</strong> Automatisch aus der Quell-Kampagne übernommen</li>
+        </ul>
+    </div>
+
+    <!-- ==================== WASTED AD SPEND ==================== -->
+    <h2 class="tool-header" id="ws">3. Wasted Ad Spend</h2>
+
+    <div class="section" id="ws-overview">
+        <h3>Übersicht</h3>
+        <p>Findet Suchbegriffe die Geld verschwenden und erstellt ein Negatives Keyword Bulk Sheet, um diese auszuschließen.</p>
+    </div>
+
+    <div class="section" id="ws-filter">
+        <h3>Filter definieren</h3>
+        <p>Definiere, ab wann ein Suchbegriff als "Wasted Spend" gilt:</p>
+        <ul>
+            <li><strong>Min. Klicks:</strong> Grundschwelle (z.B. 20 Klicks). Suchbegriffe mit weniger Klicks werden ignoriert.</li>
+            <li><strong>Max. ROAS:</strong> Suchbegriffe mit ROAS unter diesem Wert gelten als Wasted. Suchbegriffe mit 0 Bestellungen haben automatisch ROAS 0.</li>
+            <li><strong>Min. Spend (optional):</strong> Zusätzlicher Filter nach Mindest-Ausgaben.</li>
+        </ul>
+    </div>
+
+    <div class="section" id="ws-results">
+        <h3>Ergebnisse & Negatives Bulk Sheet</h3>
+        <p>Die Ergebnistabelle zeigt alle Wasted-Suchbegriffe mit Spend, Klicks, ROAS und Kampagnenzuordnung.</p>
+        <ul>
+            <li><strong>Aggregierte Ansicht:</strong> Suchbegriffe zusammengefasst über alle Kampagnen</li>
+            <li><strong>Pro Kampagne:</strong> Detailansicht mit Kampagnen- und Anzeigengruppen-Zuordnung</li>
+            <li><strong>ASIN-Erkennung:</strong> ASIN-Suchbegriffe werden automatisch als Negative Product Targeting exportiert</li>
+            <li><strong>Bereits negiert:</strong> Suchbegriffe die schon als Negative existieren werden markiert</li>
+        </ul>
         <div class="card">
-            <p><kbd>Ctrl</kbd> + <kbd>Enter</kbd> &mdash; Bulk Sheet generieren</p>
-            <p><kbd>Ctrl</kbd> + <kbd>S</kbd> &mdash; Preset speichern</p>
+            <div class="card-label">Negatives Bulk Sheet</div>
+            <p>Das exportierte Bulk Sheet enthält Campaign ID, Ad Group ID, Keyword Text und Match Type (negativeExact). Kann direkt bei Amazon hochgeladen werden.</p>
         </div>
     </div>
 
-    <div class="section" id="tips">
-        <h2>11. Tipps & Best Practices</h2>
+    <!-- ==================== BID OPTIMIZER ==================== -->
+    <h2 class="tool-header" id="bo">4. Bid Optimizer</h2>
+
+    <div class="section" id="bo-overview">
+        <h3>Übersicht</h3>
+        <p>Optimiert Gebote für bestehende Keywords und Product Targeting basierend auf ROAS-Korridoren. Erstellt ein Update Bulk Sheet das direkt bei Amazon hochgeladen werden kann.</p>
+    </div>
+
+    <div class="section" id="bo-corridors">
+        <h3>ROAS-Korridore</h3>
+        <p>Definiere ROAS-Bereiche und die jeweilige Gebots-Aktion:</p>
+        <div class="card">
+            <div class="card-label">Beispiel-Konfiguration</div>
+            <p>ROAS 0 - 1: Gebot um 50% senken<br>
+            ROAS 1 - 2: Gebot um 20% senken<br>
+            ROAS 2 - 3: Gebot beibehalten (0%)<br>
+            ROAS 3+: Gebot um 10% erhöhen</p>
+        </div>
+        <p>Pro Korridor konfigurierbar:</p>
         <ul>
-            <li><strong>Cross-Negation aktivieren:</strong> Verhindert, dass die Auto-Kampagne Traffic von manuellen Kampagnen "stiehlt"</li>
-            <li><strong>Keyword Allocation nutzen:</strong> Bei vielen Keywords (50+) auf 10-15 Keywords pro Kampagne aufteilen, um das Budget besser zu verteilen</li>
-            <li><strong>Presets für wiederkehrende Kunden:</strong> Speichere Grundkonfigurationen (Gebotsstrategie, Budgets) als Preset und passe nur Keywords/ASINs an</li>
-            <li><strong>Negative Keywords pflegen:</strong> Füge irrelevante Suchbegriffe als Negative Keywords hinzu, bevor du das Bulk Sheet erstellst</li>
-            <li><strong>Einzelne Keywords:</strong> Nutze diese Funktion für deine Top 5-10 Keywords, die ein eigenes Budget verdienen</li>
-            <li><strong>Validierung beachten:</strong> Das Tool prüft ASIN-Formate, fehlende Produktnamen und Keyword-Duplikate automatisch</li>
+            <li><strong>Änderung (%):</strong> Freie Eingabe, z.B. -90, -30, 0, +15</li>
+            <li><strong>Min./Max. Gebot:</strong> Optionale Grenzen pro Korridor</li>
+            <li><strong>Min. Klicks:</strong> Korridor greift erst ab X Klicks</li>
+            <li><strong>Min. Orders:</strong> Korridor greift erst ab X Bestellungen</li>
+            <li><strong>Pause:</strong> Keywords/Targets in diesem Bereich deaktivieren (State = Paused)</li>
+        </ul>
+        <p>Korridore können mit + / - hinzugefügt oder entfernt werden.</p>
+    </div>
+
+    <div class="section" id="bo-exclusions">
+        <h3>Ausschlüsse</h3>
+        <p>Bestimmte Keywords oder Kampagnen von der Optimierung ausschließen:</p>
+        <ul>
+            <li><strong>Keywords ausschließen:</strong> Kommagetrennt, z.B. "redbull, energy drink". Alle Keywords die diesen Text enthalten werden übersprungen.</li>
+            <li><strong>Kampagnennamen ausschließen:</strong> Kommagetrennt, z.B. "Eigenmarken, Brand". Alle Kampagnen die diesen Text im Namen enthalten werden übersprungen.</li>
+        </ul>
+    </div>
+
+    <div class="section" id="bo-export">
+        <h3>Optimiertes Bulk Sheet</h3>
+        <p>Das exportierte Bulk Sheet enthält:</p>
+        <ul>
+            <li><strong>Keyword ID / Product Targeting ID:</strong> Aus dem Original-Bulk Sheet übernommen</li>
+            <li><strong>Campaign ID + Ad Group ID:</strong> Für eindeutige Zuordnung</li>
+            <li><strong>Neues Gebot:</strong> Basierend auf der Korridor-Berechnung</li>
+            <li><strong>State:</strong> Enabled oder Paused (bei Pause-Korridor)</li>
+        </ul>
+        <p>Die Ergebnistabelle zeigt standardmäßig nur Items mit Änderungen. Über das Dropdown kann auf "Alle anzeigen" gewechselt werden.</p>
+    </div>
+
+    <!-- ==================== ALLGEMEIN ==================== -->
+    <h2 class="tool-header" id="general">Allgemein</h2>
+
+    <div class="section" id="general-bulksheet">
+        <h3>Bulk Sheet Format</h3>
+        <p>Alle Tools erstellen Amazon-kompatible Bulk Sheets mit:</p>
+        <ul>
+            <li><strong>Englische Werte:</strong> Entity, Operation, State, Match Type werden immer auf Englisch generiert (funktioniert auf allen Marketplaces)</li>
+            <li><strong>Sheet Name:</strong> "Sponsored Products Campaigns"</li>
+            <li><strong>26 Spalten:</strong> Product, Entity, Operation, Campaign ID, Ad Group ID, etc.</li>
+        </ul>
+    </div>
+
+    <div class="section" id="general-upload">
+        <h3>Datei hochladen</h3>
+        <p>Alle Tools die ein Bulk Sheet hochladen unterstützen:</p>
+        <ul>
+            <li><strong>Excel (.xlsx, .xls):</strong> Amazon Bulk Sheet Downloads</li>
+            <li><strong>CSV (.csv):</strong> Komma- oder Tab-getrennt</li>
+            <li><strong>Multi-Sheet:</strong> Bei Excel-Dateien mit mehreren Sheets wird automatisch das richtige Sheet erkannt</li>
+            <li><strong>Mehrsprachig:</strong> Deutsche, englische, französische, italienische und spanische Spaltenheader werden erkannt</li>
         </ul>
     </div>
 </div>
