@@ -126,15 +126,6 @@
         .pagination button:disabled { opacity: 0.4; cursor: default; }
         .pagination .page-info { font-size: 12px; color: var(--text-secondary); }
 
-        .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-        .comparison-box { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
-        .comparison-box .box-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .comparison-box .box-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
-        .comparison-box .box-row .label { color: var(--text-secondary); }
-        .comparison-box .box-row .value { font-weight: 600; }
-        .comparison-box .box-row .value.up { color: var(--bid-up); }
-        .comparison-box .box-row .value.down { color: var(--bid-down); }
-        .comparison-box.after { border-color: var(--accent); }
         .budget-warnings { margin-bottom: 16px; }
 
         .filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
@@ -194,7 +185,7 @@
 
         <div class="corridor-list" id="corridorList"></div>
         <div class="corridor-buttons">
-            <button class="btn-sm" onclick="addCorridor()" style="color:var(--success);border-color:var(--success);">+ Korridor hinzufuegen</button>
+            <button class="btn-sm" onclick="addCorridor()" style="color:var(--success);border-color:var(--success);">+ Korridor hinzufügen</button>
         </div>
 
         <div class="field-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">
@@ -243,10 +234,8 @@
 
     <!-- STEP 3 -->
     <div class="card hidden" id="stepResults">
-        <div class="card-title"><span class="step">3</span> Optimierungsvorschlaege</div>
+        <div class="card-title"><span class="step">3</span> Optimierungsvorschläge</div>
         <div class="stats-row" id="statsRow"></div>
-
-        <div class="comparison-grid" id="comparisonGrid"></div>
 
         <div class="budget-warnings" id="budgetWarnings"></div>
 
@@ -275,7 +264,7 @@
                 <button class="btn-sm" onclick="selectAll()">Alle</button>
                 <button class="btn-sm" onclick="deselectAll()">Keine</button>
                 <button class="btn-sm" onclick="selectFiltered()">Gefilterte</button>
-                <button class="btn-sm" onclick="selectOnlyChanges()">Nur Aenderungen</button>
+                <button class="btn-sm" onclick="selectOnlyChanges()">Nur Änderungen</button>
                 <button class="btn-sm" onclick="exportAnalysis()">Analyse exportieren</button>
             </div>
         </div>
@@ -329,7 +318,7 @@ let corridors = [
     { from: 0, to: 1, pct: -50, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
     { from: 1, to: 2, pct: -20, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
     { from: 2, to: 3, pct: 0, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
-    { from: 3, to: Infinity, pct: 20, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' }
+    { from: 3, to: Infinity, pct: 0, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' }
 ];
 
 function renderCorridors() {
@@ -338,15 +327,13 @@ function renderCorridors() {
         '<span>ROAS von</span><span></span><span>ROAS bis</span><span>Änderung (%)</span><span>Min. Gebot</span><span>Max. Gebot</span><span>Min. Klicks</span><span>Min. Orders</span><span>Pause</span><span></span>' +
         '</div>' +
         corridors.map((c, i) => {
-        const isLast = i === corridors.length - 1;
         const pauseChecked = c.pause ? ' checked' : '';
         const inputDisabled = c.pause ? ' disabled style="opacity:0.4;text-align:center;"' : ' style="text-align:center;"';
+        const toDisplay = c.to === Infinity ? '' : c.to;
         return '<div class="corridor-row">' +
             '<input type="number" value="' + c.from + '" step="0.1" min="0" onchange="corridors[' + i + '].from=parseFloat(this.value);syncCorridorBounds()">' +
             '<span class="arrow">–</span>' +
-            (isLast
-                ? '<input type="text" value="∞" disabled style="text-align:center;color:var(--text-secondary)">'
-                : '<input type="number" value="' + c.to + '" step="0.1" min="0" onchange="corridors[' + i + '].to=parseFloat(this.value);syncCorridorBounds()">') +
+            '<input type="number" value="' + toDisplay + '" step="0.1" min="0" placeholder="∞" onchange="corridors[' + i + '].to=this.value?parseFloat(this.value):Infinity;syncCorridorBounds()">' +
             '<input type="number" value="' + c.pct + '" step="5" onchange="corridors[' + i + '].pct=parseFloat(this.value)||0"' + inputDisabled + ' placeholder="z.B. -30">' +
             '<input type="number" value="' + (c.minBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].minBid=this.value?parseFloat(this.value):\'\'">' +
             '<input type="number" value="' + (c.maxBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].maxBid=this.value?parseFloat(this.value):\'\'">' +
@@ -665,7 +652,6 @@ function optimizeBids() {
     sortDir = 'desc';
 
     renderStats();
-    renderComparison();
     renderBudgetWarnings();
     renderFilters();
     renderTable();
@@ -688,49 +674,7 @@ function renderStats() {
         '<div class="stat-card"><div class="stat-label">Gebote senken</div><div class="stat-value danger">' + downs.length + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Pausieren</div><div class="stat-value warn">' + pauses.length + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Keine Änderung</div><div class="stat-value">' + sames.length + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">\u00D8 Aenderung</div><div class="stat-value ' + (parseFloat(avgChange) > 0 ? 'success' : parseFloat(avgChange) < 0 ? 'danger' : '') + '">' + avgChange + '%</div></div>';
-}
-
-// --- Vorher/Nachher Vergleich ---
-function renderComparison() {
-    const items = optimizedItems;
-    if (items.length === 0) return;
-
-    const totalSpend = items.reduce((s, i) => s + i.spend, 0);
-    const totalSales = items.reduce((s, i) => s + i.sales, 0);
-    const currentAcos = totalSales > 0 ? (totalSpend / totalSales * 100) : 0;
-    const currentRoas = totalSpend > 0 ? (totalSales / totalSpend) : 0;
-    const avgBid = items.reduce((s, i) => s + i.currentBid, 0) / items.length;
-
-    let estNewSpend = 0;
-    items.forEach(i => {
-        const ratio = i.currentBid > 0 ? i.newBid / i.currentBid : 1;
-        estNewSpend += i.spend * ratio;
-    });
-    const estNewAcos = totalSales > 0 ? (estNewSpend / totalSales * 100) : 0;
-    const estNewRoas = estNewSpend > 0 ? (totalSales / estNewSpend) : 0;
-    const newAvgBid = items.reduce((s, i) => s + i.newBid, 0) / items.length;
-    const spendDiff = estNewSpend - totalSpend;
-    const acosDiff = estNewAcos - currentAcos;
-
-    function cls(val) { return val > 0.1 ? 'up' : val < -0.1 ? 'down' : ''; }
-    function sign(val) { return val > 0 ? '+' : ''; }
-
-    document.getElementById('comparisonGrid').innerHTML =
-        '<div class="comparison-box">' +
-            '<div class="box-title">Aktuell</div>' +
-            '<div class="box-row"><span class="label">\u00D8 Gebot</span><span class="value">' + formatCurrency(avgBid) + '</span></div>' +
-            '<div class="box-row"><span class="label">Gesamtspend</span><span class="value">' + formatCurrency(totalSpend) + '</span></div>' +
-            '<div class="box-row"><span class="label">ACoS</span><span class="value">' + currentAcos.toFixed(1) + '%</span></div>' +
-            '<div class="box-row"><span class="label">ROAS</span><span class="value">' + currentRoas.toFixed(2) + 'x</span></div>' +
-        '</div>' +
-        '<div class="comparison-box after">' +
-            '<div class="box-title">Nach Optimierung (geschaetzt)</div>' +
-            '<div class="box-row"><span class="label">\u00D8 Gebot</span><span class="value ' + cls(newAvgBid - avgBid) + '">' + formatCurrency(newAvgBid) + ' (' + sign(newAvgBid - avgBid) + ((newAvgBid - avgBid) / avgBid * 100).toFixed(1) + '%)</span></div>' +
-            '<div class="box-row"><span class="label">Gesamtspend</span><span class="value ' + cls(spendDiff) + '">' + formatCurrency(estNewSpend) + ' (' + sign(spendDiff) + formatCurrency(spendDiff) + ')</span></div>' +
-            '<div class="box-row"><span class="label">ACoS</span><span class="value ' + cls(-acosDiff) + '">' + estNewAcos.toFixed(1) + '% (' + sign(acosDiff) + acosDiff.toFixed(1) + 'pp)</span></div>' +
-            '<div class="box-row"><span class="label">ROAS</span><span class="value ' + cls(estNewRoas - currentRoas) + '">' + estNewRoas.toFixed(2) + 'x</span></div>' +
-        '</div>';
+        '<div class="stat-card"><div class="stat-label">Ø Änderung</div><div class="stat-value ' + (parseFloat(avgChange) > 0 ? 'success' : parseFloat(avgChange) < 0 ? 'danger' : '') + '">' + avgChange + '%</div></div>';
 }
 
 // --- Budget Check ---
@@ -749,7 +693,7 @@ function renderBudgetWarnings() {
         if (data.budget > 0 && data.totalNewBidSpend > data.budget * 30) {
             const dailyEst = data.totalNewBidSpend / 30;
             if (dailyEst > data.budget * 1.5) {
-                warnings.push('Kampagne "' + campName + '": Geschaetzter Tages-Spend (' + formatCurrency(dailyEst) + ') koennte das Tagesbudget (' + formatCurrency(data.budget) + ') uebersteigen.');
+                warnings.push('Kampagne "' + campName + '": Geschätzter Tages-Spend (' + formatCurrency(dailyEst) + ') könnte das Tagesbudget (' + formatCurrency(data.budget) + ') übersteigen.');
             }
         }
     });
@@ -803,7 +747,7 @@ function renderTable() {
         { id: 'campaign', label: 'Kampagne', sort: true },
         { id: 'currentBid', label: 'Aktuell', sort: true, num: true },
         { id: 'newBid', label: 'Neu', sort: true, num: true },
-        { id: 'changePct', label: 'Aenderung', sort: true, num: true },
+        { id: 'changePct', label: 'Änderung', sort: true, num: true },
         { id: 'acos', label: 'ACoS', sort: true, num: true },
         { id: 'roas', label: 'ROAS', sort: true, num: true },
         { id: 'orders', label: 'Orders', sort: true, num: true },
@@ -867,7 +811,6 @@ function recalcChange(idx) {
     item.change = item.newBid - item.currentBid;
     item.changePct = item.currentBid > 0 ? (item.change / item.currentBid * 100) : 0;
     item.direction = Math.abs(item.changePct) < 1 ? 'same' : (item.change > 0 ? 'up' : 'down');
-    renderComparison();
     renderTable();
 }
 
@@ -946,7 +889,7 @@ function exportBulkSheet() {
 
 // --- Analysis Export ---
 function exportAnalysis() {
-    const headers = ['Keyword/Target', 'Typ', 'Kampagnentyp', 'Kampagne', 'Anzeigengruppe', 'Aktuelles Gebot', 'Neues Gebot', 'Aenderung %', 'ACoS %', 'ROAS', 'Orders', 'Klicks', 'Spend', 'Sales', 'CPC', 'Grund'];
+    const headers = ['Keyword/Target', 'Typ', 'Kampagnentyp', 'Kampagne', 'Anzeigengruppe', 'Aktuelles Gebot', 'Neues Gebot', 'Änderung %', 'ACoS %', 'ROAS', 'Orders', 'Klicks', 'Spend', 'Sales', 'CPC', 'Grund'];
     const rows = optimizedItems.map(r => [r.label, r.type, r.campType, r.campaign, r.adgroup, r.currentBid, r.newBid, r.changePct.toFixed(1), r.acos === Infinity ? '' : r.acos.toFixed(1), r.roas.toFixed(2), r.orders, r.clicks, r.spend, r.sales, r.cpc.toFixed(2), r.reason]);
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
