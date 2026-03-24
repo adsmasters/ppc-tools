@@ -99,6 +99,9 @@
 
         .chart-container { max-width: 700px; margin: 20px auto 0; }
 
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
+        .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; white-space: normal; max-width: 300px; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
         @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } .format-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -151,19 +154,19 @@
 
         <!-- Gesamt-Performance -->
         <div class="card" id="sectionTotal">
-            <div class="card-title"><span class="section-label">A</span> Gesamt-Performance</div>
+            <div class="card-title"><span class="section-label">A</span> Gesamt-Performance <span class="tooltip-icon" data-tip="Gesamtüberblick über alle Werbeformate (SP, SB, SD). Daten basieren auf Kampagnen-Zeilen aus dem Bulk Sheet.">i</span></div>
             <div class="stats-row" id="totalStats"></div>
         </div>
 
         <!-- Section A: Übersicht nach Werbeformat -->
         <div class="card" id="sectionA">
-            <div class="card-title"><span class="section-label">B</span> Übersicht nach Werbeformat</div>
+            <div class="card-title"><span class="section-label">B</span> Übersicht nach Werbeformat <span class="tooltip-icon" data-tip="Aufschlüsselung nach Sponsored Products, Sponsored Brands und Sponsored Display. Prozentangaben zeigen den Anteil am Gesamt-Spend/Sales.">i</span></div>
             <div class="format-grid" id="formatGrid"></div>
         </div>
 
         <!-- Section B: SP Kampagnentyp-Analyse -->
         <div class="card hidden" id="sectionB">
-            <div class="card-title"><span class="section-label">C</span> SP Kampagnentyp-Analyse</div>
+            <div class="card-title"><span class="section-label">C</span> SP Kampagnentyp-Analyse <span class="tooltip-icon" data-tip="Auto vs. Manuell wird über die Targeting-Typ Spalte erkannt. Innerhalb Manuell: Keyword Targeting vs. Product Targeting basierend auf der Entity.">i</span></div>
             <div class="results-container">
                 <table class="results-table" id="campTypeTable">
                     <thead id="campTypeHead"></thead>
@@ -174,7 +177,7 @@
 
         <!-- Section C: Platzierungsanalyse -->
         <div class="card hidden" id="sectionD">
-            <div class="card-title"><span class="section-label">D</span> Platzierungsanalyse</div>
+            <div class="card-title"><span class="section-label">D</span> Platzierungsanalyse <span class="tooltip-icon" data-tip="Zeigt die Performance nach Anzeigenplatzierung. Nur Sponsored Products Daten (Gebotsanpassung-Zeilen).">i</span></div>
             <div class="results-container">
                 <table class="results-table" id="placementTable">
                     <thead id="placementHead"></thead>
@@ -210,7 +213,7 @@
 
         <!-- Section E: SB Analyse -->
         <div class="card hidden" id="sectionSB">
-            <div class="card-title"><span class="section-label">F</span> Sponsored Brands – Top Suchbegriffe</div>
+            <div class="card-title"><span class="section-label">F</span> Sponsored Brands – Top Suchbegriffe <span class="tooltip-icon" data-tip="Suchbegriffsdaten aus dem SB Suchbegriff-Bericht. Legacy SB Kampagnen (vor 2022) haben keine Suchbegriffsdaten – diese erscheinen nicht hier.">i</span></div>
             <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
                 <button class="btn-sm" id="btnSBViewAccount" onclick="setSBView('account')" style="font-weight:700;background:var(--accent);color:#fff;border-color:var(--accent);">Accountebene</button>
                 <button class="btn-sm" id="btnSBViewCampaign" onclick="setSBView('campaign')">Kampagnenebene</button>
@@ -231,7 +234,7 @@
 
         <!-- Section F: SD Analyse -->
         <div class="card hidden" id="sectionSD">
-            <div class="card-title"><span class="section-label">G</span> Sponsored Display – Kampagnen-Performance</div>
+            <div class="card-title"><span class="section-label">G</span> Sponsored Display – Kampagnen-Performance <span class="tooltip-icon" data-tip="Sponsored Display Kampagnen-Performance. Kein Suchbegriff-Bericht verfügbar für SD.">i</span></div>
             <div class="results-container">
                 <table class="results-table" id="sdTable">
                     <thead id="sdHead"></thead>
@@ -761,7 +764,12 @@ function buildSectionC() {
         tableTitle = 'Top 20 Keywords/Targets nach Sales';
         colLabel = 'Keyword/Target';
     }
-    document.getElementById('sectionC').querySelector('.card-title').innerHTML = '<span class="section-label">E</span> SP ' + tableTitle;
+    const spTooltips = {
+        'keywords': 'Keywords und Targets die wir eingebucht haben. Auf Accountebene über alle Kampagnen aggregiert.',
+        'searchterms': 'Echte Kundensuchen aus dem SP Suchbegriff-Bericht.',
+        'wasted': 'Suchbegriffe mit hohen Klicks aber niedrigem ROAS. ROAS und Min. Klicks können angepasst werden.'
+    };
+    document.getElementById('sectionC').querySelector('.card-title').innerHTML = '<span class="section-label">E</span> SP ' + tableTitle + ' <span class="tooltip-icon" data-tip="' + escapeHtml(spTooltips[spMode]) + '">i</span>';
 
     const showCampaign = topView === 'campaign';
     head.innerHTML = '<tr><th>#</th><th>' + colLabel + '</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th>Kampagnen</th>') + '<th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Clicks</th><th>CPC</th></tr>';
@@ -983,7 +991,7 @@ function buildSectionSB() {
     sbCampRows.forEach(r => { if (seenSBcamps.has(r.campaign)) return; seenSBcamps.add(r.campaign); sbCampSpend += r.spend; });
     const coverage = sbCampSpend > 0 ? (totalSpend / sbCampSpend * 100).toFixed(0) : '–';
     const coverageHint = sbCampSpend > 0 && totalSpend < sbCampSpend * 0.8
-        ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;padding:8px 12px;background:var(--bg-hover);border-radius:6px;">Die Suchbegriffsdaten decken ' + coverage + '% des SB Gesamt-Spends ab (' + formatCurrency(totalSpend) + ' von ' + formatCurrency(sbCampSpend) + ').</div>'
+        ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;padding:8px 12px;background:var(--bg-hover);border-radius:6px;">Die Suchbegriffsdaten decken ' + coverage + '% des SB Gesamt-Spends ab (' + formatCurrency(totalSpend) + ' von ' + formatCurrency(sbCampSpend) + '). Legacy SB Kampagnen (vor 2022 angelegt) haben keine Suchbegriffsdaten.</div>'
         : '';
 
     document.getElementById('sbStats').innerHTML = '<div class="stats-row" style="margin-bottom:12px;">' +
@@ -997,7 +1005,7 @@ function buildSectionSB() {
     // Wasted oder Top anzeigen
     const displayData = sbShowWasted ? wasted.sort((a, b) => b.spend - a.spend).slice(0, 50) : top20;
     const tableTitle = sbShowWasted ? 'Wasted Suchbegriffe (' + wasted.length + ')' : 'Top 20 nach Sales';
-    section.querySelector('.card-title').innerHTML = '<span class="section-label">F</span> SB ' + tableTitle;
+    section.querySelector('.card-title').innerHTML = '<span class="section-label">F</span> SB ' + tableTitle + ' <span class="tooltip-icon" data-tip="Suchbegriffsdaten aus dem SB Suchbegriff-Bericht. Legacy SB Kampagnen (vor 2022) haben keine Suchbegriffsdaten – diese erscheinen nicht hier.">i</span>';
 
     const showCampaign = sbView === 'campaign';
     head.innerHTML = '<tr><th>#</th><th>Suchbegriff</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th>Kampagnen</th>') + '<th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';

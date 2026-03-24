@@ -93,7 +93,7 @@
 
 <div class="main">
     <h1 class="page-title">Hilfe & Dokumentation</h1>
-    <p class="page-sub">Anleitung zu allen vier PPC Tools</p>
+    <p class="page-sub">Anleitung zu allen fünf PPC Tools</p>
 
     <div class="toc">
         <div class="toc-title">Inhaltsverzeichnis</div>
@@ -125,6 +125,19 @@
             <a href="#bo-corridors">ROAS-Korridore</a>
             <a href="#bo-exclusions">Ausschlüsse</a>
             <a href="#bo-export">Optimiertes Bulk Sheet</a>
+        </div>
+        <div class="toc-group">
+            <div class="toc-group-title">5. Audit</div>
+            <a href="#audit-overview">Übersicht</a>
+            <a href="#audit-upload">Bulk Sheet hochladen</a>
+            <a href="#audit-total">Gesamt-Performance</a>
+            <a href="#audit-formats">Werbeformat-Aufschlüsselung</a>
+            <a href="#audit-camptype">SP Kampagnentyp-Analyse</a>
+            <a href="#audit-placement">Platzierungsanalyse</a>
+            <a href="#audit-top">Top Placements</a>
+            <a href="#audit-sb">SB Suchbegriffe</a>
+            <a href="#audit-sd">SD Kampagnen-Performance</a>
+            <a href="#audit-wasted">Wasted Spend Filter</a>
         </div>
         <div class="toc-group">
             <div class="toc-group-title">Allgemein</div>
@@ -331,6 +344,114 @@
             <li><strong>State:</strong> Enabled oder Paused (bei Pause-Korridor)</li>
         </ul>
         <p>Die Ergebnistabelle zeigt standardmäßig nur Items mit Änderungen. Über das Dropdown kann auf "Alle anzeigen" gewechselt werden.</p>
+    </div>
+
+    <!-- ==================== AUDIT ==================== -->
+    <h2 class="tool-header" id="audit">5. Audit</h2>
+
+    <div class="section" id="audit-overview">
+        <h3>Übersicht</h3>
+        <p>Das Audit Tool analysiert die gesamte Amazon PPC Performance eines Accounts auf Basis eines Bulk Sheets. Es schlüsselt die Daten nach Werbeformaten (SP, SB, SD), Kampagnentypen, Platzierungen und Top-Keywords/Suchbegriffen auf.</p>
+        <p>Ziel ist ein schneller Gesamtüberblick über alle Werbeformate hinweg, inklusive Wasted Spend Identifikation.</p>
+    </div>
+
+    <div class="section" id="audit-upload">
+        <h3>Bulk Sheet hochladen</h3>
+        <p>Lade ein Amazon Bulk Sheet (Excel oder CSV) mit Performance-Daten hoch. Das Tool liest automatisch alle Sheets in der Datei:</p>
+        <ul>
+            <li><strong>Kampagnen-Sheets:</strong> Sponsored Products, Sponsored Brands und Sponsored Display Kampagnen-Daten (Kampagnen-, Keyword-, Targeting-Zeilen)</li>
+            <li><strong>Suchbegriff-Sheets:</strong> SP und SB Suchbegriff-Berichte werden automatisch anhand des Sheet-Namens erkannt</li>
+            <li><strong>Platzierungs-Daten:</strong> Gebotsanpassung-Zeilen für die Platzierungsanalyse (nur SP)</li>
+        </ul>
+        <p>Das Werbeformat (SP, SB, SD) wird über die "Product"-Spalte erkannt (z.B. "Sponsored Products", "Sponsored Brands").</p>
+    </div>
+
+    <div class="section" id="audit-total">
+        <h3>Gesamt-Performance</h3>
+        <p>Zeigt die aggregierten Kennzahlen über alle Werbeformate hinweg:</p>
+        <ul>
+            <li><strong>Gesamt Ad Spend:</strong> Summe aller SP + SB + SD Ausgaben</li>
+            <li><strong>Gesamt Sales:</strong> Summe aller zugeordneten Verkäufe</li>
+            <li><strong>ROAS, ACoS, Orders, Klicks, CPC:</strong> Berechnet aus den Kampagnen-Zeilen</li>
+        </ul>
+        <p>Die Daten basieren auf Kampagnen-Zeilen (Entity = Campaign) aus dem Bulk Sheet. Jede Kampagne wird nur einmal gezählt, auch wenn sie in mehreren Sheets vorkommt.</p>
+    </div>
+
+    <div class="section" id="audit-formats">
+        <h3>Werbeformat-Aufschlüsselung</h3>
+        <p>Aufschlüsselung der Performance nach den drei Werbeformaten:</p>
+        <ul>
+            <li><strong>Sponsored Products (SP):</strong> Keyword- und Product-Targeting Anzeigen in den Suchergebnissen und auf Produktseiten</li>
+            <li><strong>Sponsored Brands (SB):</strong> Markenanzeigen mit Logo und mehreren Produkten</li>
+            <li><strong>Sponsored Display (SD):</strong> Display-Anzeigen auf und außerhalb von Amazon</li>
+        </ul>
+        <p>Prozentangaben bei Spend und Sales zeigen den jeweiligen Anteil am Gesamtbudget. So wird sofort sichtbar, welches Format den größten Teil des Budgets beansprucht und welches die meisten Sales generiert.</p>
+    </div>
+
+    <div class="section" id="audit-camptype">
+        <h3>SP Kampagnentyp-Analyse</h3>
+        <p>Zeigt die Aufteilung der Sponsored Products Kampagnen in Auto und Manuell:</p>
+        <ul>
+            <li><strong>Auto vs. Manuell:</strong> Wird über die "Targeting-Typ" Spalte im Bulk Sheet erkannt (Auto/Automatisch vs. Manuell/Manual)</li>
+            <li><strong>Keyword Targeting:</strong> Manuelle Kampagnen mit Keyword-Entities (Exact, Broad, Phrase Match)</li>
+            <li><strong>Product Targeting:</strong> Manuelle Kampagnen mit Product Targeting Entities (ASIN-Targeting)</li>
+        </ul>
+        <p>Die Gesamt-Zeile zeigt die Summe aller SP Kampagnen. Die Unterkategorien (Keyword/Product Targeting) basieren auf den einzelnen Keyword- und Targeting-Zeilen innerhalb der manuellen Kampagnen.</p>
+    </div>
+
+    <div class="section" id="audit-placement">
+        <h3>Platzierungsanalyse</h3>
+        <p>Zeigt die Performance nach Anzeigenplatzierung. Nur verfügbar für Sponsored Products:</p>
+        <ul>
+            <li><strong>Top of Search (first page):</strong> Ganz oben in den Suchergebnissen</li>
+            <li><strong>Rest of Search:</strong> Weitere Positionen in den Suchergebnissen</li>
+            <li><strong>Product Pages:</strong> Anzeigen auf Produktdetailseiten</li>
+            <li><strong>Weitere Platzierungen:</strong> Falls im Bulk Sheet vorhanden</li>
+        </ul>
+        <p>Die Daten stammen aus den Gebotsanpassung-Zeilen (Bid Adjustment) im Bulk Sheet. Diese Zeilen enthalten die Platzierungsinformation mit den zugehörigen Performance-Daten.</p>
+    </div>
+
+    <div class="section" id="audit-top">
+        <h3>Top Placements (Keywords, Suchbegriffe, Wasted Spend)</h3>
+        <p>Drei verschiedene Ansichten für die SP-Analyse:</p>
+        <div class="card">
+            <div class="card-label">Top Keywords/Targets</div>
+            <p>Zeigt die eingebuchten Keywords und Product Targets, sortiert nach Sales. Daten stammen aus den Keyword- und Targeting-Zeilen des Bulk Sheets. Auf Accountebene werden gleiche Keywords über alle Kampagnen aggregiert.</p>
+        </div>
+        <div class="card">
+            <div class="card-label">Top Suchbegriffe</div>
+            <p>Zeigt die echten Kundensuchen aus dem SP Suchbegriff-Bericht, sortiert nach Sales. Das sind die tatsächlichen Suchbegriffe, die Kunden bei Amazon eingegeben haben.</p>
+        </div>
+        <div class="card">
+            <div class="card-label">Wasted Spend</div>
+            <p>Filtert Suchbegriffe mit hohen Klicks aber niedrigem ROAS. Zeigt die größten Geldverschwender auf, die negiert werden sollten.</p>
+        </div>
+        <p>Beide Ebenen verfügbar: <strong>Accountebene</strong> aggregiert gleiche Keywords/Suchbegriffe über alle Kampagnen. <strong>Kampagnenebene</strong> zeigt jede Kampagne einzeln.</p>
+    </div>
+
+    <div class="section" id="audit-sb">
+        <h3>SB Suchbegriffe</h3>
+        <p>Suchbegriffsdaten aus dem Sponsored Brands Suchbegriff-Bericht. Funktioniert analog zur SP-Analyse mit Top Suchbegriffen und Wasted Spend.</p>
+        <div class="card">
+            <div class="card-label">Legacy SB Kampagnen</div>
+            <p>Sponsored Brands Kampagnen, die vor 2022 angelegt wurden (Legacy-Format), haben keine Suchbegriffsdaten. Diese Kampagnen erscheinen nicht in der Suchbegriff-Analyse. Das Tool zeigt einen Hinweis mit der Abdeckung an, wenn die Suchbegriffsdaten weniger als 80% des SB Gesamt-Spends abdecken.</p>
+        </div>
+    </div>
+
+    <div class="section" id="audit-sd">
+        <h3>SD Kampagnen-Performance</h3>
+        <p>Zeigt die Performance aller Sponsored Display Kampagnen mit Spend, Sales, ROAS, ACoS, Orders, Klicks und Impressions.</p>
+        <p>Für Sponsored Display gibt es keinen Suchbegriff-Bericht. Daher werden nur die Kampagnen-Level Daten angezeigt, keine Suchbegriff-Analyse.</p>
+    </div>
+
+    <div class="section" id="audit-wasted">
+        <h3>Wasted Spend Filter</h3>
+        <p>Der Wasted Spend Filter ist in der SP- und SB-Analyse verfügbar und identifiziert Suchbegriffe, die Geld verschwenden:</p>
+        <ul>
+            <li><strong>Max. ROAS:</strong> Suchbegriffe mit einem ROAS unter diesem Schwellenwert gelten als Wasted. Standard: 1.0 (d.h. weniger Sales als Spend). Frei einstellbar.</li>
+            <li><strong>Min. Klicks:</strong> Nur Suchbegriffe mit mindestens dieser Anzahl Klicks werden berücksichtigt. Filtert Suchbegriffe mit zu wenig Daten heraus. Standard: 10 Klicks.</li>
+        </ul>
+        <p>Beide Filter können direkt in der Toolbar angepasst werden. Die Tabelle und der Wasted Spend Wert aktualisieren sich sofort bei Änderung.</p>
     </div>
 
     <!-- ==================== ALLGEMEIN ==================== -->
