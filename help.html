@@ -95,7 +95,7 @@
 
 <div class="main">
     <h1 class="page-title">Hilfe & Dokumentation</h1>
-    <p class="page-sub">Anleitung zu allen fünf PPC Tools</p>
+    <p class="page-sub">Anleitung zu allen PPC Tools</p>
 
     <div class="toc">
         <div class="toc-title">Inhaltsverzeichnis</div>
@@ -140,6 +140,15 @@
             <a href="#audit-sb">SB Suchbegriffe</a>
             <a href="#audit-sd">SD Kampagnen-Performance</a>
             <a href="#audit-wasted">Wasted Spend Filter</a>
+        </div>
+        <div class="toc-group">
+            <div class="toc-group-title">6. ASIN Optimizer</div>
+            <a href="#asin-overview">Übersicht</a>
+            <a href="#asin-upload">Bulk Sheet hochladen</a>
+            <a href="#asin-criteria">Kriterien</a>
+            <a href="#asin-views">Zwei Ansichten</a>
+            <a href="#asin-exclusions">Ausschlüsse</a>
+            <a href="#asin-export">Export</a>
         </div>
         <div class="toc-group">
             <div class="toc-group-title">Allgemein</div>
@@ -461,6 +470,48 @@
             <li><strong>Min. Klicks:</strong> Nur Suchbegriffe mit mindestens dieser Anzahl Klicks werden berücksichtigt. Filtert Suchbegriffe mit zu wenig Daten heraus. Standard: 10 Klicks.</li>
         </ul>
         <p>Beide Filter können direkt in der Toolbar angepasst werden. Die Tabelle und der Wasted Spend Wert aktualisieren sich sofort bei Änderung.</p>
+    </div>
+
+    <!-- ==================== ASIN OPTIMIZER ==================== -->
+    <h2 class="tool-header" id="asin">6. ASIN Optimizer</h2>
+
+    <div class="section" id="asin-overview">
+        <h3>Übersicht</h3>
+        <p>Identifiziert unterperformende beworbene Produkte (ASINs/SKUs) innerhalb von Kampagnen und erstellt ein Bulk Sheet um sie zu deaktivieren. Produkte werden nur in den Kampagnen deaktiviert wo sie nicht performen -- nicht im gesamten Account.</p>
+    </div>
+
+    <div class="section" id="asin-upload">
+        <h3>Bulk Sheet hochladen</h3>
+        <p>Benötigt ein Bulk Sheet mit Performance-Daten. Das Tool liest Product Ad Zeilen und deren Spend/Sales/ROAS.</p>
+    </div>
+
+    <div class="section" id="asin-criteria">
+        <h3>Kriterien</h3>
+        <p>Drei Schwellenwerte bestimmen, ob ein Produkt als unterperformend gilt:</p>
+        <ul>
+            <li><strong>Min. Spend:</strong> Nur Produkte mit mindestens diesem Betrag an Ausgaben werden berücksichtigt.</li>
+            <li><strong>Max. ROAS:</strong> Produkte mit ROAS unter diesem Wert gelten als unterperformend.</li>
+            <li><strong>Min. Klicks:</strong> Nur Produkte mit mindestens dieser Anzahl Klicks werden berücksichtigt.</li>
+        </ul>
+        <p>Alle drei Kriterien müssen erfüllt sein, damit ein Produkt als unterperformend gilt.</p>
+    </div>
+
+    <div class="section" id="asin-views">
+        <h3>Zwei Ansichten</h3>
+        <ul>
+            <li><strong>Accountebene:</strong> ASIN/SKU über alle Kampagnen aggregiert -- zeigt das Gesamtbild der Performance eines Produkts.</li>
+            <li><strong>Kampagnenebene:</strong> ASIN/SKU pro Kampagne einzeln -- hier wird sichtbar in welcher konkreten Kampagne ein Produkt nicht performt. Die Deaktivierung erfolgt auf dieser Ebene.</li>
+        </ul>
+    </div>
+
+    <div class="section" id="asin-exclusions">
+        <h3>Ausschlüsse</h3>
+        <p>ASINs/SKUs können manuell oder per CSV-Upload von der Deaktivierung ausgeschlossen werden. Zusätzlich können Kampagnen über einen Namensfilter übersprungen werden.</p>
+    </div>
+
+    <div class="section" id="asin-export">
+        <h3>Export</h3>
+        <p>Setzt die ausgewählten Product Ads auf "Paused". Benötigt die Ad ID aus dem Bulk Sheet. Funktioniert für Seller (SKU) und Vendor (ASIN).</p>
     </div>
 
     <!-- ==================== ALLGEMEIN ==================== -->

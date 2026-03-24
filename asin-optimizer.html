@@ -166,7 +166,7 @@
 
     <!-- STEP 1: Upload -->
     <div class="card" id="stepUpload">
-        <div class="card-title"><span class="step">1</span> Bulk Sheet hochladen</div>
+        <div class="card-title"><span class="step">1</span> Bulk Sheet hochladen <span class="tooltip-icon" data-tip="Lade ein Amazon Bulk Sheet hoch. Das Tool analysiert alle Product Ad Zeilen und deren Performance-Daten (Spend, Sales, ROAS).">i</span></div>
         <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
             <div class="icon">&#128203;</div>
             <div class="label">Bulk Sheet mit Performance-Daten</div>
@@ -179,19 +179,19 @@
 
     <!-- STEP 2: Criteria -->
     <div class="card hidden" id="stepCriteria">
-        <div class="card-title"><span class="step">2</span> Kriterien definieren</div>
+        <div class="card-title"><span class="step">2</span> Kriterien definieren <span class="tooltip-icon" data-tip="Definiere ab wann ein beworbenes Produkt als unterperformend gilt. Nur Produkte die ALLE Kriterien erfüllen werden als Kandidaten angezeigt.">i</span></div>
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere Schwellenwerte, um unterperformende Produkte zu identifizieren.</p>
         <div class="field-row">
             <div class="field">
-                <label>Min. Spend <span class="tooltip-icon" data-tip="Nur Produkte mit mindestens diesem Spend werden betrachtet.">?</span></label>
+                <label>Min. Spend <span class="tooltip-icon" data-tip="Nur Produkte berücksichtigen die mindestens diesen Betrag ausgegeben haben.">i</span></label>
                 <input type="number" id="minSpend" value="10" step="1" min="0">
             </div>
             <div class="field">
-                <label>Max. ROAS <span class="tooltip-icon" data-tip="Produkte mit ROAS unter diesem Wert gelten als unterperformend.">?</span></label>
+                <label>Max. ROAS <span class="tooltip-icon" data-tip="Produkte mit ROAS unter diesem Wert gelten als unterperformend. ROAS = Sales / Spend.">i</span></label>
                 <input type="number" id="maxRoas" value="1.0" step="0.1" min="0">
             </div>
             <div class="field">
-                <label>Min. Klicks <span class="tooltip-icon" data-tip="Nur Produkte mit mindestens dieser Anzahl Klicks werden betrachtet.">?</span></label>
+                <label>Min. Klicks <span class="tooltip-icon" data-tip="Nur Produkte mit mindestens X Klicks berücksichtigen, um statistische Relevanz sicherzustellen.">i</span></label>
                 <input type="number" id="minClicks" value="10" step="1" min="0">
             </div>
         </div>
@@ -203,11 +203,11 @@
 
     <!-- STEP 3: Results -->
     <div class="card hidden" id="stepResults">
-        <div class="card-title"><span class="step">3</span> Ergebnisse</div>
+        <div class="card-title"><span class="step">3</span> Ergebnisse <span class="tooltip-icon" data-tip="Unterperformende Produkte nach den definierten Kriterien.">i</span></div>
         <div class="stats-row" id="statsRow"></div>
         <div class="view-toggle" id="viewToggle">
-            <button class="active" onclick="switchView('account')">Accountebene</button>
-            <button onclick="switchView('campaign')">Kampagnenebene</button>
+            <button class="active" onclick="switchView('account')">Accountebene <span class="tooltip-icon" data-tip="Zeigt die Gesamt-Performance jeder ASIN/SKU über alle Kampagnen aggregiert.">i</span></button>
+            <button onclick="switchView('campaign')">Kampagnenebene <span class="tooltip-icon" data-tip="Zeigt jede ASIN/SKU pro Kampagne einzeln. Hier siehst du in welcher konkreten Kampagne ein Produkt nicht performt.">i</span></button>
         </div>
         <div class="table-controls">
             <div class="left">
@@ -223,10 +223,10 @@
 
     <!-- STEP 4: Exclusions -->
     <div class="card hidden" id="stepExclusions">
-        <div class="card-title"><span class="step">4</span> Ausschl&uuml;sse</div>
+        <div class="card-title"><span class="step">4</span> Ausschlüsse <span class="tooltip-icon" data-tip="Bestimmte ASINs/SKUs oder Kampagnen von der Deaktivierung ausschließen. Z.B. neue Produkte die noch nicht genug Daten haben.">i</span></div>
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">ASINs/SKUs oder Kampagnen von der Pausierung ausschliessen.</p>
         <div class="field">
-            <label>ASINs/SKUs ausschliessen (eine pro Zeile)</label>
+            <label>ASINs/SKUs ausschliessen (eine pro Zeile) <span class="tooltip-icon" data-tip="ASINs oder SKUs die NICHT deaktiviert werden sollen, eine pro Zeile.">i</span></label>
             <textarea id="excludeAsins" rows="4" placeholder="B08XYZ1234&#10;SKU-ABC-123"></textarea>
         </div>
         <div class="excl-upload-zone" onclick="document.getElementById('exclFileInput').click()">
@@ -235,7 +235,7 @@
         </div>
         <div id="exclFileInfo" style="margin-top:8px;"></div>
         <div class="field" style="margin-top:16px;">
-            <label>Kampagnen ausschliessen (Name enth&auml;lt)</label>
+            <label>Kampagnen ausschliessen (Name enthält) <span class="tooltip-icon" data-tip="Kampagnen deren Name diesen Text enthält werden übersprungen.">i</span></label>
             <input type="text" id="excludeCampaigns" placeholder="z.B. Brand, Markenname">
         </div>
         <div class="btn-row">
@@ -245,7 +245,7 @@
 
     <!-- STEP 5: Export -->
     <div class="card hidden" id="stepExport">
-        <div class="card-title"><span class="step">5</span> Export</div>
+        <div class="card-title"><span class="step">5</span> Export <span class="tooltip-icon" data-tip="Erstellt ein Amazon Bulk Sheet das die ausgewählten Product Ads auf 'Paused' setzt. Die Produkte werden nur in den spezifischen Kampagnen deaktiviert, nicht im gesamten Account.">i</span></div>
         <div class="table-controls">
             <div class="left">
                 <button class="btn-sm" onclick="selectAll(true)">Alle ausw&auml;hlen</button>
