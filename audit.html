@@ -457,9 +457,14 @@ function buildDashboard() {
 function getFormatData() {
     const formatMap = {};
     const campaignEntities = ['kampagne', 'campaign', 'campagne', 'campaña', 'campagna'];
+    const seenCampaigns = new Set(); // Deduplizierung über Kampagne+Format
     allRows.forEach(r => {
         if (!r.format) return;
         if (!campaignEntities.some(e => r.entity.includes(e))) return;
+        // Deduplizieren: gleiche Kampagne kann in mehreren Sheets vorkommen (z.B. SB + SB Anzeigengruppe)
+        const dedupKey = r.format + '|' + r.campaign;
+        if (seenCampaigns.has(dedupKey)) return;
+        seenCampaigns.add(dedupKey);
         if (!formatMap[r.format]) formatMap[r.format] = { spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
         formatMap[r.format].spend += r.spend;
         formatMap[r.format].sales += r.sales;
@@ -548,10 +553,13 @@ function buildSectionB() {
     const kwEntities = ['keyword', 'mot-cl', 'palabra', 'parola'];
     const ptEntities = ['targeting', 'ciblage', 'segmentación'];
 
-    // Step 1: Auto vs. Manuell (aus Kampagnen-Zeilen mit Targeting-Typ)
+    // Step 1: Auto vs. Manuell (aus Kampagnen-Zeilen mit Targeting-Typ, dedupliziert)
     const autoManual = { 'Auto': { campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 }, 'Manuell': { campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 } };
+    const seenSPcamps = new Set();
     spRows.forEach(r => {
         if (!campaignEntities.some(e => r.entity.includes(e))) return;
+        if (seenSPcamps.has(r.campaign)) return;
+        seenSPcamps.add(r.campaign);
         const tgtType = r.targetingType.toLowerCase();
         const isAuto = tgtType.includes('auto') || tgtType.includes('automatisch');
         const key = isAuto ? 'Auto' : 'Manuell';
