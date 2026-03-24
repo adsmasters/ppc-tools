@@ -166,9 +166,20 @@
             </div>
         </div>
 
-        <!-- Section C: Top Placements (Keywords/Targets) -->
+        <!-- Section C: Platzierungsanalyse -->
+        <div class="card hidden" id="sectionD">
+            <div class="card-title"><span class="section-label">C</span> Platzierungsanalyse</div>
+            <div class="results-container">
+                <table class="results-table" id="placementTable">
+                    <thead id="placementHead"></thead>
+                    <tbody id="placementBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section D: Top Placements (Keywords/Targets) -->
         <div class="card hidden" id="sectionC">
-            <div class="card-title"><span class="section-label">C</span> Top Placements (Keywords/Targets nach Sales)</div>
+            <div class="card-title"><span class="section-label">D</span> Top Placements (Keywords/Targets nach Sales)</div>
             <div style="display:flex;gap:8px;margin-bottom:14px;">
                 <button class="btn-sm" id="btnViewAccount" onclick="setTopView('account')" style="font-weight:700;background:var(--accent);color:#fff;border-color:var(--accent);">Accountebene</button>
                 <button class="btn-sm" id="btnViewCampaign" onclick="setTopView('campaign')">Kampagnenebene</button>
@@ -181,17 +192,6 @@
             </div>
             <div class="chart-container">
                 <canvas id="cumulativeChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Section D: Platzierungsanalyse -->
-        <div class="card hidden" id="sectionD">
-            <div class="card-title"><span class="section-label">D</span> Platzierungsanalyse</div>
-            <div class="results-container">
-                <table class="results-table" id="placementTable">
-                    <thead id="placementHead"></thead>
-                    <tbody id="placementBody"></tbody>
-                </table>
             </div>
         </div>
     </div>
