@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Negative Manager - AdsMasters PPC Tools</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-hover: #1c2129;
+            --border: #30363d; --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #f85149; --error-bg: #f8514911;
+            --warn: #d29922; --warn-bg: #d2992211;
+            --success: #3fb950; --success-bg: #3fb95011;
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff; --bg-secondary: #f6f8fa; --bg-hover: #eef1f5;
+            --border: #d0d7de; --text-primary: #1f2328; --text-secondary: #656d76;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #cf222e; --error-bg: #cf222e11;
+            --warn: #9a6700; --warn-bg: #9a670011;
+            --success: #1a7f37; --success-bg: #1a7f3711;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar-left { display: flex; align-items: center; gap: 32px; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-nav { display: flex; gap: 16px; }
+        .topbar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+        .topbar-nav a:hover { color: var(--text-primary); }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title .step { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; font-family: Arial, sans-serif; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+        textarea { resize: vertical; min-height: 100px; }
+        .field { margin-bottom: 14px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
+        .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; white-space: normal; max-width: 300px; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary)); }
+        .upload-zone .icon { font-size: 28px; margin-bottom: 6px; }
+        .upload-zone .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone .hint { font-size: 12px; color: var(--text-secondary); }
+        .upload-zone input { display: none; }
+        .file-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; margin-top: 12px; font-size: 13px; }
+        .file-info .name { flex: 1; font-weight: 600; }
+        .file-info .meta { color: var(--text-secondary); }
+        .file-info .remove { color: var(--error); cursor: pointer; font-weight: 700; }
+        .btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .stat-value { font-size: 22px; font-weight: 700; }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warn { color: var(--warn); }
+        .error-msg { color: var(--error); font-size: 13px; padding: 8px 12px; border: 1px solid var(--error); border-radius: 6px; margin-bottom: 6px; background: var(--error-bg); }
+        .success-msg { color: var(--success); font-size: 13px; padding: 8px 12px; border: 1px solid var(--success); border-radius: 6px; margin-bottom: 6px; background: var(--success-bg); animation: fadeOut 0.5s ease 3s forwards; }
+        .warn-msg { color: var(--warn); font-size: 13px; padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; margin-bottom: 6px; background: var(--warn-bg); }
+        @keyframes fadeOut { to { opacity: 0; } }
+        .msg-container { margin-bottom: 16px; }
+        .hidden { display: none; }
+        .section-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+        .sub-section { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+        .sub-section-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
+        .campaign-list { max-height: 300px; overflow-y: auto; font-size: 12px; }
+        .campaign-list .camp-item { padding: 4px 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        .campaign-list .camp-item:last-child { border-bottom: none; }
+        .campaign-list .camp-type { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+        .camp-type.auto { background: var(--warn-bg); color: var(--warn); }
+        .camp-type.manual { background: var(--success-bg); color: var(--success); }
+        .settings-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        .checkbox-field { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-primary); margin-top: 20px; }
+        .checkbox-field input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+        @media (max-width: 900px) { .field-row { grid-template-columns: 1fr; } .settings-row { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } .btn-row { flex-direction: column; } .btn-row .btn { width: 100%; text-align: center; } }
+    </style>
+</head>
+<body>
+<script>
+    if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('ppc_theme') || 'light');
+</script>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <nav class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="campaign-creator.html">Kampagnen Ersteller</a>
+            <a href="keyword-harvesting.html">Keyword Harvesting</a>
+            <a href="wasted-spend.html">Wasted Ad Spend</a>
+            <a href="bid-optimizer.html">Bid Optimizer</a>
+            <a href="negative-manager.html">Negatives</a>
+            <a href="audit.html">Audit</a>
+            <a href="help.html">Hilfe</a>
+        </nav>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9790;</button>
+        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <h1 class="page-title">Negative Keyword Manager</h1>
+        <p class="page-sub">Strategische Negatives auf Kampagnen- oder Anzeigengruppen-Ebene hinzufügen — Keywords und ASINs</p>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div class="card" id="stepUpload">
+        <div class="card-title"><span class="step">1</span> Bulk Sheet hochladen</div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="icon">&#128203;</div>
+            <div class="label">Bulk Sheet hochladen</div>
+            <div class="hint">Excel (.xlsx) mit Kampagnen, Anzeigengruppen, Targeting-Typ</div>
+            <input type="file" id="fileInput" accept=".xlsx,.xls">
+        </div>
+        <div id="fileInfoContainer"></div>
+        <div class="msg-container" id="uploadMsg"></div>
+    </div>
+
+    <!-- STEP 2: Define Negatives -->
+    <div class="card hidden" id="stepNegatives">
+        <div class="card-title"><span class="step">2</span> Negative Keywords definieren</div>
+        <div class="field-row">
+            <!-- Left: Keywords -->
+            <div>
+                <div class="section-title">Negative Keywords</div>
+                <div class="sub-section">
+                    <div class="sub-section-title">AUTO Kampagnen <span class="tooltip-icon" data-tip="Diese Keywords werden als Negatives in alle erkannten Auto-Kampagnen eingefügt.">?</span></div>
+                    <div class="field">
+                        <label>Keywords (eins pro Zeile)</label>
+                        <textarea id="kwAuto" rows="6" placeholder="keyword 1&#10;keyword 2&#10;keyword 3"></textarea>
+                    </div>
+                </div>
+                <div class="sub-section">
+                    <div class="sub-section-title">MANUELLE Kampagnen <span class="tooltip-icon" data-tip="Diese Keywords werden nur in manuelle Kampagnen eingefügt, deren Name einen der angegebenen Begriffe enthält.">?</span></div>
+                    <div class="field">
+                        <label>Kampagnennamen enthält (kommagetrennt)</label>
+                        <input type="text" id="kwManualFilter" placeholder="z.B. Generic Keywords, Generische-Keywords">
+                    </div>
+                    <div class="field">
+                        <label>Keywords (eins pro Zeile)</label>
+                        <textarea id="kwManual" rows="6" placeholder="keyword 1&#10;keyword 2&#10;keyword 3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <!-- Right: ASINs -->
+            <div>
+                <div class="section-title">Negatives Product Targeting (ASINs)</div>
+                <div class="sub-section">
+                    <div class="sub-section-title">AUTO Kampagnen <span class="tooltip-icon" data-tip="Diese ASINs werden als Negative Product Targeting in alle erkannten Auto-Kampagnen eingefügt.">?</span></div>
+                    <div class="field">
+                        <label>ASINs (eins pro Zeile)</label>
+                        <textarea id="asinAuto" rows="6" placeholder="B0XXXXXXXXXX&#10;B0YYYYYYYYYY"></textarea>
+                    </div>
+                </div>
+                <div class="sub-section">
+                    <div class="sub-section-title">MANUELLE Kampagnen <span class="tooltip-icon" data-tip="Diese ASINs werden nur in manuelle Kampagnen eingefügt, deren Name einen der angegebenen Begriffe enthält.">?</span></div>
+                    <div class="field">
+                        <label>Kampagnennamen enthält (kommagetrennt)</label>
+                        <input type="text" id="asinManualFilter" placeholder="z.B. Wettbewerb, Competitor">
+                    </div>
+                    <div class="field">
+                        <label>ASINs (eins pro Zeile)</label>
+                        <textarea id="asinManual" rows="6" placeholder="B0XXXXXXXXXX&#10;B0YYYYYYYYYY"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 3: Settings -->
+    <div class="card hidden" id="stepSettings">
+        <div class="card-title"><span class="step">3</span> Einstellungen</div>
+        <div class="settings-row">
+            <div class="field">
+                <label>Match Type (Negative Keywords) <span class="tooltip-icon" data-tip="negativeExact: exakte Übereinstimmung. negativePhrase: Phrase. Beide: je eine Zeile pro Match Type.">?</span></label>
+                <select id="matchType">
+                    <option value="negativeExact">negativeExact</option>
+                    <option value="negativePhrase">negativePhrase</option>
+                    <option value="both">Beide (negativeExact + negativePhrase)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>Ebene <span class="tooltip-icon" data-tip="Kampagnen-Ebene: Campaign negative keyword (kein Ad Group nötig). Anzeigengruppen-Ebene: Negative keyword (Ad Group nötig).">?</span></label>
+                <select id="level">
+                    <option value="campaign">Kampagnen-Ebene</option>
+                    <option value="adgroup">Anzeigengruppen-Ebene</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>&nbsp;</label>
+                <div class="checkbox-field">
+                    <input type="checkbox" id="manualInAuto">
+                    <span>Manuelle Keywords auch in Auto-Kampagnen <span class="tooltip-icon" data-tip="Wenn aktiviert, werden die manuellen Keywords zusätzlich auch in alle Auto-Kampagnen eingefügt.">?</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 4: Preview & Export -->
+    <div class="card hidden" id="stepPreview">
+        <div class="card-title"><span class="step">4</span> Vorschau &amp; Export</div>
+        <div id="previewContent"></div>
+        <div class="btn-row">
+            <button class="btn btn-secondary" onclick="updatePreview()">Vorschau aktualisieren</button>
+            <button class="btn btn-primary" onclick="exportBulkSheet()">Negatives Bulk Sheet erstellen</button>
+        </div>
+        <div class="msg-container" id="exportMsg"></div>
+    </div>
+</div>
+
+<script>
+// --- Theme ---
+const savedTheme = localStorage.getItem('ppc_theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+document.getElementById('themeToggle').innerHTML = savedTheme === 'light' ? '&#9790;' : '&#9788;';
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('ppc_theme', next);
+    document.getElementById('themeToggle').innerHTML = next === 'light' ? '&#9790;' : '&#9788;';
+}
+
+// --- Column aliases ---
+const COL = {
+    entity: ['entity', 'entität', 'entité', 'entidad', 'entità'],
+    campaign: ['kampagnenname (nur zu informationszwecken)', 'campaign name (informational only)', 'campaign name', 'kampagnenname'],
+    campaignId: ['campaign id', 'kampagnen-id'],
+    adgroup: ['name der anzeigengruppe (nur zu informationszwecken)', 'ad group name (informational only)', 'ad group name', 'name der anzeigengruppe'],
+    adgroupId: ['ad group id', 'anzeigengruppen-id'],
+    targeting: ['targeting type', 'targeting-typ'],
+    product: ['product', 'produkt'],
+};
+
+function findCol(headers, key) {
+    const aliases = COL[key] || [];
+    const lower = headers.map(h => String(h).toLowerCase().trim());
+    for (const alias of aliases) {
+        const idx = lower.indexOf(alias);
+        if (idx !== -1) return idx;
+    }
+    return -1;
+}
+
+// --- State ---
+let parsedCampaigns = []; // { campaignName, campaignId, adgroupName, adgroupId, isAuto, targetingType }
+let accountType = ''; // 'seller' or 'vendor'
+
+// --- Upload ---
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+    if (!file.name.match(/\.xlsx?$/i)) {
+        showMsg('uploadMsg', 'Bitte eine Excel-Datei (.xlsx) hochladen.', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const wb = XLSX.read(e.target.result, { type: 'array' });
+            parseWorkbook(wb, file);
+        } catch (err) {
+            showMsg('uploadMsg', 'Fehler beim Lesen der Datei: ' + err.message, 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function parseWorkbook(wb, file) {
+    parsedCampaigns = [];
+    let totalRows = 0;
+    let detectedType = '';
+
+    for (const sheetName of wb.SheetNames) {
+        const ws = wb.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        if (data.length < 2) continue;
+
+        // Find header row
+        let headerIdx = -1;
+        for (let i = 0; i < Math.min(5, data.length); i++) {
+            const row = data[i].map(c => String(c).toLowerCase().trim());
+            if (findCol(row, 'campaign') !== -1 || row.some(c => COL.campaign.includes(c))) {
+                headerIdx = i;
+                break;
+            }
+        }
+        if (headerIdx === -1) continue;
+
+        const headers = data[headerIdx].map(c => String(c));
+        const colMap = {};
+        for (const key of Object.keys(COL)) {
+            colMap[key] = findCol(headers, key);
+        }
+
+        if (colMap.campaign === -1) continue;
+
+        // Detect Seller vs Vendor by checking for SKU or ASIN in product column
+        if (!detectedType) {
+            const lower = headers.map(h => h.toLowerCase().trim());
+            const skuIdx = lower.indexOf('sku');
+            const asinIdx = lower.indexOf('asin');
+            if (skuIdx !== -1) {
+                // Check if any data row has a SKU value
+                for (let i = headerIdx + 1; i < Math.min(headerIdx + 50, data.length); i++) {
+                    if (data[i][skuIdx] && String(data[i][skuIdx]).trim()) {
+                        detectedType = 'seller';
+                        break;
+                    }
+                }
+            }
+            if (!detectedType && asinIdx !== -1) {
+                for (let i = headerIdx + 1; i < Math.min(headerIdx + 50, data.length); i++) {
+                    if (data[i][asinIdx] && String(data[i][asinIdx]).trim()) {
+                        detectedType = 'vendor';
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Parse rows — collect unique campaign+adgroup combos
+        const seen = new Set();
+        for (let i = headerIdx + 1; i < data.length; i++) {
+            const row = data[i];
+            const campaignName = String(row[colMap.campaign] || '').trim();
+            if (!campaignName) continue;
+
+            const campaignId = colMap.campaignId !== -1 ? String(row[colMap.campaignId] || '').trim() : '';
+            const adgroupName = colMap.adgroup !== -1 ? String(row[colMap.adgroup] || '').trim() : '';
+            const adgroupId = colMap.adgroupId !== -1 ? String(row[colMap.adgroupId] || '').trim() : '';
+            const targetingType = colMap.targeting !== -1 ? String(row[colMap.targeting] || '').trim().toLowerCase() : '';
+
+            // Determine if auto campaign
+            const isAuto = targetingType.includes('auto') || targetingType.includes('automatisch');
+
+            const key = campaignName + '||' + adgroupName;
+            if (seen.has(key)) continue;
+            seen.add(key);
+
+            parsedCampaigns.push({ campaignName, campaignId, adgroupName, adgroupId, isAuto, targetingType });
+            totalRows++;
+        }
+    }
+
+    if (parsedCampaigns.length === 0) {
+        showMsg('uploadMsg', 'Keine Kampagnen gefunden. Prüfe, ob die Datei die richtigen Spalten enthält.', 'error');
+        return;
+    }
+
+    accountType = detectedType || 'seller';
+
+    const autoCamps = new Set(parsedCampaigns.filter(c => c.isAuto).map(c => c.campaignName));
+    const manualCamps = new Set(parsedCampaigns.filter(c => !c.isAuto).map(c => c.campaignName));
+    const totalCamps = new Set(parsedCampaigns.map(c => c.campaignName));
+
+    // Show file info
+    document.getElementById('fileInfoContainer').innerHTML = `
+        <div class="file-info">
+            <span class="name">${file.name}</span>
+            <span class="meta">${totalCamps.size} Kampagnen (${autoCamps.size} Auto, ${manualCamps.size} Manuell) &middot; ${parsedCampaigns.length} Anzeigengruppen &middot; ${accountType === 'seller' ? 'Seller (SKU)' : 'Vendor (ASIN)'}</span>
+            <span class="remove" onclick="resetUpload()">&times;</span>
+        </div>
+    `;
+
+    showMsg('uploadMsg', 'Datei erfolgreich geladen. ' + totalCamps.size + ' Kampagnen erkannt.', 'success');
+
+    // Show remaining steps
+    document.getElementById('stepNegatives').classList.remove('hidden');
+    document.getElementById('stepSettings').classList.remove('hidden');
+    document.getElementById('stepPreview').classList.remove('hidden');
+    updatePreview();
+}
+
+function resetUpload() {
+    parsedCampaigns = [];
+    accountType = '';
+    document.getElementById('fileInfoContainer').innerHTML = '';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('stepNegatives').classList.add('hidden');
+    document.getElementById('stepSettings').classList.add('hidden');
+    document.getElementById('stepPreview').classList.add('hidden');
+    document.getElementById('uploadMsg').innerHTML = '';
+}
+
+// --- Preview ---
+function getInputLines(id) {
+    const val = document.getElementById(id).value.trim();
+    if (!val) return [];
+    return val.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+}
+
+function getFilterTerms(id) {
+    const val = document.getElementById(id).value.trim();
+    if (!val) return [];
+    return val.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0);
+}
+
+function matchesCampaignFilter(campaignName, filterTerms) {
+    if (filterTerms.length === 0) return false;
+    const lower = campaignName.toLowerCase();
+    return filterTerms.some(term => lower.includes(term));
+}
+
+function getMatchingCampaigns() {
+    const kwAutoList = getInputLines('kwAuto');
+    const kwManualList = getInputLines('kwManual');
+    const kwManualFilters = getFilterTerms('kwManualFilter');
+    const asinAutoList = getInputLines('asinAuto');
+    const asinManualList = getInputLines('asinManual');
+    const asinManualFilters = getFilterTerms('asinManualFilter');
+    const manualInAuto = document.getElementById('manualInAuto').checked;
+
+    const kwAutoCampaigns = new Set();
+    const kwManualCampaigns = new Set();
+    const asinAutoCampaigns = new Set();
+    const asinManualCampaigns = new Set();
+
+    parsedCampaigns.forEach(c => {
+        if (c.isAuto) {
+            if (kwAutoList.length > 0) kwAutoCampaigns.add(c.campaignName);
+            if (asinAutoList.length > 0) asinAutoCampaigns.add(c.campaignName);
+            if (manualInAuto && kwManualList.length > 0) kwAutoCampaigns.add(c.campaignName);
+            if (manualInAuto && asinManualList.length > 0) asinAutoCampaigns.add(c.campaignName);
+        } else {
+            if (kwManualList.length > 0 && matchesCampaignFilter(c.campaignName, kwManualFilters)) {
+                kwManualCampaigns.add(c.campaignName);
+            }
+            if (asinManualList.length > 0 && matchesCampaignFilter(c.campaignName, asinManualFilters)) {
+                asinManualCampaigns.add(c.campaignName);
+            }
+        }
+    });
+
+    return { kwAutoCampaigns, kwManualCampaigns, asinAutoCampaigns, asinManualCampaigns };
+}
+
+function updatePreview() {
+    const kwAutoList = getInputLines('kwAuto');
+    const kwManualList = getInputLines('kwManual');
+    const asinAutoList = getInputLines('asinAuto');
+    const asinManualList = getInputLines('asinManual');
+    const manualInAuto = document.getElementById('manualInAuto').checked;
+    const matchType = document.getElementById('matchType').value;
+
+    const { kwAutoCampaigns, kwManualCampaigns, asinAutoCampaigns, asinManualCampaigns } = getMatchingCampaigns();
+
+    const totalKwCampaigns = new Set([...kwAutoCampaigns, ...kwManualCampaigns]);
+    const totalAsinCampaigns = new Set([...asinAutoCampaigns, ...asinManualCampaigns]);
+    const allKw = new Set([...kwAutoList, ...kwManualList]);
+    const allAsins = new Set([...asinAutoList, ...asinManualList]);
+
+    const matchMultiplier = matchType === 'both' ? 2 : 1;
+
+    let html = '<div class="stats-row">';
+    html += `<div class="stat-card"><div class="stat-label">Negative Keywords</div><div class="stat-value">${allKw.size}</div></div>`;
+    html += `<div class="stat-card"><div class="stat-label">Betroffene Kampagnen (KW)</div><div class="stat-value">${totalKwCampaigns.size}</div></div>`;
+    html += `<div class="stat-card"><div class="stat-label">Negative ASINs</div><div class="stat-value">${allAsins.size}</div></div>`;
+    html += `<div class="stat-card"><div class="stat-label">Betroffene Kampagnen (ASIN)</div><div class="stat-value">${totalAsinCampaigns.size}</div></div>`;
+    html += '</div>';
+
+    // Campaign lists
+    if (totalKwCampaigns.size > 0 || totalAsinCampaigns.size > 0) {
+        html += '<div class="field-row">';
+
+        // KW campaigns
+        html += '<div>';
+        if (totalKwCampaigns.size > 0) {
+            html += '<div class="section-title">Kampagnen mit Neg. Keywords</div>';
+            html += '<div class="campaign-list">';
+            // Auto
+            [...kwAutoCampaigns].sort().forEach(name => {
+                html += `<div class="camp-item"><span>${escHtml(name)}</span><span class="camp-type auto">Auto</span></div>`;
+            });
+            // Manual
+            [...kwManualCampaigns].sort().forEach(name => {
+                if (!kwAutoCampaigns.has(name)) {
+                    html += `<div class="camp-item"><span>${escHtml(name)}</span><span class="camp-type manual">Manuell</span></div>`;
+                }
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // ASIN campaigns
+        html += '<div>';
+        if (totalAsinCampaigns.size > 0) {
+            html += '<div class="section-title">Kampagnen mit Neg. ASINs</div>';
+            html += '<div class="campaign-list">';
+            [...asinAutoCampaigns].sort().forEach(name => {
+                html += `<div class="camp-item"><span>${escHtml(name)}</span><span class="camp-type auto">Auto</span></div>`;
+            });
+            [...asinManualCampaigns].sort().forEach(name => {
+                if (!asinAutoCampaigns.has(name)) {
+                    html += `<div class="camp-item"><span>${escHtml(name)}</span><span class="camp-type manual">Manuell</span></div>`;
+                }
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+
+        html += '</div>';
+    }
+
+    if (allKw.size === 0 && allAsins.size === 0) {
+        html += '<div class="warn-msg">Keine Negatives definiert. Gib Keywords oder ASINs ein.</div>';
+    }
+
+    document.getElementById('previewContent').innerHTML = html;
+}
+
+// Listen for input changes to update preview
+['kwAuto', 'kwManual', 'kwManualFilter', 'asinAuto', 'asinManual', 'asinManualFilter', 'matchType', 'level', 'manualInAuto'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', debounce(updatePreview, 300));
+    el.addEventListener('change', updatePreview);
+});
+
+function debounce(fn, ms) { let t; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
+
+// --- Export ---
+function exportBulkSheet() {
+    const kwAutoList = getInputLines('kwAuto');
+    const kwManualList = getInputLines('kwManual');
+    const kwManualFilters = getFilterTerms('kwManualFilter');
+    const asinAutoList = getInputLines('asinAuto');
+    const asinManualList = getInputLines('asinManual');
+    const asinManualFilters = getFilterTerms('asinManualFilter');
+    const matchType = document.getElementById('matchType').value;
+    const level = document.getElementById('level').value;
+    const manualInAuto = document.getElementById('manualInAuto').checked;
+
+    if (kwAutoList.length === 0 && kwManualList.length === 0 && asinAutoList.length === 0 && asinManualList.length === 0) {
+        showMsg('exportMsg', 'Keine Negatives definiert.', 'error');
+        return;
+    }
+
+    // Headers (English, Amazon format)
+    const headers = ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'];
+
+    // Index constants
+    const H = {};
+    headers.forEach((h, i) => H[h] = i);
+
+    function emptyRow() { return headers.map(() => ''); }
+
+    const rows = [];
+    const dedup = new Set();
+
+    function addKeywordRow(campaign, keyword, mt) {
+        const entity = level === 'campaign' ? 'Campaign negative keyword' : 'Negative keyword';
+        const dedupKey = campaign.campaignName + '|' + campaign.adgroupName + '|' + keyword.toLowerCase() + '|' + mt + '|' + entity;
+        if (dedup.has(dedupKey)) return;
+        dedup.add(dedupKey);
+
+        const r = emptyRow();
+        r[H['Product']] = 'Sponsored Products';
+        r[H['Entity']] = entity;
+        r[H['Operation']] = 'Create';
+        if (campaign.campaignId) r[H['Campaign ID']] = campaign.campaignId;
+        r[H['Campaign Name']] = campaign.campaignName;
+        if (level === 'adgroup') {
+            if (campaign.adgroupId) r[H['Ad Group ID']] = campaign.adgroupId;
+            r[H['Ad Group Name']] = campaign.adgroupName;
+        }
+        r[H['State']] = 'Enabled';
+        r[H['Keyword Text']] = keyword.toLowerCase();
+        r[H['Match Type']] = mt;
+        rows.push(r);
+    }
+
+    function addAsinRow(campaign, asin) {
+        const entity = 'Negative product targeting';
+        const cleanAsin = asin.toUpperCase().trim();
+        const dedupKey = campaign.campaignName + '|' + campaign.adgroupName + '|' + cleanAsin + '|' + entity;
+        if (dedup.has(dedupKey)) return;
+        dedup.add(dedupKey);
+
+        const r = emptyRow();
+        r[H['Product']] = 'Sponsored Products';
+        r[H['Entity']] = entity;
+        r[H['Operation']] = 'Create';
+        if (campaign.campaignId) r[H['Campaign ID']] = campaign.campaignId;
+        r[H['Campaign Name']] = campaign.campaignName;
+        // Negative product targeting ALWAYS needs Ad Group ID
+        if (campaign.adgroupId) r[H['Ad Group ID']] = campaign.adgroupId;
+        r[H['Ad Group Name']] = campaign.adgroupName;
+        r[H['State']] = 'Enabled';
+        r[H['Product Targeting Expression']] = 'asin="' + cleanAsin + '"';
+        rows.push(r);
+    }
+
+    const matchTypes = matchType === 'both' ? ['negativeExact', 'negativePhrase'] : [matchType];
+
+    // Process keyword negatives
+    parsedCampaigns.forEach(camp => {
+        if (camp.isAuto) {
+            // Auto campaign keywords
+            kwAutoList.forEach(kw => {
+                matchTypes.forEach(mt => addKeywordRow(camp, kw, mt));
+            });
+            // Manual keywords in auto (if checkbox)
+            if (manualInAuto) {
+                kwManualList.forEach(kw => {
+                    matchTypes.forEach(mt => addKeywordRow(camp, kw, mt));
+                });
+            }
+        } else {
+            // Manual campaign keywords — only if name matches filter
+            if (kwManualList.length > 0 && matchesCampaignFilter(camp.campaignName, kwManualFilters)) {
+                kwManualList.forEach(kw => {
+                    matchTypes.forEach(mt => addKeywordRow(camp, kw, mt));
+                });
+            }
+        }
+    });
+
+    // Process ASIN negatives
+    parsedCampaigns.forEach(camp => {
+        if (camp.isAuto) {
+            asinAutoList.forEach(asin => addAsinRow(camp, asin));
+            if (manualInAuto) {
+                asinManualList.forEach(asin => addAsinRow(camp, asin));
+            }
+        } else {
+            if (asinManualList.length > 0 && matchesCampaignFilter(camp.campaignName, asinManualFilters)) {
+                asinManualList.forEach(asin => addAsinRow(camp, asin));
+            }
+        }
+    });
+
+    if (rows.length === 0) {
+        showMsg('exportMsg', 'Keine Rows generiert. Prüfe Filter und Eingaben.', 'error');
+        return;
+    }
+
+    // Build Excel
+    const wsData = [headers, ...rows];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = headers.map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Sponsored Products Campaigns');
+
+    const today = new Date();
+    const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const fileName = 'Negatives-Manager-Bulk-Upload ' + dateStr + '.xlsx';
+    XLSX.writeFile(wb, fileName);
+
+    const kwRows = rows.filter(r => r[H['Entity']] !== 'Negative product targeting').length;
+    const asinRows = rows.filter(r => r[H['Entity']] === 'Negative product targeting').length;
+    showMsg('exportMsg', '"' + fileName + '" erstellt (' + kwRows + ' Negative Keywords, ' + asinRows + ' Negative ASINs, ' + rows.length + ' Zeilen gesamt).', 'success');
+}
+
+// --- Helpers ---
+function showMsg(containerId, msg, type) {
+    const cls = type === 'error' ? 'error-msg' : type === 'success' ? 'success-msg' : 'warn-msg';
+    document.getElementById(containerId).innerHTML = '<div class="' + cls + '">' + msg + '</div>';
+    if (type === 'success') {
+        setTimeout(() => {
+            const el = document.getElementById(containerId);
+            if (el) el.innerHTML = '';
+        }, 5000);
+    }
+}
+
+function escHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+</script>
+</body>
+</html>
