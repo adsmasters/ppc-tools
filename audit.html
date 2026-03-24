@@ -975,13 +975,24 @@ function buildSectionSB() {
     const totalSpend = sorted.reduce((s, r) => s + r.spend, 0);
     const totalSales = sorted.reduce((s, r) => s + r.sales, 0);
 
-    document.getElementById('sbStats').innerHTML = '<div class="stats-row" style="margin-bottom:16px;">' +
+    // Vergleiche mit Kampagnen-Daten um Abdeckung zu zeigen
+    const campaignEntities = ['kampagne', 'campaign'];
+    const sbCampRows = allRows.filter(r => r.format === 'SB' && campaignEntities.some(e => r.entity.includes(e)));
+    const seenSBcamps = new Set();
+    let sbCampSpend = 0;
+    sbCampRows.forEach(r => { if (seenSBcamps.has(r.campaign)) return; seenSBcamps.add(r.campaign); sbCampSpend += r.spend; });
+    const coverage = sbCampSpend > 0 ? (totalSpend / sbCampSpend * 100).toFixed(0) : '–';
+    const coverageHint = sbCampSpend > 0 && totalSpend < sbCampSpend * 0.8
+        ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;padding:8px 12px;background:var(--bg-hover);border-radius:6px;">Hinweis: Amazon liefert im SB Suchbegriff-Export nur ' + coverage + '% der Gesamtdaten. Die Übersicht oben zeigt die vollständigen Kampagnen-Daten.</div>'
+        : '';
+
+    document.getElementById('sbStats').innerHTML = '<div class="stats-row" style="margin-bottom:12px;">' +
         '<div class="stat-card"><div class="stat-label">Suchbegriffe</div><div class="stat-value">' + sorted.length.toLocaleString('de-DE') + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Spend</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Sales</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Spend (Suchbegriffe)</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Sales (Suchbegriffe)</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + (totalSpend > 0 ? (totalSales/totalSpend).toFixed(2) : '–') + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Wasted Spend (ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
-        '</div>';
+        '</div>' + coverageHint;
 
     // Wasted oder Top anzeigen
     const displayData = sbShowWasted ? wasted.sort((a, b) => b.spend - a.spend).slice(0, 50) : top20;
