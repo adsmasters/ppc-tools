@@ -186,10 +186,15 @@
         <!-- Section D: Top Placements (Keywords/Targets) -->
         <div class="card hidden" id="sectionC">
             <div class="card-title"><span class="section-label">E</span> Top Placements (Keywords/Targets nach Sales)</div>
-            <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
                 <button class="btn-sm" id="btnViewAccount" onclick="setTopView('account')" style="font-weight:700;background:var(--accent);color:#fff;border-color:var(--accent);">Accountebene</button>
                 <button class="btn-sm" id="btnViewCampaign" onclick="setTopView('campaign')">Kampagnenebene</button>
+                <span style="margin-left:auto;display:flex;gap:12px;align-items:center;font-size:12px;color:var(--text-secondary);">
+                    <label>Max. ROAS <input type="number" id="spWastedRoas" value="1.0" step="0.1" min="0" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionC()"></label>
+                    <label>Min. Klicks <input type="number" id="spWastedClicks" value="10" step="1" min="0" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionC()"></label>
+                </span>
             </div>
+            <div id="spStats"></div>
             <div class="results-container">
                 <table class="results-table" id="topKeywordsTable">
                     <thead id="topKeywordsHead"></thead>
@@ -204,6 +209,15 @@
         <!-- Section E: SB Analyse -->
         <div class="card hidden" id="sectionSB">
             <div class="card-title"><span class="section-label">F</span> Sponsored Brands – Top Suchbegriffe</div>
+            <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
+                <button class="btn-sm" id="btnSBViewAccount" onclick="setSBView('account')" style="font-weight:700;background:var(--accent);color:#fff;border-color:var(--accent);">Accountebene</button>
+                <button class="btn-sm" id="btnSBViewCampaign" onclick="setSBView('campaign')">Kampagnenebene</button>
+                <span style="margin-left:auto;display:flex;gap:12px;align-items:center;font-size:12px;color:var(--text-secondary);">
+                    <label>Max. ROAS <input type="number" id="sbWastedRoas" value="1.0" step="0.1" min="0" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionSB()"></label>
+                    <label>Min. Klicks <input type="number" id="sbWastedClicks" value="10" step="1" min="0" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionSB()"></label>
+                </span>
+            </div>
+            <div id="sbStats"></div>
             <div class="results-container">
                 <table class="results-table" id="sbTable">
                     <thead id="sbHead"></thead>
@@ -628,7 +642,6 @@ function buildSectionC() {
 
     const kwMap = {};
     if (topView === 'account') {
-        // Accountebene: gleiche Keywords über alle Kampagnen aggregieren
         kwRows.forEach(r => {
             const key = r.keyword.toLowerCase().trim();
             if (!kwMap[key]) kwMap[key] = { keyword: r.keyword, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
@@ -640,7 +653,6 @@ function buildSectionC() {
             kwMap[key].impressions += r.impressions;
         });
     } else {
-        // Kampagnenebene: pro Keyword+Kampagne
         kwRows.forEach(r => {
             const key = r.keyword + '|||' + r.campaign;
             if (!kwMap[key]) kwMap[key] = { keyword: r.keyword, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
@@ -656,6 +668,24 @@ function buildSectionC() {
     const sorted = Object.values(kwMap).sort((a, b) => b.sales - a.sales);
     const top20 = sorted.slice(0, 20);
 
+    // Wasted Spend berechnen
+    const wastedRoasThreshold = parseFloat(document.getElementById('spWastedRoas').value) || 1.0;
+    const wastedClicksMin = parseInt(document.getElementById('spWastedClicks').value) || 10;
+    const wasted = sorted.filter(s => s.clicks >= wastedClicksMin && s.spend > 0 && (s.sales / s.spend) < wastedRoasThreshold);
+    const wastedSpend = wasted.reduce((s, r) => s + r.spend, 0);
+
+    // Stats
+    const totalSpend = sorted.reduce((s, r) => s + r.spend, 0);
+    const totalSales = sorted.reduce((s, r) => s + r.sales, 0);
+
+    document.getElementById('spStats').innerHTML = '<div class="stats-row" style="margin-bottom:16px;">' +
+        '<div class="stat-card"><div class="stat-label">Suchbegriffe</div><div class="stat-value">' + sorted.length.toLocaleString('de-DE') + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Spend</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Sales</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + (totalSpend > 0 ? (totalSales/totalSpend).toFixed(2) : '–') + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Wasted Spend (ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
+        '</div>';
+
     // Total SP Sales aus Kampagnen-Zeilen
     const campaignEntities = ['kampagne', 'campaign'];
     const totalSPsales = allRows.filter(r => r.format === 'SP' && campaignEntities.some(e => r.entity.includes(e))).reduce((s, r) => s + r.sales, 0);
@@ -669,6 +699,7 @@ function buildSectionC() {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
         const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
         const cpc = d.clicks > 0 ? formatCurrency(d.spend / d.clicks) : '–';
+        const roasColor = d.spend > 0 ? (d.sales/d.spend >= 2 ? 'var(--success)' : d.sales/d.spend < 1 ? 'var(--error)' : 'var(--text-primary)') : '';
         const campCol = showCampaign
             ? '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml([...d.campaigns].join(', ')) + '">' + escapeHtml([...d.campaigns][0]) + '</td>'
             : '<td class="num">' + d.campaigns.size + '</td>';
@@ -678,7 +709,7 @@ function buildSectionC() {
             campCol +
             '<td class="num">' + formatCurrency(d.spend) + '</td>' +
             '<td class="num">' + formatCurrency(d.sales) + '</td>' +
-            '<td class="num">' + roas + '</td>' +
+            '<td class="num" style="color:' + roasColor + '">' + roas + '</td>' +
             '<td class="num">' + acos + '</td>' +
             '<td class="num">' + d.orders.toLocaleString('de-DE') + '</td>' +
             '<td class="num">' + d.clicks.toLocaleString('de-DE') + '</td>' +
@@ -802,6 +833,19 @@ function buildSectionD() {
 }
 
 // --- Section E: Sponsored Brands Suchbegriff-Analyse ---
+let sbView = 'account';
+
+function setSBView(view) {
+    sbView = view;
+    document.getElementById('btnSBViewAccount').style.background = view === 'account' ? 'var(--accent)' : '';
+    document.getElementById('btnSBViewAccount').style.color = view === 'account' ? '#fff' : '';
+    document.getElementById('btnSBViewAccount').style.borderColor = view === 'account' ? 'var(--accent)' : '';
+    document.getElementById('btnSBViewCampaign').style.background = view === 'campaign' ? 'var(--accent)' : '';
+    document.getElementById('btnSBViewCampaign').style.color = view === 'campaign' ? '#fff' : '';
+    document.getElementById('btnSBViewCampaign').style.borderColor = view === 'campaign' ? 'var(--accent)' : '';
+    buildSectionSB();
+}
+
 function buildSectionSB() {
     const section = document.getElementById('sectionSB');
     // SB Suchbegriffe kommen aus dem Search Term Sheet (kein Entity)
@@ -809,52 +853,69 @@ function buildSectionSB() {
     if (sbSTrows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
-    // Top Suchbegriffe (Accountebene aggregiert)
     const stMap = {};
     sbSTrows.forEach(r => {
         const searchterm = r.sheetName && r.sheetName.includes('Suchbegriff') ? r.keyword : '';
         if (!searchterm) return;
-        const key = searchterm.toLowerCase().trim();
-        if (!stMap[key]) stMap[key] = { searchterm, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
-        stMap[key].campaigns.add(r.campaign);
-        stMap[key].spend += r.spend;
-        stMap[key].sales += r.sales;
-        stMap[key].orders += r.orders;
-        stMap[key].clicks += r.clicks;
-        stMap[key].impressions += r.impressions;
+        if (sbView === 'account') {
+            const key = searchterm.toLowerCase().trim();
+            if (!stMap[key]) stMap[key] = { searchterm, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+            stMap[key].campaigns.add(r.campaign);
+            stMap[key].spend += r.spend;
+            stMap[key].sales += r.sales;
+            stMap[key].orders += r.orders;
+            stMap[key].clicks += r.clicks;
+            stMap[key].impressions += r.impressions;
+        } else {
+            const key = searchterm + '|||' + r.campaign;
+            if (!stMap[key]) stMap[key] = { searchterm, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+            stMap[key].campaigns.add(r.campaign);
+            stMap[key].spend += r.spend;
+            stMap[key].sales += r.sales;
+            stMap[key].orders += r.orders;
+            stMap[key].clicks += r.clicks;
+            stMap[key].impressions += r.impressions;
+        }
     });
 
     const sorted = Object.values(stMap).sort((a, b) => b.sales - a.sales);
     const top20 = sorted.slice(0, 20);
-    const wasted = sorted.filter(s => s.clicks >= 10 && (s.spend > 0 && s.sales / s.spend < 1));
+
+    // Wasted Spend berechnen
+    const wastedRoasThreshold = parseFloat(document.getElementById('sbWastedRoas').value) || 1.0;
+    const wastedClicksMin = parseInt(document.getElementById('sbWastedClicks').value) || 10;
+    const wasted = sorted.filter(s => s.clicks >= wastedClicksMin && s.spend > 0 && (s.sales / s.spend) < wastedRoasThreshold);
+    const wastedSpend = wasted.reduce((s, r) => s + r.spend, 0);
 
     const head = document.getElementById('sbHead');
     const body = document.getElementById('sbBody');
 
-    // Stats
+    // Stats in dedicated container
     const totalSpend = sorted.reduce((s, r) => s + r.spend, 0);
     const totalSales = sorted.reduce((s, r) => s + r.sales, 0);
-    const wastedSpend = wasted.reduce((s, r) => s + r.spend, 0);
 
-    let html = '<div class="stats-row" style="margin-bottom:16px;">' +
+    document.getElementById('sbStats').innerHTML = '<div class="stats-row" style="margin-bottom:16px;">' +
         '<div class="stat-card"><div class="stat-label">Suchbegriffe</div><div class="stat-value">' + sorted.length.toLocaleString('de-DE') + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Spend</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Sales</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + (totalSpend > 0 ? (totalSales/totalSpend).toFixed(2) : '–') + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Wasted Spend (ROAS<1)</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Wasted Spend (ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
         '</div>';
-    section.querySelector('.results-container').insertAdjacentHTML('beforebegin', html);
 
     // Top 20 table
-    head.innerHTML = '<tr><th>#</th><th>Suchbegriff</th><th>Kampagnen</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';
+    const showCampaign = sbView === 'campaign';
+    head.innerHTML = '<tr><th>#</th><th>Suchbegriff</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th>Kampagnen</th>') + '<th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';
     body.innerHTML = top20.map((d, idx) => {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
         const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
         const roasColor = d.spend > 0 ? (d.sales/d.spend >= 2 ? 'var(--success)' : d.sales/d.spend < 1 ? 'var(--error)' : 'var(--text-primary)') : '';
+        const campCol = showCampaign
+            ? '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml([...d.campaigns].join(', ')) + '">' + escapeHtml([...d.campaigns][0]) + '</td>'
+            : '<td class="num">' + d.campaigns.size + '</td>';
         return '<tr>' +
             '<td>' + (idx + 1) + '</td>' +
             '<td><strong>' + escapeHtml(d.searchterm) + '</strong></td>' +
-            '<td class="num">' + d.campaigns.size + '</td>' +
+            campCol +
             '<td class="num">' + formatCurrency(d.spend) + '</td>' +
             '<td class="num">' + formatCurrency(d.sales) + '</td>' +
             '<td class="num" style="color:' + roasColor + '">' + roas + '</td>' +
