@@ -406,8 +406,11 @@ function buildSectionA() {
     grid.innerHTML = '';
 
     const formatMap = {};
+    // Nur Kampagnen-Entity Zeilen zählen um Doppelzählung zu vermeiden
+    const campaignEntities = ['kampagne', 'campaign', 'campagne', 'campaña', 'campagna'];
     allRows.forEach(r => {
         if (!r.format) return;
+        if (!campaignEntities.some(e => r.entity.includes(e))) return;
         if (!formatMap[r.format]) formatMap[r.format] = { spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
         formatMap[r.format].spend += r.spend;
         formatMap[r.format].sales += r.sales;
@@ -455,29 +458,37 @@ function buildSectionB() {
     if (spRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
-    // Group by campaign type
+    // Group by campaign type - use campaign rows for spend, keyword/PT rows for counts
     const typeMap = {};
-    const campaignSeen = {};
+    const campaignEntities = ['kampagne', 'campaign', 'campagne', 'campaña', 'campagna'];
+    const kwPtEntities = ['keyword', 'targeting', 'mot-cl', 'palabra', 'parola', 'ciblage', 'segmentación'];
     spRows.forEach(r => {
-        // Determine type: Auto vs Manual subtypes
+        const isCampaignRow = campaignEntities.some(e => r.entity.includes(e));
+        const isKwPtRow = kwPtEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat');
+
+        // Determine type
         let type;
         const tgtType = r.targetingType.toLowerCase();
         if (tgtType.includes('auto') || tgtType.includes('automatisch')) {
             type = 'Auto';
         } else {
             type = detectType(r.campaign);
-            if (type === 'Auto' && !tgtType.includes('auto')) {
-                // Campaign name says auto but targeting type says manual - trust targeting type if available
-                if (tgtType.includes('manual') || tgtType.includes('manuell')) type = detectType(r.campaign);
-            }
         }
 
         if (!typeMap[type]) typeMap[type] = { campaigns: new Set(), keywords: 0, spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
         typeMap[type].campaigns.add(r.campaign);
-        typeMap[type].keywords++;
-        typeMap[type].spend += r.spend;
-        typeMap[type].sales += r.sales;
-        typeMap[type].orders += r.orders;
+
+        if (isCampaignRow) {
+            // Spend/Sales nur von Kampagnen-Zeilen
+            typeMap[type].spend += r.spend;
+            typeMap[type].sales += r.sales;
+            typeMap[type].orders += r.orders;
+            typeMap[type].clicks += r.clicks;
+            typeMap[type].impressions += r.impressions;
+        }
+        if (isKwPtRow) {
+            typeMap[type].keywords++;
+        }
         typeMap[type].clicks += r.clicks;
         typeMap[type].impressions += r.impressions;
     });
@@ -526,8 +537,9 @@ function buildSectionB() {
 // --- Section C: Top Placements (Keywords/Targets by sales) ---
 function buildSectionC() {
     const section = document.getElementById('sectionC');
-    // Use SP rows with keyword data
-    const kwRows = allRows.filter(r => r.keyword && r.sales > 0);
+    // Use only Keyword/PT entity rows with sales data
+    const kwPtEntities = ['keyword', 'targeting', 'mot-cl', 'palabra', 'parola', 'ciblage', 'segmentación'];
+    const kwRows = allRows.filter(r => r.keyword && r.sales > 0 && kwPtEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat'));
     if (kwRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
