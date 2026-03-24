@@ -858,7 +858,8 @@ function buildCumulativeChart(sorted, totalSales) {
 // --- Section D: Platzierungsanalyse ---
 function buildSectionD() {
     const section = document.getElementById('sectionD');
-    const placementRows = allRows.filter(r => r.placement && r.placement.trim() !== '');
+    // Nur SP Gebotsanpassung-Zeilen für Platzierungsanalyse (nicht SB/SD mischen)
+    const placementRows = allRows.filter(r => r.format === 'SP' && r.placement && r.placement.trim() !== '' && r.entity.includes('gebotsanpassung'));
     if (placementRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
