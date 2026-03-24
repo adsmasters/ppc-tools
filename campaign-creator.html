@@ -2085,12 +2085,13 @@ function addToAccumulator() {
         // Push rows to accumulator
         window.accumulatedRows.push(...result.rows);
 
-        // Store product info
+        // Store product info + form state for editing
         window.accumulatedProducts.push({
             name: result.productName,
             itemCount: result.itemCount,
             campaignCount: result.campaignCount,
-            rowCount: result.rows.length
+            rowCount: result.rows.length,
+            formState: gatherFormState()
         });
 
         // Update accumulator UI
@@ -2136,9 +2137,21 @@ function updateAccumulatorUI() {
     window.accumulatedProducts.forEach((p, idx) => {
         const div = document.createElement('div');
         div.className = 'acc-product-item';
-        div.innerHTML = '<span>' + (idx + 1) + '. ' + escapeHtml(p.name) + ' (' + p.itemCount + ' ' + (mode === 'vendor' ? 'ASINs' : 'SKUs') + ', ' + p.campaignCount + ' ' + campLabel + ')</span><button onclick="removeFromAccumulator(' + idx + ')">&times;</button>';
+        div.innerHTML = '<span>' + (idx + 1) + '. ' + escapeHtml(p.name) + ' (' + p.itemCount + ' ' + (mode === 'vendor' ? 'ASINs' : 'SKUs') + ', ' + p.campaignCount + ' ' + campLabel + ')</span><button onclick="editProduct(' + idx + ')" style="margin-right:4px;" title="Bearbeiten">&#9998;</button><button onclick="removeFromAccumulator(' + idx + ')" title="Entfernen">&times;</button>';
         container.appendChild(div);
     });
+}
+
+function editProduct(idx) {
+    if (idx < 0 || idx >= window.accumulatedProducts.length) return;
+    const product = window.accumulatedProducts[idx];
+    if (!product.formState) { alert('Keine Formulardaten gespeichert für dieses Produkt.'); return; }
+    // Restore form state
+    applyFormState(product.formState);
+    // Remove from accumulator
+    removeFromAccumulator(idx);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function removeFromAccumulator(idx) {
