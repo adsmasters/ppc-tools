@@ -983,7 +983,7 @@ function buildSectionSB() {
     sbCampRows.forEach(r => { if (seenSBcamps.has(r.campaign)) return; seenSBcamps.add(r.campaign); sbCampSpend += r.spend; });
     const coverage = sbCampSpend > 0 ? (totalSpend / sbCampSpend * 100).toFixed(0) : '–';
     const coverageHint = sbCampSpend > 0 && totalSpend < sbCampSpend * 0.8
-        ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;padding:8px 12px;background:var(--bg-hover);border-radius:6px;">Hinweis: Amazon liefert im SB Suchbegriff-Export nur ' + coverage + '% der Gesamtdaten. Die Übersicht oben zeigt die vollständigen Kampagnen-Daten.</div>'
+        ? '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;padding:8px 12px;background:var(--bg-hover);border-radius:6px;">Die Suchbegriffsdaten decken ' + coverage + '% des SB Gesamt-Spends ab (' + formatCurrency(totalSpend) + ' von ' + formatCurrency(sbCampSpend) + ').</div>'
         : '';
 
     document.getElementById('sbStats').innerHTML = '<div class="stats-row" style="margin-bottom:12px;">' +
