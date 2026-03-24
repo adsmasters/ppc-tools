@@ -169,6 +169,10 @@
         <!-- Section C: Top Placements (Keywords/Targets) -->
         <div class="card hidden" id="sectionC">
             <div class="card-title"><span class="section-label">C</span> Top Placements (Keywords/Targets nach Sales)</div>
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                <button class="btn-sm" id="btnViewAccount" onclick="setTopView('account')" style="font-weight:700;background:var(--accent);color:#fff;border-color:var(--accent);">Accountebene</button>
+                <button class="btn-sm" id="btnViewCampaign" onclick="setTopView('campaign')">Kampagnenebene</button>
+            </div>
             <div class="results-container">
                 <table class="results-table" id="topKeywordsTable">
                     <thead id="topKeywordsHead"></thead>
@@ -536,41 +540,76 @@ function buildSectionB() {
 }
 
 // --- Section C: Top Placements (Keywords/Targets by sales) ---
+let topView = 'account';
+
+function setTopView(view) {
+    topView = view;
+    document.getElementById('btnViewAccount').style.background = view === 'account' ? 'var(--accent)' : '';
+    document.getElementById('btnViewAccount').style.color = view === 'account' ? '#fff' : '';
+    document.getElementById('btnViewAccount').style.borderColor = view === 'account' ? 'var(--accent)' : '';
+    document.getElementById('btnViewCampaign').style.background = view === 'campaign' ? 'var(--accent)' : '';
+    document.getElementById('btnViewCampaign').style.color = view === 'campaign' ? '#fff' : '';
+    document.getElementById('btnViewCampaign').style.borderColor = view === 'campaign' ? 'var(--accent)' : '';
+    buildSectionC();
+}
+
 function buildSectionC() {
     const section = document.getElementById('sectionC');
-    // Use only Keyword/PT entity rows with sales data
     const kwPtEntities = ['keyword', 'targeting', 'mot-cl', 'palabra', 'parola', 'ciblage', 'segmentación'];
     const kwRows = allRows.filter(r => r.keyword && r.sales > 0 && kwPtEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat'));
     if (kwRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
-    // Aggregate by keyword+campaign
     const kwMap = {};
-    kwRows.forEach(r => {
-        const key = r.keyword + '|||' + r.campaign;
-        if (!kwMap[key]) kwMap[key] = { keyword: r.keyword, campaign: r.campaign, spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
-        kwMap[key].spend += r.spend;
-        kwMap[key].sales += r.sales;
-        kwMap[key].orders += r.orders;
-        kwMap[key].clicks += r.clicks;
-        kwMap[key].impressions += r.impressions;
-    });
+    if (topView === 'account') {
+        // Accountebene: gleiche Keywords über alle Kampagnen aggregieren
+        kwRows.forEach(r => {
+            const key = r.keyword.toLowerCase().trim();
+            if (!kwMap[key]) kwMap[key] = { keyword: r.keyword, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+            kwMap[key].campaigns.add(r.campaign);
+            kwMap[key].spend += r.spend;
+            kwMap[key].sales += r.sales;
+            kwMap[key].orders += r.orders;
+            kwMap[key].clicks += r.clicks;
+            kwMap[key].impressions += r.impressions;
+        });
+    } else {
+        // Kampagnenebene: pro Keyword+Kampagne
+        kwRows.forEach(r => {
+            const key = r.keyword + '|||' + r.campaign;
+            if (!kwMap[key]) kwMap[key] = { keyword: r.keyword, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+            kwMap[key].campaigns.add(r.campaign);
+            kwMap[key].spend += r.spend;
+            kwMap[key].sales += r.sales;
+            kwMap[key].orders += r.orders;
+            kwMap[key].clicks += r.clicks;
+            kwMap[key].impressions += r.impressions;
+        });
+    }
 
     const sorted = Object.values(kwMap).sort((a, b) => b.sales - a.sales);
     const top20 = sorted.slice(0, 20);
-    const totalSPsales = allRows.filter(r => r.format === 'SP').reduce((s, r) => s + r.sales, 0);
+
+    // Total SP Sales aus Kampagnen-Zeilen
+    const campaignEntities = ['kampagne', 'campaign'];
+    const totalSPsales = allRows.filter(r => r.format === 'SP' && campaignEntities.some(e => r.entity.includes(e))).reduce((s, r) => s + r.sales, 0);
 
     const head = document.getElementById('topKeywordsHead');
     const body = document.getElementById('topKeywordsBody');
-    head.innerHTML = '<tr><th>#</th><th>Keyword/Target</th><th>Campaign</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Clicks</th><th>CPC</th></tr>';
+
+    const showCampaign = topView === 'campaign';
+    head.innerHTML = '<tr><th>#</th><th>Keyword/Target</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th>Kampagnen</th>') + '<th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Clicks</th><th>CPC</th></tr>';
     body.innerHTML = top20.map((d, idx) => {
-        const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '-';
-        const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '-';
-        const cpc = d.clicks > 0 ? formatCurrency(d.spend / d.clicks) : '-';
+        const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
+        const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
+        const cpc = d.clicks > 0 ? formatCurrency(d.spend / d.clicks) : '–';
+        const campCol = showCampaign
+            ? '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml([...d.campaigns].join(', ')) + '">' + escapeHtml([...d.campaigns][0]) + '</td>'
+            : '<td class="num">' + d.campaigns.size + '</td>';
         return '<tr>' +
             '<td>' + (idx + 1) + '</td>' +
             '<td><strong>' + escapeHtml(d.keyword) + '</strong></td>' +
-            '<td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(d.campaign) + '">' + escapeHtml(d.campaign) + '</td>' +
+            campCol +
             '<td class="num">' + formatCurrency(d.spend) + '</td>' +
             '<td class="num">' + formatCurrency(d.sales) + '</td>' +
             '<td class="num">' + roas + '</td>' +
@@ -581,7 +620,6 @@ function buildSectionC() {
             '</tr>';
     }).join('');
 
-    // Build cumulative chart
     buildCumulativeChart(sorted, totalSPsales);
 }
 
