@@ -88,9 +88,9 @@
 
         /* Results table */
         .results-container { overflow-x: auto; max-height: 70vh; }
-        .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px 12px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; z-index: 2; }
-        .results-table th.num, .results-table td.num { min-width: 100px; }
+        .results-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px 12px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; z-index: 2; overflow: hidden; text-overflow: ellipsis; }
+        .results-table td { overflow: hidden; text-overflow: ellipsis; }
         .results-table th:hover { color: var(--text-primary); }
         .results-table th.sorted-asc::after { content: ' \u25B2'; font-size: 9px; }
         .results-table th.sorted-desc::after { content: ' \u25BC'; font-size: 9px; }
@@ -171,6 +171,7 @@
             <div class="card-title"><span class="section-label">C</span> SP Kampagnentyp-Analyse <span class="tooltip-icon" data-tip="Auto vs. Manuell wird über die Targeting-Typ Spalte erkannt. Innerhalb Manuell: Keyword Targeting vs. Product Targeting basierend auf der Entity.">i</span></div>
             <div class="results-container">
                 <table class="results-table" id="campTypeTable">
+                    <colgroup><col style="width:22%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:11%"></colgroup>
                     <thead id="campTypeHead"></thead>
                     <tbody id="campTypeBody"></tbody>
                 </table>
@@ -182,6 +183,7 @@
             <div class="card-title"><span class="section-label">D</span> Platzierungsanalyse <span class="tooltip-icon" data-tip="Zeigt die Performance nach Anzeigenplatzierung. Nur Sponsored Products Daten (Gebotsanpassung-Zeilen).">i</span></div>
             <div class="results-container">
                 <table class="results-table" id="placementTable">
+                    <colgroup><col style="width:25%"><col style="width:14%"><col style="width:14%"><col style="width:10%"><col style="width:10%"><col style="width:13%"><col style="width:14%"></colgroup>
                     <thead id="placementHead"></thead>
                     <tbody id="placementBody"></tbody>
                 </table>
@@ -204,6 +206,7 @@
             <div id="spStats"></div>
             <div class="results-container">
                 <table class="results-table" id="topKeywordsTable">
+                    <colgroup><col style="width:4%"><col style="width:20%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"></colgroup>
                     <thead id="topKeywordsHead"></thead>
                     <tbody id="topKeywordsBody"></tbody>
                 </table>
