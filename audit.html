@@ -647,12 +647,16 @@ function toggleSPWasted() {
 
 function buildSectionC() {
     const section = document.getElementById('sectionC');
-    // Keyword/PT Entity Zeilen + Search Term Zeilen (ohne Entity)
+
+    // Top Placements: Keyword/PT Entity Zeilen (was wir eingebucht haben)
     const kwPtEntities = ['keyword', 'targeting', 'mot-cl', 'palabra', 'parola', 'ciblage', 'segmentación'];
-    const kwRows = allRows.filter(r => r.format === 'SP' && r.keyword && (
-        (kwPtEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat')) ||
-        (!r.entity && r.sheetName && r.sheetName.includes('Suchbegriff'))
-    ));
+    const keywordRows = allRows.filter(r => r.format === 'SP' && r.keyword && kwPtEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat'));
+
+    // Wasted Ad Spend: Search Term Zeilen (was der Kunde gesucht hat)
+    const searchTermRows = allRows.filter(r => r.format === 'SP' && r.keyword && !r.entity && r.sheetName && r.sheetName.includes('Suchbegriff'));
+
+    // Top Placements aus Keywords, Wasted aus Search Terms
+    const kwRows = spShowWasted ? searchTermRows : keywordRows;
     if (kwRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
@@ -684,22 +688,37 @@ function buildSectionC() {
     const sorted = Object.values(kwMap).sort((a, b) => b.sales - a.sales);
     const top20 = sorted.slice(0, 20);
 
-    // Wasted Spend berechnen
+    // Wasted Spend immer aus Search Terms berechnen (was der Kunde gesucht hat)
     const wastedRoasThreshold = parseFloat(document.getElementById('spWastedRoas').value) || 1.0;
     const wastedClicksMin = parseInt(document.getElementById('spWastedClicks').value) || 10;
-    const wasted = sorted.filter(s => s.clicks >= wastedClicksMin && s.spend > 0 && (s.sales / s.spend) < wastedRoasThreshold);
+
+    // Search Term Map für Wasted berechnen (immer, unabhängig vom Toggle)
+    const stMapForWasted = {};
+    searchTermRows.forEach(r => {
+        const key = (topView === 'account') ? r.keyword.toLowerCase().trim() : r.keyword + '|||' + r.campaign;
+        if (!stMapForWasted[key]) stMapForWasted[key] = { keyword: r.keyword, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+        stMapForWasted[key].campaigns.add(r.campaign);
+        stMapForWasted[key].spend += r.spend;
+        stMapForWasted[key].sales += r.sales;
+        stMapForWasted[key].orders += r.orders;
+        stMapForWasted[key].clicks += r.clicks;
+        stMapForWasted[key].impressions += r.impressions;
+    });
+    const allSearchTerms = Object.values(stMapForWasted);
+    const wasted = allSearchTerms.filter(s => s.clicks >= wastedClicksMin && s.spend > 0 && (s.sales / s.spend) < wastedRoasThreshold);
     const wastedSpend = wasted.reduce((s, r) => s + r.spend, 0);
 
     // Stats
     const totalSpend = sorted.reduce((s, r) => s + r.spend, 0);
     const totalSales = sorted.reduce((s, r) => s + r.sales, 0);
+    const statsLabel = spShowWasted ? 'Suchbegriffe' : 'Keywords/Targets';
 
     document.getElementById('spStats').innerHTML = '<div class="stats-row" style="margin-bottom:16px;">' +
-        '<div class="stat-card"><div class="stat-label">Suchbegriffe</div><div class="stat-value">' + sorted.length.toLocaleString('de-DE') + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">' + statsLabel + '</div><div class="stat-value">' + sorted.length.toLocaleString('de-DE') + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Spend</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Sales</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + (totalSpend > 0 ? (totalSales/totalSpend).toFixed(2) : '–') + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Wasted Spend (ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Wasted Spend (Suchbegriffe, ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
         '</div>';
 
     // Total SP Sales aus Kampagnen-Zeilen
