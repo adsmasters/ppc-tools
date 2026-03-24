@@ -458,80 +458,81 @@ function buildSectionB() {
     if (spRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
-    // Group by campaign type - use campaign rows for spend, keyword/PT rows for counts
-    const typeMap = {};
     const campaignEntities = ['kampagne', 'campaign', 'campagne', 'campaña', 'campagna'];
-    const kwPtEntities = ['keyword', 'targeting', 'mot-cl', 'palabra', 'parola', 'ciblage', 'segmentación'];
+    const kwEntities = ['keyword', 'mot-cl', 'palabra', 'parola'];
+    const ptEntities = ['targeting', 'ciblage', 'segmentación'];
+
+    // Step 1: Auto vs. Manuell (aus Kampagnen-Zeilen mit Targeting-Typ)
+    const autoManual = { 'Auto': { campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 }, 'Manuell': { campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 } };
     spRows.forEach(r => {
-        const isCampaignRow = campaignEntities.some(e => r.entity.includes(e));
-        const isKwPtRow = kwPtEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat');
-
-        // Determine type
-        let type;
+        if (!campaignEntities.some(e => r.entity.includes(e))) return;
         const tgtType = r.targetingType.toLowerCase();
-        if (tgtType.includes('auto') || tgtType.includes('automatisch')) {
-            type = 'Auto';
-        } else {
-            type = detectType(r.campaign);
-        }
-
-        if (!typeMap[type]) typeMap[type] = { campaigns: new Set(), keywords: 0, spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
-        typeMap[type].campaigns.add(r.campaign);
-
-        if (isCampaignRow) {
-            // Spend/Sales nur von Kampagnen-Zeilen
-            typeMap[type].spend += r.spend;
-            typeMap[type].sales += r.sales;
-            typeMap[type].orders += r.orders;
-            typeMap[type].clicks += r.clicks;
-            typeMap[type].impressions += r.impressions;
-        }
-        if (isKwPtRow) {
-            typeMap[type].keywords++;
-        }
-        typeMap[type].clicks += r.clicks;
-        typeMap[type].impressions += r.impressions;
+        const isAuto = tgtType.includes('auto') || tgtType.includes('automatisch');
+        const key = isAuto ? 'Auto' : 'Manuell';
+        autoManual[key].campaigns.add(r.campaign);
+        autoManual[key].spend += r.spend;
+        autoManual[key].sales += r.sales;
+        autoManual[key].orders += r.orders;
+        autoManual[key].clicks += r.clicks;
+        autoManual[key].impressions += r.impressions;
     });
 
-    // Sort by spend descending
-    const sorted = Object.entries(typeMap).sort((a, b) => b[1].spend - a[1].spend);
+    // Step 2: Innerhalb Manuell – Keyword Targeting vs. Product Targeting (aus Keyword/PT-Zeilen)
+    // Sammle manuelle Kampagnennamen
+    const manualCampaigns = autoManual['Manuell'].campaigns;
+    const manualSub = { 'Keyword Targeting': { keywords: 0, spend: 0, sales: 0, orders: 0, clicks: 0 }, 'Product Targeting': { keywords: 0, spend: 0, sales: 0, orders: 0, clicks: 0 } };
+    spRows.forEach(r => {
+        if (!manualCampaigns.has(r.campaign)) return;
+        const isKw = kwEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat');
+        const isPT = ptEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat');
+        if (!isKw && !isPT) return;
+        const key = isKw ? 'Keyword Targeting' : 'Product Targeting';
+        manualSub[key].keywords++;
+        manualSub[key].spend += r.spend;
+        manualSub[key].sales += r.sales;
+        manualSub[key].orders += r.orders;
+        manualSub[key].clicks += r.clicks;
+    });
 
+    // Render table
     const head = document.getElementById('campTypeHead');
     const body = document.getElementById('campTypeBody');
-    head.innerHTML = '<tr><th>Typ</th><th>Kampagnen</th><th>Keywords/Targets</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th></tr>';
-    body.innerHTML = sorted.map(([type, d]) => {
-        const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '-';
-        const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : (d.spend > 0 ? '---' : '-');
+    head.innerHTML = '<tr><th>Typ</th><th>Kampagnen</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';
+
+    function typeRow(label, d, indent) {
+        const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
+        const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : (d.spend > 0 ? '–' : '–');
+        const nameStyle = indent ? 'padding-left:24px;color:var(--text-secondary)' : 'font-weight:700';
+        const campaigns = d.campaigns ? d.campaigns.size : (d.keywords ? d.keywords.toLocaleString('de-DE') + ' KW/Targets' : '');
         return '<tr>' +
-            '<td><strong>' + escapeHtml(type) + '</strong></td>' +
-            '<td class="num">' + d.campaigns.size + '</td>' +
-            '<td class="num">' + d.keywords.toLocaleString('de-DE') + '</td>' +
+            '<td style="' + nameStyle + '">' + escapeHtml(label) + '</td>' +
+            '<td class="num">' + campaigns + '</td>' +
             '<td class="num">' + formatCurrency(d.spend) + '</td>' +
             '<td class="num">' + formatCurrency(d.sales) + '</td>' +
             '<td class="num">' + roas + '</td>' +
             '<td class="num">' + acos + '</td>' +
             '<td class="num">' + d.orders.toLocaleString('de-DE') + '</td>' +
+            '<td class="num">' + d.clicks.toLocaleString('de-DE') + '</td>' +
             '</tr>';
-    }).join('');
+    }
 
-    // Add total row
-    const total = sorted.reduce((acc, [, d]) => {
-        acc.campaigns += d.campaigns.size; acc.keywords += d.keywords;
-        acc.spend += d.spend; acc.sales += d.sales; acc.orders += d.orders;
-        return acc;
-    }, { campaigns: 0, keywords: 0, spend: 0, sales: 0, orders: 0 });
-    const totalRoas = total.spend > 0 ? (total.sales / total.spend).toFixed(2) : '-';
-    const totalAcos = total.sales > 0 ? (total.spend / total.sales * 100).toFixed(1) + '%' : '-';
-    body.innerHTML += '<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Gesamt</td><td class="num">' + total.campaigns + '</td><td class="num">' + total.keywords.toLocaleString('de-DE') + '</td><td class="num">' + formatCurrency(total.spend) + '</td><td class="num">' + formatCurrency(total.sales) + '</td><td class="num">' + totalRoas + '</td><td class="num">' + totalAcos + '</td><td class="num">' + total.orders.toLocaleString('de-DE') + '</td></tr>';
+    let html = '';
+    html += typeRow('Auto', autoManual['Auto'], false);
+    html += typeRow('Manuell', autoManual['Manuell'], false);
+    if (manualSub['Keyword Targeting'].keywords > 0) html += typeRow('↳ Keyword Targeting', manualSub['Keyword Targeting'], true);
+    if (manualSub['Product Targeting'].keywords > 0) html += typeRow('↳ Product Targeting', manualSub['Product Targeting'], true);
 
-    // Make sortable
-    makeSortable('campTypeTable', sorted.map(([type, d]) => ({
-        type, campaigns: d.campaigns.size, keywords: d.keywords,
-        spend: d.spend, sales: d.sales,
-        roas: d.spend > 0 ? d.sales / d.spend : 0,
-        acos: d.sales > 0 ? d.spend / d.sales * 100 : Infinity,
-        orders: d.orders
-    })));
+    // Gesamt
+    const totalSpend = autoManual['Auto'].spend + autoManual['Manuell'].spend;
+    const totalSales = autoManual['Auto'].sales + autoManual['Manuell'].sales;
+    const totalOrders = autoManual['Auto'].orders + autoManual['Manuell'].orders;
+    const totalClicks = autoManual['Auto'].clicks + autoManual['Manuell'].clicks;
+    const totalCampaigns = autoManual['Auto'].campaigns.size + autoManual['Manuell'].campaigns.size;
+    const totalRoas = totalSpend > 0 ? (totalSales / totalSpend).toFixed(2) : '–';
+    const totalAcos = totalSales > 0 ? (totalSpend / totalSales * 100).toFixed(1) + '%' : '–';
+    html += '<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Gesamt SP</td><td class="num">' + totalCampaigns + '</td><td class="num">' + formatCurrency(totalSpend) + '</td><td class="num">' + formatCurrency(totalSales) + '</td><td class="num">' + totalRoas + '</td><td class="num">' + totalAcos + '</td><td class="num">' + totalOrders.toLocaleString('de-DE') + '</td><td class="num">' + totalClicks.toLocaleString('de-DE') + '</td></tr>';
+
+    body.innerHTML = html;
 }
 
 // --- Section C: Top Placements (Keywords/Targets by sales) ---
