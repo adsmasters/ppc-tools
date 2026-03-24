@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASIN Optimizer - AdsMasters PPC Tools</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-hover: #1c2129;
+            --border: #30363d; --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #f85149; --error-bg: #f8514911;
+            --warn: #d29922; --warn-bg: #d2992211;
+            --success: #3fb950; --success-bg: #3fb95011;
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff; --bg-secondary: #f6f8fa; --bg-hover: #eef1f5;
+            --border: #d0d7de; --text-primary: #1f2328; --text-secondary: #656d76;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #cf222e; --error-bg: #cf222e11;
+            --warn: #9a6700; --warn-bg: #9a670011;
+            --success: #1a7f37; --success-bg: #1a7f3711;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar-left { display: flex; align-items: center; gap: 32px; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-nav { display: flex; gap: 16px; }
+        .topbar-nav a { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+        .topbar-nav a:hover { color: var(--text-primary); }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title .step { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; font-family: Arial, sans-serif; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+        .field { margin-bottom: 14px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
+        .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; white-space: normal; max-width: 300px; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary)); }
+        .upload-zone .icon { font-size: 28px; margin-bottom: 6px; }
+        .upload-zone .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone .hint { font-size: 12px; color: var(--text-secondary); }
+        .upload-zone input { display: none; }
+        .file-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; margin-top: 12px; font-size: 13px; }
+        .file-info .name { flex: 1; font-weight: 600; }
+        .file-info .meta { color: var(--text-secondary); }
+        .file-info .remove { color: var(--error); cursor: pointer; font-weight: 700; }
+        .btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-sm { padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .btn-sm:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .stat-value { font-size: 22px; font-weight: 700; }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warn { color: var(--warn); }
+        .stat-value.danger { color: var(--error); }
+
+        .results-container { overflow-x: auto; max-height: 70vh; }
+        .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; z-index: 2; }
+        .results-table th:hover { color: var(--text-primary); }
+        .results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .results-table tr:hover td { background: var(--bg-hover); }
+        .results-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .results-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+        .table-controls .left { display: flex; gap: 10px; align-items: center; }
+        .table-controls .right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .search-input { width: 200px; padding: 6px 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 12px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+
+        .roas-good { color: var(--success); font-weight: 700; }
+        .roas-mid { color: var(--warn); font-weight: 700; }
+        .roas-bad { color: var(--error); font-weight: 700; }
+
+        .error-msg { color: var(--error); font-size: 13px; padding: 8px 12px; border: 1px solid var(--error); border-radius: 6px; margin-bottom: 6px; background: var(--error-bg); }
+        .success-msg { color: var(--success); font-size: 13px; padding: 8px 12px; border: 1px solid var(--success); border-radius: 6px; margin-bottom: 6px; background: var(--success-bg); animation: fadeOut 0.5s ease 3s forwards; }
+        .warn-msg { color: var(--warn); font-size: 13px; padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; margin-bottom: 6px; background: var(--warn-bg); }
+        @keyframes fadeOut { to { opacity: 0; } }
+        .msg-container { margin-bottom: 16px; }
+        .hidden { display: none; }
+
+        .live-counter { font-size: 13px; color: var(--accent); font-weight: 600; padding: 8px 0; }
+
+        .view-toggle { display: flex; gap: 0; margin-bottom: 16px; }
+        .view-toggle button { padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-secondary); }
+        .view-toggle button:first-child { border-radius: 6px 0 0 6px; }
+        .view-toggle button:last-child { border-radius: 0 6px 6px 0; }
+        .view-toggle button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 12px; }
+        .pagination button { padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .pagination button:hover { color: var(--text-primary); }
+        .pagination button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+        .pagination .page-info { font-size: 12px; color: var(--text-secondary); }
+
+        .excl-upload-zone { border: 1px dashed var(--border); border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; font-size: 12px; color: var(--text-secondary); margin-top: 12px; transition: border-color 0.2s; }
+        .excl-upload-zone:hover { border-color: var(--accent); }
+
+        @media (max-width: 900px) { .field-row { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) {
+            .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+            .main { padding: 16px; }
+            .field-row { grid-template-columns: 1fr; }
+            .btn-row { flex-direction: column; }
+            .btn-row .btn { width: 100%; text-align: center; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+<script>
+    if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('ppc_theme') || 'light');
+</script>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <nav class="topbar-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="campaign-creator.html">Kampagnen Ersteller</a>
+            <a href="keyword-harvesting.html">Keyword Harvesting</a>
+            <a href="wasted-spend.html">Wasted Ad Spend</a>
+            <a href="bid-optimizer.html">Bid Optimizer</a>
+            <a href="negative-manager.html">Negatives</a>
+            <a href="audit.html">Audit</a>
+            <a href="asin-optimizer.html">ASIN Optimizer</a>
+            <a href="help.html">Hilfe</a>
+        </nav>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9790;</button>
+        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <h1 class="page-title">ASIN Optimizer</h1>
+        <p class="page-sub">Identifiziere unterperformende beworbene Produkte (ASINs/SKUs) und pausiere sie per Bulk Sheet</p>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div class="card" id="stepUpload">
+        <div class="card-title"><span class="step">1</span> Bulk Sheet hochladen</div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="icon">&#128203;</div>
+            <div class="label">Bulk Sheet mit Performance-Daten</div>
+            <div class="hint">Excel/CSV mit Product Ad Zeilen inkl. Spend, Sales, Orders</div>
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.tsv">
+        </div>
+        <div id="fileInfoContainer"></div>
+        <div class="msg-container" id="uploadMsg"></div>
+    </div>
+
+    <!-- STEP 2: Criteria -->
+    <div class="card hidden" id="stepCriteria">
+        <div class="card-title"><span class="step">2</span> Kriterien definieren</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere Schwellenwerte, um unterperformende Produkte zu identifizieren.</p>
+        <div class="field-row">
+            <div class="field">
+                <label>Min. Spend <span class="tooltip-icon" data-tip="Nur Produkte mit mindestens diesem Spend werden betrachtet.">?</span></label>
+                <input type="number" id="minSpend" value="10" step="1" min="0">
+            </div>
+            <div class="field">
+                <label>Max. ROAS <span class="tooltip-icon" data-tip="Produkte mit ROAS unter diesem Wert gelten als unterperformend.">?</span></label>
+                <input type="number" id="maxRoas" value="1.0" step="0.1" min="0">
+            </div>
+            <div class="field">
+                <label>Min. Klicks <span class="tooltip-icon" data-tip="Nur Produkte mit mindestens dieser Anzahl Klicks werden betrachtet.">?</span></label>
+                <input type="number" id="minClicks" value="10" step="1" min="0">
+            </div>
+        </div>
+        <div class="live-counter" id="liveCounter">0 Produkte betroffen</div>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="analyzeResults()">Analysieren</button>
+        </div>
+    </div>
+
+    <!-- STEP 3: Results -->
+    <div class="card hidden" id="stepResults">
+        <div class="card-title"><span class="step">3</span> Ergebnisse</div>
+        <div class="stats-row" id="statsRow"></div>
+        <div class="view-toggle" id="viewToggle">
+            <button class="active" onclick="switchView('account')">Accountebene</button>
+            <button onclick="switchView('campaign')">Kampagnenebene</button>
+        </div>
+        <div class="table-controls">
+            <div class="left">
+                <input type="text" class="search-input" id="searchResults" placeholder="ASIN/SKU suchen..." oninput="renderCurrentView()">
+            </div>
+            <div class="right">
+                <span id="resultCount" style="font-size:12px;color:var(--text-secondary);"></span>
+            </div>
+        </div>
+        <div class="results-container" id="resultsContainer"></div>
+        <div class="pagination" id="resultsPagination"></div>
+    </div>
+
+    <!-- STEP 4: Exclusions -->
+    <div class="card hidden" id="stepExclusions">
+        <div class="card-title"><span class="step">4</span> Ausschl&uuml;sse</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">ASINs/SKUs oder Kampagnen von der Pausierung ausschliessen.</p>
+        <div class="field">
+            <label>ASINs/SKUs ausschliessen (eine pro Zeile)</label>
+            <textarea id="excludeAsins" rows="4" placeholder="B08XYZ1234&#10;SKU-ABC-123"></textarea>
+        </div>
+        <div class="excl-upload-zone" onclick="document.getElementById('exclFileInput').click()">
+            Oder CSV/Excel mit Ausschluss-Liste hochladen
+            <input type="file" id="exclFileInput" accept=".csv,.xlsx,.xls,.tsv" style="display:none">
+        </div>
+        <div id="exclFileInfo" style="margin-top:8px;"></div>
+        <div class="field" style="margin-top:16px;">
+            <label>Kampagnen ausschliessen (Name enth&auml;lt)</label>
+            <input type="text" id="excludeCampaigns" placeholder="z.B. Brand, Markenname">
+        </div>
+        <div class="btn-row">
+            <button class="btn btn-secondary" onclick="applyExclusions()">Ausschl&uuml;sse anwenden</button>
+        </div>
+    </div>
+
+    <!-- STEP 5: Export -->
+    <div class="card hidden" id="stepExport">
+        <div class="card-title"><span class="step">5</span> Export</div>
+        <div class="table-controls">
+            <div class="left">
+                <button class="btn-sm" onclick="selectAll(true)">Alle ausw&auml;hlen</button>
+                <button class="btn-sm" onclick="selectAll(false)">Alle abw&auml;hlen</button>
+                <button class="btn-sm" onclick="selectFiltered()">Gefilterte ausw&auml;hlen</button>
+                <input type="text" class="search-input" id="searchExport" placeholder="ASIN/SKU suchen..." oninput="renderExportTable()">
+            </div>
+            <div class="right">
+                <span id="exportCount" style="font-size:12px;color:var(--text-secondary);"></span>
+            </div>
+        </div>
+        <div class="results-container" id="exportContainer"></div>
+        <div class="pagination" id="exportPagination"></div>
+        <div class="btn-row">
+            <button class="btn btn-primary" onclick="generateBulkSheet()">Bulk Sheet erstellen</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Column aliases ──
+const COL = {
+    entity: ['entity', 'entit\u00e4t', 'entit\u00e9', 'entidad', 'entit\u00e0'],
+    product: ['product', 'produkt'],
+    campaign: ['kampagnenname (nur zu informationszwecken)', 'campaign name (informational only)', 'campaign name', 'kampagnenname'],
+    campaignId: ['campaign id', 'kampagnen-id'],
+    adgroup: ['name der anzeigengruppe (nur zu informationszwecken)', 'ad group name (informational only)', 'ad group name', 'name der anzeigengruppe'],
+    adgroupId: ['ad group id', 'anzeigengruppen-id'],
+    adId: ['ad id', 'anzeigen-id'],
+    sku: ['sku'],
+    asin: ['asin', 'asin (nur zu informationszwecken)', 'asin (informational only)'],
+    impressions: ['impressions', 'impressionen'],
+    clicks: ['clicks', 'klicks', 'clics'],
+    spend: ['spend', 'ausgaben', 'cost', 'd\u00e9penses'],
+    sales: ['7 day total sales', '7-day total sales', 'total sales', 'sales', 'umsatz', 'verk\u00e4ufe'],
+    orders: ['7 day total orders', '7-day total orders', 'total orders', 'orders', 'bestellungen'],
+};
+
+const PRODUCT_AD_ENTITY = ['produktanzeige', 'product ad', 'annuncio', 'anuncio', 'annonce'];
+
+let allProductAds = [];
+let filteredResults = [];
+let accountView = [];
+let campaignView = [];
+let currentView = 'account';
+let exportRows = []; // campaign-level rows for export, with .selected flag
+let excludedAsins = new Set();
+let excludedCampaignPatterns = [];
+let currentPage = 1;
+let exportPage = 1;
+const PAGE_SIZE = 50;
+
+// ── Theme ──
+function toggleTheme() {
+    const c = document.documentElement.getAttribute('data-theme');
+    const n = c === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', n);
+    localStorage.setItem('ppc_theme', n);
+    document.getElementById('themeToggle').innerHTML = n === 'light' ? '&#9790;' : '&#9788;';
+}
+(function(){
+    const t = localStorage.getItem('ppc_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', t);
+    document.getElementById('themeToggle').innerHTML = t === 'light' ? '&#9790;' : '&#9788;';
+})();
+
+// ── Helpers ──
+function findCol(headers, aliases) {
+    for (const alias of aliases) {
+        const idx = headers.findIndex(h => h.toLowerCase().trim() === alias.toLowerCase());
+        if (idx !== -1) return idx;
+    }
+    return -1;
+}
+
+function num(v) {
+    if (v == null || v === '') return 0;
+    if (typeof v === 'number') return v;
+    return parseFloat(String(v).replace(/[^0-9.\-]/g, '')) || 0;
+}
+
+function fmt(n, d) { return n.toLocaleString('de-DE', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+function fmtCur(n) { return fmt(n, 2) + '\u00a0\u20ac'; }
+function fmtPct(n) { return fmt(n, 1) + '%'; }
+
+function roasClass(roas) {
+    if (roas >= 2) return 'roas-good';
+    if (roas >= 1) return 'roas-mid';
+    return 'roas-bad';
+}
+
+// ── Upload ──
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const wb = XLSX.read(e.target.result, { type: 'array' });
+            parseWorkbook(wb, file.name, file.size);
+        } catch (err) {
+            showMsg('uploadMsg', 'Fehler beim Lesen der Datei: ' + err.message, 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function parseWorkbook(wb, fileName, fileSize) {
+    allProductAds = [];
+    let detectedType = null; // 'seller' or 'vendor'
+    let foundColumns = {};
+
+    for (const sheetName of wb.SheetNames) {
+        const ws = wb.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        if (data.length < 2) continue;
+
+        // Find header row (search first 5 rows)
+        let headerIdx = -1;
+        let headers = [];
+        for (let i = 0; i < Math.min(5, data.length); i++) {
+            const row = data[i].map(c => String(c).trim());
+            if (findCol(row, COL.entity) !== -1) {
+                headerIdx = i;
+                headers = row;
+                break;
+            }
+        }
+        if (headerIdx === -1) continue;
+
+        const ci = {
+            entity: findCol(headers, COL.entity),
+            product: findCol(headers, COL.product),
+            campaign: findCol(headers, COL.campaign),
+            campaignId: findCol(headers, COL.campaignId),
+            adgroup: findCol(headers, COL.adgroup),
+            adgroupId: findCol(headers, COL.adgroupId),
+            adId: findCol(headers, COL.adId),
+            sku: findCol(headers, COL.sku),
+            asin: findCol(headers, COL.asin),
+            impressions: findCol(headers, COL.impressions),
+            clicks: findCol(headers, COL.clicks),
+            spend: findCol(headers, COL.spend),
+            sales: findCol(headers, COL.sales),
+            orders: findCol(headers, COL.orders),
+        };
+
+        // Log detected columns
+        console.log('Sheet:', sheetName);
+        for (const [key, idx] of Object.entries(ci)) {
+            console.log('  ' + key + ':', idx !== -1 ? headers[idx] + ' (col ' + idx + ')' : 'NOT FOUND');
+            if (idx !== -1) foundColumns[key] = headers[idx];
+        }
+
+        if (ci.entity === -1) continue;
+
+        for (let r = headerIdx + 1; r < data.length; r++) {
+            const row = data[r];
+            const entity = String(row[ci.entity] || '').toLowerCase().trim();
+            const isProductAd = PRODUCT_AD_ENTITY.some(e => entity.includes(e));
+            if (!isProductAd) continue;
+
+            const sku = ci.sku !== -1 ? String(row[ci.sku] || '').trim() : '';
+            const asin = ci.asin !== -1 ? String(row[ci.asin] || '').trim() : '';
+
+            if (!sku && !asin) continue;
+
+            // Detect seller vs vendor
+            if (!detectedType) {
+                detectedType = sku ? 'seller' : 'vendor';
+            }
+
+            allProductAds.push({
+                campaignName: ci.campaign !== -1 ? String(row[ci.campaign] || '').trim() : '',
+                campaignId: ci.campaignId !== -1 ? String(row[ci.campaignId] || '').trim() : '',
+                adgroupName: ci.adgroup !== -1 ? String(row[ci.adgroup] || '').trim() : '',
+                adgroupId: ci.adgroupId !== -1 ? String(row[ci.adgroupId] || '').trim() : '',
+                adId: ci.adId !== -1 ? String(row[ci.adId] || '').trim() : '',
+                sku: sku,
+                asin: asin,
+                identifier: sku || asin,
+                spend: num(row[ci.spend]),
+                sales: num(row[ci.sales]),
+                orders: num(row[ci.orders]),
+                clicks: num(row[ci.clicks]),
+                impressions: num(row[ci.impressions]),
+            });
+        }
+    }
+
+    if (allProductAds.length === 0) {
+        showMsg('uploadMsg', 'Keine Product Ad Zeilen gefunden. Stelle sicher, dass das Bulk Sheet "Product Ad" Entity-Zeilen enth\u00e4lt.', 'error');
+        return;
+    }
+
+    // Show file info
+    const sizeMB = (fileSize / 1024 / 1024).toFixed(1);
+    const uniqueIds = new Set(allProductAds.map(r => r.identifier)).size;
+    const uniqueCampaigns = new Set(allProductAds.map(r => r.campaignName)).size;
+    document.getElementById('fileInfoContainer').innerHTML =
+        '<div class="file-info"><span class="name">' + fileName + '</span>' +
+        '<span class="meta">' + sizeMB + ' MB | ' + allProductAds.length + ' Product Ads | ' +
+        uniqueIds + ' ' + (detectedType === 'seller' ? 'SKUs' : 'ASINs') + ' | ' +
+        uniqueCampaigns + ' Kampagnen | Typ: ' + (detectedType === 'seller' ? 'Seller (SKU)' : 'Vendor (ASIN)') +
+        '</span><span class="remove" onclick="resetUpload()">&times;</span></div>';
+
+    showMsg('uploadMsg', 'Erfolgreich geladen: ' + allProductAds.length + ' Product Ad Zeilen gefunden.', 'success');
+    document.getElementById('stepCriteria').classList.remove('hidden');
+    updateLiveCounter();
+
+    // Bind live counter updates
+    ['minSpend', 'maxRoas', 'minClicks'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateLiveCounter);
+    });
+}
+
+function resetUpload() {
+    allProductAds = [];
+    document.getElementById('fileInfoContainer').innerHTML = '';
+    document.getElementById('uploadMsg').innerHTML = '';
+    fileInput.value = '';
+    document.getElementById('stepCriteria').classList.add('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+    document.getElementById('stepExclusions').classList.add('hidden');
+    document.getElementById('stepExport').classList.add('hidden');
+}
+
+function showMsg(containerId, msg, type) {
+    const cls = type === 'error' ? 'error-msg' : type === 'success' ? 'success-msg' : 'warn-msg';
+    document.getElementById(containerId).innerHTML = '<div class="' + cls + '">' + msg + '</div>';
+}
+
+// ── Live counter ──
+function updateLiveCounter() {
+    const minSpend = parseFloat(document.getElementById('minSpend').value) || 0;
+    const maxRoas = parseFloat(document.getElementById('maxRoas').value) || 0;
+    const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
+
+    const matching = allProductAds.filter(r => {
+        if (r.spend < minSpend) return false;
+        if (r.clicks < minClicks) return false;
+        const roas = r.spend > 0 ? r.sales / r.spend : 0;
+        return roas < maxRoas;
+    });
+    const uniqueIds = new Set(matching.map(r => r.identifier)).size;
+    document.getElementById('liveCounter').textContent = matching.length + ' Produkt-Kampagnen-Kombinationen betroffen (' + uniqueIds + ' einzigartige Produkte)';
+}
+
+// ── Analysis ──
+function analyzeResults() {
+    const minSpend = parseFloat(document.getElementById('minSpend').value) || 0;
+    const maxRoas = parseFloat(document.getElementById('maxRoas').value) || 0;
+    const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
+
+    // Campaign level: each product+campaign combo
+    campaignView = allProductAds.filter(r => {
+        if (r.spend < minSpend) return false;
+        if (r.clicks < minClicks) return false;
+        const roas = r.spend > 0 ? r.sales / r.spend : 0;
+        return roas < maxRoas;
+    }).map(r => {
+        const roas = r.spend > 0 ? r.sales / r.spend : 0;
+        const acos = r.sales > 0 ? (r.spend / r.sales) * 100 : (r.spend > 0 ? Infinity : 0);
+        return { ...r, roas, acos };
+    });
+
+    // Account level: aggregate by identifier
+    const agg = {};
+    campaignView.forEach(r => {
+        if (!agg[r.identifier]) {
+            agg[r.identifier] = { identifier: r.identifier, sku: r.sku, asin: r.asin, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+        }
+        const a = agg[r.identifier];
+        a.campaigns.add(r.campaignName);
+        a.spend += r.spend;
+        a.sales += r.sales;
+        a.orders += r.orders;
+        a.clicks += r.clicks;
+        a.impressions += r.impressions;
+    });
+    accountView = Object.values(agg).map(a => {
+        a.campaignCount = a.campaigns.size;
+        a.roas = a.spend > 0 ? a.sales / a.spend : 0;
+        a.acos = a.sales > 0 ? (a.spend / a.sales) * 100 : (a.spend > 0 ? Infinity : 0);
+        return a;
+    });
+
+    // Stats
+    const totalSpend = campaignView.reduce((s, r) => s + r.spend, 0);
+    const totalSales = campaignView.reduce((s, r) => s + r.sales, 0);
+    const totalOrders = campaignView.reduce((s, r) => s + r.orders, 0);
+    const overallRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
+
+    document.getElementById('statsRow').innerHTML =
+        '<div class="stat-card"><div class="stat-label">Betroffene Produkte</div><div class="stat-value">' + accountView.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Kampagnen-Kombinationen</div><div class="stat-value">' + campaignView.length + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Gesamt Spend</div><div class="stat-value danger">' + fmtCur(totalSpend) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Gesamt Sales</div><div class="stat-value">' + fmtCur(totalSales) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">ROAS (gesamt)</div><div class="stat-value ' + (overallRoas < 1 ? 'danger' : overallRoas < 2 ? 'warn' : 'success') + '">' + fmt(overallRoas, 2) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Orders</div><div class="stat-value">' + totalOrders + '</div></div>';
+
+    // Setup export rows
+    exportRows = campaignView.map(r => ({ ...r, selected: true }));
+
+    document.getElementById('stepResults').classList.remove('hidden');
+    document.getElementById('stepExclusions').classList.remove('hidden');
+    document.getElementById('stepExport').classList.remove('hidden');
+    currentPage = 1;
+    renderCurrentView();
+    renderExportTable();
+}
+
+// ── View switching ──
+function switchView(view) {
+    currentView = view;
+    currentPage = 1;
+    document.querySelectorAll('#viewToggle button').forEach(b => b.classList.remove('active'));
+    document.querySelector('#viewToggle button:' + (view === 'account' ? 'first-child' : 'last-child')).classList.add('active');
+    renderCurrentView();
+}
+
+function renderCurrentView() {
+    const search = (document.getElementById('searchResults').value || '').toLowerCase().trim();
+    if (currentView === 'account') {
+        renderAccountTable(search);
+    } else {
+        renderCampaignTable(search);
+    }
+}
+
+function renderAccountTable(search) {
+    let data = accountView;
+    if (search) data = data.filter(r => r.identifier.toLowerCase().includes(search));
+    document.getElementById('resultCount').textContent = data.length + ' Produkte';
+
+    const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = data.slice(start, start + PAGE_SIZE);
+
+    let html = '<table class="results-table"><thead><tr>' +
+        '<th>ASIN/SKU</th><th>Kampagnen</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Clicks</th>' +
+        '</tr></thead><tbody>';
+    pageData.forEach(r => {
+        const acosStr = r.acos === Infinity ? '---' : fmtPct(r.acos);
+        html += '<tr>' +
+            '<td>' + r.identifier + '</td>' +
+            '<td class="num">' + r.campaignCount + '</td>' +
+            '<td class="num">' + fmtCur(r.spend) + '</td>' +
+            '<td class="num">' + fmtCur(r.sales) + '</td>' +
+            '<td class="num ' + roasClass(r.roas) + '">' + fmt(r.roas, 2) + '</td>' +
+            '<td class="num">' + acosStr + '</td>' +
+            '<td class="num">' + r.orders + '</td>' +
+            '<td class="num">' + r.clicks + '</td>' +
+            '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('resultsContainer').innerHTML = html;
+    renderPagination('resultsPagination', totalPages, currentPage, p => { currentPage = p; renderCurrentView(); });
+}
+
+function renderCampaignTable(search) {
+    let data = campaignView;
+    if (search) data = data.filter(r => r.identifier.toLowerCase().includes(search) || r.campaignName.toLowerCase().includes(search));
+    document.getElementById('resultCount').textContent = data.length + ' Kombinationen';
+
+    const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = data.slice(start, start + PAGE_SIZE);
+
+    let html = '<table class="results-table"><thead><tr>' +
+        '<th>ASIN/SKU</th><th>Kampagne</th><th>Anzeigengruppe</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Clicks</th>' +
+        '</tr></thead><tbody>';
+    pageData.forEach(r => {
+        const acosStr = r.acos === Infinity ? '---' : fmtPct(r.acos);
+        html += '<tr>' +
+            '<td>' + r.identifier + '</td>' +
+            '<td>' + r.campaignName + '</td>' +
+            '<td>' + r.adgroupName + '</td>' +
+            '<td class="num">' + fmtCur(r.spend) + '</td>' +
+            '<td class="num">' + fmtCur(r.sales) + '</td>' +
+            '<td class="num ' + roasClass(r.roas) + '">' + fmt(r.roas, 2) + '</td>' +
+            '<td class="num">' + acosStr + '</td>' +
+            '<td class="num">' + r.orders + '</td>' +
+            '<td class="num">' + r.clicks + '</td>' +
+            '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('resultsContainer').innerHTML = html;
+    renderPagination('resultsPagination', totalPages, currentPage, p => { currentPage = p; renderCurrentView(); });
+}
+
+// ── Pagination ──
+function renderPagination(containerId, totalPages, page, onPage) {
+    if (totalPages <= 1) { document.getElementById(containerId).innerHTML = ''; return; }
+    let html = '<button ' + (page <= 1 ? 'disabled' : '') + ' onclick="arguments[0].stopPropagation()">&laquo;</button>';
+    const range = [];
+    for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) range.push(i);
+    if (range[0] > 1) html += '<button>1</button>';
+    if (range[0] > 2) html += '<span class="page-info">...</span>';
+    range.forEach(p => { html += '<button class="' + (p === page ? 'active' : '') + '">' + p + '</button>'; });
+    if (range[range.length - 1] < totalPages - 1) html += '<span class="page-info">...</span>';
+    if (range[range.length - 1] < totalPages) html += '<button>' + totalPages + '</button>';
+    html += '<button ' + (page >= totalPages ? 'disabled' : '') + '>&raquo;</button>';
+    const container = document.getElementById(containerId);
+    container.innerHTML = html;
+    container.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const txt = btn.textContent.trim();
+            if (txt === '\u00ab') onPage(Math.max(1, page - 1));
+            else if (txt === '\u00bb') onPage(Math.min(totalPages, page + 1));
+            else { const p = parseInt(txt); if (!isNaN(p)) onPage(p); }
+        });
+    });
+}
+
+// ── Exclusions ──
+document.getElementById('exclFileInput').addEventListener('change', function(e) {
+    if (!e.target.files.length) return;
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const wb = XLSX.read(ev.target.result, { type: 'array' });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+            const asins = [];
+            data.forEach(row => {
+                row.forEach(cell => {
+                    const v = String(cell).trim();
+                    if (v) asins.push(v);
+                });
+            });
+            const existing = document.getElementById('excludeAsins').value.trim();
+            document.getElementById('excludeAsins').value = (existing ? existing + '\n' : '') + asins.join('\n');
+            document.getElementById('exclFileInfo').innerHTML = '<span style="font-size:12px;color:var(--success);">' + asins.length + ' Eintr\u00e4ge geladen aus ' + file.name + '</span>';
+        } catch (err) {
+            document.getElementById('exclFileInfo').innerHTML = '<span style="font-size:12px;color:var(--error);">Fehler: ' + err.message + '</span>';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+});
+
+function applyExclusions() {
+    // Parse excluded ASINs/SKUs
+    const lines = document.getElementById('excludeAsins').value.split('\n').map(l => l.trim().toLowerCase()).filter(l => l);
+    excludedAsins = new Set(lines);
+
+    // Parse campaign exclusion patterns
+    const campFilter = document.getElementById('excludeCampaigns').value.trim();
+    excludedCampaignPatterns = campFilter ? campFilter.split(',').map(p => p.trim().toLowerCase()).filter(p => p) : [];
+
+    // Update export rows
+    exportRows.forEach(r => {
+        const idExcluded = excludedAsins.has(r.identifier.toLowerCase());
+        const campExcluded = excludedCampaignPatterns.some(p => r.campaignName.toLowerCase().includes(p));
+        if (idExcluded || campExcluded) {
+            r.selected = false;
+            r.excluded = true;
+        } else {
+            r.excluded = false;
+        }
+    });
+
+    exportPage = 1;
+    renderExportTable();
+}
+
+// ── Export table ──
+function renderExportTable() {
+    const search = (document.getElementById('searchExport').value || '').toLowerCase().trim();
+    let data = exportRows;
+    if (search) data = data.filter(r => r.identifier.toLowerCase().includes(search) || r.campaignName.toLowerCase().includes(search));
+
+    const selectedCount = exportRows.filter(r => r.selected).length;
+    document.getElementById('exportCount').textContent = selectedCount + ' von ' + exportRows.length + ' ausgew\u00e4hlt';
+
+    const totalPages = Math.max(1, Math.ceil(data.length / PAGE_SIZE));
+    if (exportPage > totalPages) exportPage = totalPages;
+    const start = (exportPage - 1) * PAGE_SIZE;
+    const pageData = data.slice(start, start + PAGE_SIZE);
+
+    let html = '<table class="results-table"><thead><tr>' +
+        '<th><input type="checkbox" onchange="togglePageCheckboxes(this.checked)"></th>' +
+        '<th>ASIN/SKU</th><th>Kampagne</th><th>Anzeigengruppe</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>Status</th>' +
+        '</tr></thead><tbody>';
+    pageData.forEach((r, i) => {
+        const globalIdx = exportRows.indexOf(r);
+        const statusLabel = r.excluded ? '<span style="color:var(--warn);font-size:11px;">Ausgeschlossen</span>' : '<span style="color:var(--text-secondary);font-size:11px;">Pausieren</span>';
+        html += '<tr>' +
+            '<td><input type="checkbox" ' + (r.selected ? 'checked' : '') + ' onchange="toggleExportRow(' + globalIdx + ', this.checked)"></td>' +
+            '<td>' + r.identifier + '</td>' +
+            '<td>' + r.campaignName + '</td>' +
+            '<td>' + r.adgroupName + '</td>' +
+            '<td class="num">' + fmtCur(r.spend) + '</td>' +
+            '<td class="num">' + fmtCur(r.sales) + '</td>' +
+            '<td class="num ' + roasClass(r.roas) + '">' + fmt(r.roas, 2) + '</td>' +
+            '<td>' + statusLabel + '</td>' +
+            '</tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('exportContainer').innerHTML = html;
+    renderPagination('exportPagination', totalPages, exportPage, p => { exportPage = p; renderExportTable(); });
+}
+
+function toggleExportRow(idx, checked) {
+    exportRows[idx].selected = checked;
+    renderExportTable();
+}
+
+function togglePageCheckboxes(checked) {
+    const search = (document.getElementById('searchExport').value || '').toLowerCase().trim();
+    let data = exportRows;
+    if (search) data = data.filter(r => r.identifier.toLowerCase().includes(search) || r.campaignName.toLowerCase().includes(search));
+    const start = (exportPage - 1) * PAGE_SIZE;
+    const pageData = data.slice(start, start + PAGE_SIZE);
+    pageData.forEach(r => { r.selected = checked; });
+    renderExportTable();
+}
+
+function selectAll(val) {
+    exportRows.forEach(r => { if (!r.excluded) r.selected = val; });
+    renderExportTable();
+}
+
+function selectFiltered() {
+    const search = (document.getElementById('searchExport').value || '').toLowerCase().trim();
+    exportRows.forEach(r => {
+        if (r.excluded) return;
+        if (search) {
+            r.selected = r.identifier.toLowerCase().includes(search) || r.campaignName.toLowerCase().includes(search);
+        } else {
+            r.selected = true;
+        }
+    });
+    renderExportTable();
+}
+
+// ── Bulk Sheet generation ──
+function generateBulkSheet() {
+    const selected = exportRows.filter(r => r.selected);
+    if (selected.length === 0) {
+        alert('Keine Zeilen ausgew\u00e4hlt.');
+        return;
+    }
+
+    // Build header row (indices matter!)
+    // 0: Product, 1: Entity, 2: Operation, 3: Campaign ID, 4: Ad Group ID,
+    // 5: (Portfolio ID), 6: Ad ID, 7: (Keyword ID), 8: (Product Targeting ID),
+    // 9: Campaign Name, 10: Ad Group Name, 11-15: various,
+    // 16: SKU, 17: ASIN, 18+: rest
+    const headers = [
+        'Product',           // 0
+        'Entity',            // 1
+        'Operation',         // 2
+        'Campaign ID',       // 3
+        'Ad Group ID',       // 4
+        'Portfolio ID',      // 5
+        'Ad ID',             // 6
+        'Keyword ID',        // 7
+        'Product Targeting ID', // 8
+        'Campaign Name (Informational only)', // 9
+        'Ad Group Name (Informational only)', // 10
+        'Campaign Start Date',  // 11
+        'Campaign End Date',    // 12
+        'Campaign Targeting Type', // 13
+        'Ad Group Default Bid', // 14
+        'State',             // 15
+        'SKU',               // 16
+        'ASIN',              // 17
+    ];
+
+    const rows = [headers];
+
+    selected.forEach(r => {
+        const row = new Array(18).fill('');
+        row[0] = 'Sponsored Products';
+        row[1] = 'Product Ad';
+        row[2] = 'Update';
+        row[3] = r.campaignId;
+        row[4] = r.adgroupId;
+        row[6] = r.adId;
+        row[9] = r.campaignName;
+        row[10] = r.adgroupName;
+        row[15] = 'Paused';
+        row[16] = r.sku || '';
+        row[17] = r.asin || '';
+        rows.push(row);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Sponsored Products Campaigns');
+    XLSX.writeFile(wb, 'ASIN_Optimizer_Bulk_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+}
+</script>
+</body>
+</html>
