@@ -96,7 +96,7 @@
         .results-table th.sorted-desc::after { content: ' \u25BC'; font-size: 9px; }
         .results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
         .results-table tr:hover td { background: var(--bg-hover); }
-        .results-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .results-table td.num, .results-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
         .chart-container { max-width: 700px; margin: 20px auto 0; }
 
@@ -777,7 +777,7 @@ function buildSectionC() {
     document.getElementById('sectionC').querySelector('.card-title').innerHTML = '<span class="section-label">E</span> SP ' + tableTitle + ' <span class="tooltip-icon" data-tip="' + escapeHtml(spTooltips[spMode]) + '">i</span>';
 
     const showCampaign = topView === 'campaign';
-    head.innerHTML = '<tr><th>#</th><th>' + colLabel + '</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th>Kampagnen</th>') + '<th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Clicks</th><th>CPC</th></tr>';
+    head.innerHTML = '<tr><th>#</th><th>' + colLabel + '</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th class="num">Kampagnen</th>') + '<th class="num">Spend</th><th class="num">Sales</th><th class="num">ROAS</th><th class="num">ACoS</th><th class="num">Orders</th><th class="num">Clicks</th><th class="num">CPC</th></tr>';
     body.innerHTML = displayData.map((d, idx) => {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
         const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
@@ -1013,7 +1013,7 @@ function buildSectionSB() {
     section.querySelector('.card-title').innerHTML = '<span class="section-label">F</span> SB ' + tableTitle + ' <span class="tooltip-icon" data-tip="Suchbegriffsdaten aus dem SB Suchbegriff-Bericht. Legacy SB Kampagnen (vor 2022) haben keine Suchbegriffsdaten – diese erscheinen nicht hier.">i</span>';
 
     const showCampaign = sbView === 'campaign';
-    head.innerHTML = '<tr><th>#</th><th>Suchbegriff</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th>Kampagnen</th>') + '<th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';
+    head.innerHTML = '<tr><th>#</th><th>Suchbegriff</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th class="num">Kampagnen</th>') + '<th class="num">Spend</th><th class="num">Sales</th><th class="num">ROAS</th><th class="num">ACoS</th><th class="num">Orders</th><th class="num">Klicks</th></tr>';
     body.innerHTML = displayData.map((d, idx) => {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
         const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
@@ -1060,7 +1060,7 @@ function buildSectionSD() {
 
     const head = document.getElementById('sdHead');
     const body = document.getElementById('sdBody');
-    head.innerHTML = '<tr><th>Kampagne</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th><th>Impressions</th></tr>';
+    head.innerHTML = '<tr><th>Kampagne</th><th class="num">Spend</th><th class="num">Sales</th><th class="num">ROAS</th><th class="num">ACoS</th><th class="num">Orders</th><th class="num">Klicks</th><th class="num">Impressions</th></tr>';
     body.innerHTML = sorted.map(d => {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
         const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
