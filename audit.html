@@ -149,15 +149,21 @@
     <!-- STEP 2: Audit Dashboard (hidden until upload) -->
     <div id="auditDashboard" class="hidden">
 
+        <!-- Gesamt-Performance -->
+        <div class="card" id="sectionTotal">
+            <div class="card-title"><span class="section-label">A</span> Gesamt-Performance</div>
+            <div class="stats-row" id="totalStats"></div>
+        </div>
+
         <!-- Section A: Übersicht nach Werbeformat -->
         <div class="card" id="sectionA">
-            <div class="card-title"><span class="section-label">A</span> Übersicht nach Werbeformat</div>
+            <div class="card-title"><span class="section-label">B</span> Übersicht nach Werbeformat</div>
             <div class="format-grid" id="formatGrid"></div>
         </div>
 
         <!-- Section B: SP Kampagnentyp-Analyse -->
         <div class="card hidden" id="sectionB">
-            <div class="card-title"><span class="section-label">B</span> SP Kampagnentyp-Analyse</div>
+            <div class="card-title"><span class="section-label">C</span> SP Kampagnentyp-Analyse</div>
             <div class="results-container">
                 <table class="results-table" id="campTypeTable">
                     <thead id="campTypeHead"></thead>
@@ -168,7 +174,7 @@
 
         <!-- Section C: Platzierungsanalyse -->
         <div class="card hidden" id="sectionD">
-            <div class="card-title"><span class="section-label">C</span> Platzierungsanalyse</div>
+            <div class="card-title"><span class="section-label">D</span> Platzierungsanalyse</div>
             <div class="results-container">
                 <table class="results-table" id="placementTable">
                     <thead id="placementHead"></thead>
@@ -179,7 +185,7 @@
 
         <!-- Section D: Top Placements (Keywords/Targets) -->
         <div class="card hidden" id="sectionC">
-            <div class="card-title"><span class="section-label">D</span> Top Placements (Keywords/Targets nach Sales)</div>
+            <div class="card-title"><span class="section-label">E</span> Top Placements (Keywords/Targets nach Sales)</div>
             <div style="display:flex;gap:8px;margin-bottom:14px;">
                 <button class="btn-sm" id="btnViewAccount" onclick="setTopView('account')" style="font-weight:700;background:var(--accent);color:#fff;border-color:var(--accent);">Accountebene</button>
                 <button class="btn-sm" id="btnViewCampaign" onclick="setTopView('campaign')">Kampagnenebene</button>
@@ -197,7 +203,7 @@
 
         <!-- Section E: SB Analyse -->
         <div class="card hidden" id="sectionSB">
-            <div class="card-title"><span class="section-label">E</span> Sponsored Brands – Top Suchbegriffe</div>
+            <div class="card-title"><span class="section-label">F</span> Sponsored Brands – Top Suchbegriffe</div>
             <div class="results-container">
                 <table class="results-table" id="sbTable">
                     <thead id="sbHead"></thead>
@@ -208,7 +214,7 @@
 
         <!-- Section F: SD Analyse -->
         <div class="card hidden" id="sectionSD">
-            <div class="card-title"><span class="section-label">F</span> Sponsored Display – Kampagnen-Performance</div>
+            <div class="card-title"><span class="section-label">G</span> Sponsored Display – Kampagnen-Performance</div>
             <div class="results-container">
                 <table class="results-table" id="sdTable">
                     <thead id="sdHead"></thead>
@@ -422,6 +428,7 @@ function clearUpload() {
 // --- Build Dashboard ---
 function buildDashboard() {
     document.getElementById('auditDashboard').classList.remove('hidden');
+    buildSectionTotal();
     buildSectionA();
     buildSectionB();
     buildSectionC();
@@ -430,13 +437,9 @@ function buildDashboard() {
     buildSectionSD();
 }
 
-// --- Section A: Übersicht nach Werbeformat ---
-function buildSectionA() {
-    const grid = document.getElementById('formatGrid');
-    grid.innerHTML = '';
-
+// --- Gesamt-Performance ---
+function getFormatData() {
     const formatMap = {};
-    // Nur Kampagnen-Entity Zeilen zählen um Doppelzählung zu vermeiden
     const campaignEntities = ['kampagne', 'campaign', 'campagne', 'campaña', 'campagna'];
     allRows.forEach(r => {
         if (!r.format) return;
@@ -448,6 +451,41 @@ function buildSectionA() {
         formatMap[r.format].clicks += r.clicks;
         formatMap[r.format].impressions += r.impressions;
     });
+    return formatMap;
+}
+
+function buildSectionTotal() {
+    const formatMap = getFormatData();
+    const total = { spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+    Object.values(formatMap).forEach(d => {
+        total.spend += d.spend; total.sales += d.sales; total.orders += d.orders;
+        total.clicks += d.clicks; total.impressions += d.impressions;
+    });
+
+    const roas = total.spend > 0 ? (total.sales / total.spend) : 0;
+    const acos = total.sales > 0 ? (total.spend / total.sales * 100) : 0;
+    const cpc = total.clicks > 0 ? total.spend / total.clicks : 0;
+
+    document.getElementById('totalStats').innerHTML =
+        '<div class="stat-card"><div class="stat-label">Gesamt Ad Spend</div><div class="stat-value">' + formatCurrency(total.spend) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Gesamt Sales</div><div class="stat-value">' + formatCurrency(total.sales) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + roas.toFixed(2) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">ACoS</div><div class="stat-value">' + acos.toFixed(1) + '%</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Orders</div><div class="stat-value">' + total.orders.toLocaleString('de-DE') + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Klicks</div><div class="stat-value">' + total.clicks.toLocaleString('de-DE') + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Ø CPC</div><div class="stat-value">' + formatCurrency(cpc) + '</div></div>';
+}
+
+// --- Section B: Übersicht nach Werbeformat ---
+function buildSectionA() {
+    const grid = document.getElementById('formatGrid');
+    grid.innerHTML = '';
+
+    const formatMap = getFormatData();
+
+    // Gesamtwerte für Prozentberechnung
+    const totalSpend = Object.values(formatMap).reduce((s, d) => s + d.spend, 0);
+    const totalSales = Object.values(formatMap).reduce((s, d) => s + d.sales, 0);
 
     const formatLabels = { SP: 'Sponsored Products', SB: 'Sponsored Brands', SD: 'Sponsored Display' };
     const badgeClasses = { SP: 'badge-sp', SB: 'badge-sb', SD: 'badge-sd' };
@@ -457,13 +495,15 @@ function buildSectionA() {
         const d = formatMap[fmt];
         const roas = d.spend > 0 ? (d.sales / d.spend) : 0;
         const acos = d.sales > 0 ? (d.spend / d.sales * 100) : 0;
+        const spendPct = totalSpend > 0 ? (d.spend / totalSpend * 100).toFixed(1) : '0';
+        const salesPct = totalSales > 0 ? (d.sales / totalSales * 100).toFixed(1) : '0';
 
         const card = document.createElement('div');
         card.className = 'format-card';
         card.innerHTML = '<div class="format-card-title"><span class="badge ' + badgeClasses[fmt] + '">' + fmt + '</span> ' + formatLabels[fmt] + '</div>' +
             '<div class="format-stats">' +
-            statHtml('Spend', formatCurrency(d.spend)) +
-            statHtml('Sales', formatCurrency(d.sales)) +
+            statHtml('Spend', formatCurrency(d.spend) + ' <span style="font-size:11px;color:var(--text-secondary)">(' + spendPct + '%)</span>') +
+            statHtml('Sales', formatCurrency(d.sales) + ' <span style="font-size:11px;color:var(--text-secondary)">(' + salesPct + '%)</span>') +
             statHtml('ROAS', roas.toFixed(2)) +
             statHtml('ACoS', acos.toFixed(1) + '%') +
             statHtml('Orders', d.orders.toLocaleString('de-DE')) +
