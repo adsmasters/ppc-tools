@@ -89,7 +89,8 @@
         /* Results table */
         .results-container { overflow-x: auto; max-height: 70vh; }
         .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; z-index: 2; }
+        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px 12px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; z-index: 2; }
+        .results-table th.num, .results-table td.num { min-width: 100px; }
         .results-table th:hover { color: var(--text-primary); }
         .results-table th.sorted-asc::after { content: ' \u25B2'; font-size: 9px; }
         .results-table th.sorted-desc::after { content: ' \u25BC'; font-size: 9px; }
@@ -596,7 +597,7 @@ function buildSectionB() {
     // Render table
     const head = document.getElementById('campTypeHead');
     const body = document.getElementById('campTypeBody');
-    head.innerHTML = '<tr><th>Typ</th><th>Kampagnen</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';
+    head.innerHTML = '<tr><th style="width:25%">Typ</th><th class="num">Kampagnen</th><th class="num">Spend</th><th class="num">Sales</th><th class="num">ROAS</th><th class="num">ACoS</th><th class="num">Orders</th><th class="num">Klicks</th></tr>';
 
     function typeRow(label, d, indent) {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
@@ -895,7 +896,7 @@ function buildSectionD() {
 
     const head = document.getElementById('placementHead');
     const body = document.getElementById('placementBody');
-    head.innerHTML = '<tr><th>Platzierung</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Clicks</th><th>CPC</th></tr>';
+    head.innerHTML = '<tr><th style="width:25%">Platzierung</th><th class="num">Spend</th><th class="num">Sales</th><th class="num">ROAS</th><th class="num">ACoS</th><th class="num">Clicks</th><th class="num">CPC</th></tr>';
     body.innerHTML = sorted.map(([p, d]) => {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '-';
         const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : (d.spend > 0 ? '---' : '-');
