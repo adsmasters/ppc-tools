@@ -194,6 +194,28 @@
                 <canvas id="cumulativeChart"></canvas>
             </div>
         </div>
+
+        <!-- Section E: SB Analyse -->
+        <div class="card hidden" id="sectionSB">
+            <div class="card-title"><span class="section-label">E</span> Sponsored Brands – Kampagnenanalyse</div>
+            <div class="results-container">
+                <table class="results-table" id="sbTable">
+                    <thead id="sbHead"></thead>
+                    <tbody id="sbBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section F: SD Analyse -->
+        <div class="card hidden" id="sectionSD">
+            <div class="card-title"><span class="section-label">F</span> Sponsored Display – Kampagnenanalyse</div>
+            <div class="results-container">
+                <table class="results-table" id="sdTable">
+                    <thead id="sdHead"></thead>
+                    <tbody id="sdBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -402,6 +424,8 @@ function buildDashboard() {
     buildSectionB();
     buildSectionC();
     buildSectionD();
+    buildSectionSB();
+    buildSectionSD();
 }
 
 // --- Section A: Übersicht nach Werbeformat ---
@@ -733,6 +757,108 @@ function buildSectionD() {
             '<td class="num">' + cpc + '</td>' +
             '</tr>';
     }).join('');
+}
+
+// --- Section E: Sponsored Brands Analyse ---
+function buildSectionSB() {
+    const section = document.getElementById('sectionSB');
+    const sbRows = allRows.filter(r => r.format === 'SB');
+    if (sbRows.length === 0) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+
+    const campaignEntities = ['kampagne', 'campaign'];
+    const kwPtEntities = ['keyword', 'targeting', 'mot-cl', 'palabra', 'parola', 'ciblage', 'segmentación'];
+
+    // Group by campaign (only campaign-entity rows for spend)
+    const campMap = {};
+    sbRows.forEach(r => {
+        if (!campaignEntities.some(e => r.entity.includes(e))) return;
+        if (!campMap[r.campaign]) campMap[r.campaign] = { campaign: r.campaign, spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0, keywords: 0 };
+        campMap[r.campaign].spend += r.spend;
+        campMap[r.campaign].sales += r.sales;
+        campMap[r.campaign].orders += r.orders;
+        campMap[r.campaign].clicks += r.clicks;
+        campMap[r.campaign].impressions += r.impressions;
+    });
+    // Count keywords per campaign
+    sbRows.forEach(r => {
+        if (!kwPtEntities.some(e => r.entity.includes(e)) || r.entity.includes('negat')) return;
+        if (campMap[r.campaign]) campMap[r.campaign].keywords++;
+    });
+
+    const sorted = Object.values(campMap).sort((a, b) => b.spend - a.spend);
+
+    const head = document.getElementById('sbHead');
+    const body = document.getElementById('sbBody');
+    head.innerHTML = '<tr><th>Kampagne</th><th>Keywords/Targets</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';
+    body.innerHTML = sorted.map(d => {
+        const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
+        const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
+        return '<tr>' +
+            '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(d.campaign) + '"><strong>' + escapeHtml(d.campaign) + '</strong></td>' +
+            '<td class="num">' + d.keywords + '</td>' +
+            '<td class="num">' + formatCurrency(d.spend) + '</td>' +
+            '<td class="num">' + formatCurrency(d.sales) + '</td>' +
+            '<td class="num">' + roas + '</td>' +
+            '<td class="num">' + acos + '</td>' +
+            '<td class="num">' + d.orders.toLocaleString('de-DE') + '</td>' +
+            '<td class="num">' + d.clicks.toLocaleString('de-DE') + '</td>' +
+            '</tr>';
+    }).join('');
+
+    // Gesamt
+    const total = sorted.reduce((a, d) => { a.spend += d.spend; a.sales += d.sales; a.orders += d.orders; a.clicks += d.clicks; a.keywords += d.keywords; return a; }, { spend: 0, sales: 0, orders: 0, clicks: 0, keywords: 0 });
+    const tRoas = total.spend > 0 ? (total.sales / total.spend).toFixed(2) : '–';
+    const tAcos = total.sales > 0 ? (total.spend / total.sales * 100).toFixed(1) + '%' : '–';
+    body.innerHTML += '<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Gesamt SB (' + sorted.length + ' Kampagnen)</td><td class="num">' + total.keywords + '</td><td class="num">' + formatCurrency(total.spend) + '</td><td class="num">' + formatCurrency(total.sales) + '</td><td class="num">' + tRoas + '</td><td class="num">' + tAcos + '</td><td class="num">' + total.orders.toLocaleString('de-DE') + '</td><td class="num">' + total.clicks.toLocaleString('de-DE') + '</td></tr>';
+}
+
+// --- Section F: Sponsored Display Analyse ---
+function buildSectionSD() {
+    const section = document.getElementById('sectionSD');
+    const sdRows = allRows.filter(r => r.format === 'SD');
+    if (sdRows.length === 0) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+
+    const campaignEntities = ['kampagne', 'campaign'];
+
+    // Group by campaign (only campaign-entity rows for spend)
+    const campMap = {};
+    sdRows.forEach(r => {
+        if (!campaignEntities.some(e => r.entity.includes(e))) return;
+        if (!campMap[r.campaign]) campMap[r.campaign] = { campaign: r.campaign, spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0, targetingType: r.targetingType };
+        campMap[r.campaign].spend += r.spend;
+        campMap[r.campaign].sales += r.sales;
+        campMap[r.campaign].orders += r.orders;
+        campMap[r.campaign].clicks += r.clicks;
+        campMap[r.campaign].impressions += r.impressions;
+    });
+
+    const sorted = Object.values(campMap).sort((a, b) => b.spend - a.spend);
+
+    const head = document.getElementById('sdHead');
+    const body = document.getElementById('sdBody');
+    head.innerHTML = '<tr><th>Kampagne</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th><th>Impressions</th></tr>';
+    body.innerHTML = sorted.map(d => {
+        const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
+        const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
+        return '<tr>' +
+            '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(d.campaign) + '"><strong>' + escapeHtml(d.campaign) + '</strong></td>' +
+            '<td class="num">' + formatCurrency(d.spend) + '</td>' +
+            '<td class="num">' + formatCurrency(d.sales) + '</td>' +
+            '<td class="num">' + roas + '</td>' +
+            '<td class="num">' + acos + '</td>' +
+            '<td class="num">' + d.orders.toLocaleString('de-DE') + '</td>' +
+            '<td class="num">' + d.clicks.toLocaleString('de-DE') + '</td>' +
+            '<td class="num">' + d.impressions.toLocaleString('de-DE') + '</td>' +
+            '</tr>';
+    }).join('');
+
+    // Gesamt
+    const total = sorted.reduce((a, d) => { a.spend += d.spend; a.sales += d.sales; a.orders += d.orders; a.clicks += d.clicks; a.impressions += d.impressions; return a; }, { spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 });
+    const tRoas = total.spend > 0 ? (total.sales / total.spend).toFixed(2) : '–';
+    const tAcos = total.sales > 0 ? (total.spend / total.sales * 100).toFixed(1) + '%' : '–';
+    body.innerHTML += '<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Gesamt SD (' + sorted.length + ' Kampagnen)</td><td class="num">' + formatCurrency(total.spend) + '</td><td class="num">' + formatCurrency(total.sales) + '</td><td class="num">' + tRoas + '</td><td class="num">' + tAcos + '</td><td class="num">' + total.orders.toLocaleString('de-DE') + '</td><td class="num">' + total.clicks.toLocaleString('de-DE') + '</td><td class="num">' + total.impressions.toLocaleString('de-DE') + '</td></tr>';
 }
 
 // --- Sortable tables (generic) ---
