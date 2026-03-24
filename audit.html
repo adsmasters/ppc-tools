@@ -189,6 +189,7 @@
             <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
                 <button class="btn-sm" id="btnViewAccount" onclick="setTopView('account')" style="font-weight:700;background:var(--accent);color:#fff;border-color:var(--accent);">Accountebene</button>
                 <button class="btn-sm" id="btnViewCampaign" onclick="setTopView('campaign')">Kampagnenebene</button>
+                <button class="btn-sm" id="btnSPWasted" onclick="toggleSPWasted()">Wasted Spend anzeigen</button>
                 <span style="margin-left:auto;display:flex;gap:12px;align-items:center;font-size:12px;color:var(--text-secondary);">
                     <label>Max. ROAS <input type="number" id="spWastedRoas" value="1.0" step="0.1" min="0" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionC()"></label>
                     <label>Min. Klicks <input type="number" id="spWastedClicks" value="10" step="1" min="0" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionC()"></label>
@@ -212,6 +213,7 @@
             <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
                 <button class="btn-sm" id="btnSBViewAccount" onclick="setSBView('account')" style="font-weight:700;background:var(--accent);color:#fff;border-color:var(--accent);">Accountebene</button>
                 <button class="btn-sm" id="btnSBViewCampaign" onclick="setSBView('campaign')">Kampagnenebene</button>
+                <button class="btn-sm" id="btnSBWasted" onclick="toggleSBWasted()">Wasted Spend anzeigen</button>
                 <span style="margin-left:auto;display:flex;gap:12px;align-items:center;font-size:12px;color:var(--text-secondary);">
                     <label>Max. ROAS <input type="number" id="sbWastedRoas" value="1.0" step="0.1" min="0" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionSB()"></label>
                     <label>Min. Klicks <input type="number" id="sbWastedClicks" value="10" step="1" min="0" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionSB()"></label>
@@ -633,10 +635,24 @@ function setTopView(view) {
     buildSectionC();
 }
 
+let spShowWasted = false;
+function toggleSPWasted() {
+    spShowWasted = !spShowWasted;
+    document.getElementById('btnSPWasted').style.background = spShowWasted ? 'var(--error)' : '';
+    document.getElementById('btnSPWasted').style.color = spShowWasted ? '#fff' : '';
+    document.getElementById('btnSPWasted').style.borderColor = spShowWasted ? 'var(--error)' : '';
+    document.getElementById('btnSPWasted').textContent = spShowWasted ? 'Top Placements anzeigen' : 'Wasted Spend anzeigen';
+    buildSectionC();
+}
+
 function buildSectionC() {
     const section = document.getElementById('sectionC');
+    // Keyword/PT Entity Zeilen + Search Term Zeilen (ohne Entity)
     const kwPtEntities = ['keyword', 'targeting', 'mot-cl', 'palabra', 'parola', 'ciblage', 'segmentación'];
-    const kwRows = allRows.filter(r => r.keyword && r.sales > 0 && kwPtEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat'));
+    const kwRows = allRows.filter(r => r.format === 'SP' && r.keyword && (
+        (kwPtEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat')) ||
+        (!r.entity && r.sheetName && r.sheetName.includes('Suchbegriff'))
+    ));
     if (kwRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
@@ -693,9 +709,14 @@ function buildSectionC() {
     const head = document.getElementById('topKeywordsHead');
     const body = document.getElementById('topKeywordsBody');
 
+    // Wasted Spend oder Top Placements anzeigen
+    const displayData = spShowWasted ? wasted.sort((a, b) => b.spend - a.spend).slice(0, 50) : top20;
+    const tableTitle = spShowWasted ? 'Wasted Suchbegriffe (' + wasted.length + ')' : 'Top 20 nach Sales';
+    document.getElementById('sectionC').querySelector('.card-title').innerHTML = '<span class="section-label">E</span> SP ' + tableTitle;
+
     const showCampaign = topView === 'campaign';
     head.innerHTML = '<tr><th>#</th><th>Keyword/Target</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th>Kampagnen</th>') + '<th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Clicks</th><th>CPC</th></tr>';
-    body.innerHTML = top20.map((d, idx) => {
+    body.innerHTML = displayData.map((d, idx) => {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
         const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
         const cpc = d.clicks > 0 ? formatCurrency(d.spend / d.clicks) : '–';
@@ -834,6 +855,16 @@ function buildSectionD() {
 
 // --- Section E: Sponsored Brands Suchbegriff-Analyse ---
 let sbView = 'account';
+let sbShowWasted = false;
+
+function toggleSBWasted() {
+    sbShowWasted = !sbShowWasted;
+    document.getElementById('btnSBWasted').style.background = sbShowWasted ? 'var(--error)' : '';
+    document.getElementById('btnSBWasted').style.color = sbShowWasted ? '#fff' : '';
+    document.getElementById('btnSBWasted').style.borderColor = sbShowWasted ? 'var(--error)' : '';
+    document.getElementById('btnSBWasted').textContent = sbShowWasted ? 'Top Suchbegriffe anzeigen' : 'Wasted Spend anzeigen';
+    buildSectionSB();
+}
 
 function setSBView(view) {
     sbView = view;
@@ -902,10 +933,14 @@ function buildSectionSB() {
         '<div class="stat-card"><div class="stat-label">Wasted Spend (ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
         '</div>';
 
-    // Top 20 table
+    // Wasted oder Top anzeigen
+    const displayData = sbShowWasted ? wasted.sort((a, b) => b.spend - a.spend).slice(0, 50) : top20;
+    const tableTitle = sbShowWasted ? 'Wasted Suchbegriffe (' + wasted.length + ')' : 'Top 20 nach Sales';
+    section.querySelector('.card-title').innerHTML = '<span class="section-label">F</span> SB ' + tableTitle;
+
     const showCampaign = sbView === 'campaign';
     head.innerHTML = '<tr><th>#</th><th>Suchbegriff</th>' + (showCampaign ? '<th>Kampagne</th>' : '<th>Kampagnen</th>') + '<th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';
-    body.innerHTML = top20.map((d, idx) => {
+    body.innerHTML = displayData.map((d, idx) => {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
         const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
         const roasColor = d.spend > 0 ? (d.sales/d.spend >= 2 ? 'var(--success)' : d.sales/d.spend < 1 ? 'var(--error)' : 'var(--text-primary)') : '';
