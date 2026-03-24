@@ -197,7 +197,7 @@
 
         <!-- Section E: SB Analyse -->
         <div class="card hidden" id="sectionSB">
-            <div class="card-title"><span class="section-label">E</span> Sponsored Brands – Kampagnenanalyse</div>
+            <div class="card-title"><span class="section-label">E</span> Sponsored Brands – Top Suchbegriffe</div>
             <div class="results-container">
                 <table class="results-table" id="sbTable">
                     <thead id="sbHead"></thead>
@@ -208,7 +208,7 @@
 
         <!-- Section F: SD Analyse -->
         <div class="card hidden" id="sectionSD">
-            <div class="card-title"><span class="section-label">F</span> Sponsored Display – Kampagnenanalyse</div>
+            <div class="card-title"><span class="section-label">F</span> Sponsored Display – Kampagnen-Performance</div>
             <div class="results-container">
                 <table class="results-table" id="sdTable">
                     <thead id="sdHead"></thead>
@@ -333,7 +333,9 @@ function handleUpload(file) {
             const entity = cm.entity !== -1 ? String(r[cm.entity] || '').toLowerCase().trim() : '';
             const campaign = cm.campaign !== -1 ? String(r[cm.campaign] || '').trim() : '';
             const adgroup = cm.adgroup !== -1 ? String(r[cm.adgroup] || '').trim() : '';
-            const keyword = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim() : '';
+            let keyword = cm.keyword !== -1 ? String(r[cm.keyword] || '').trim() : '';
+            const searchterm = cm.searchterm !== -1 ? String(r[cm.searchterm] || '').trim() : '';
+            if (!keyword && searchterm) keyword = searchterm; // Search Term als Keyword verwenden
             const ptExpr = cm.ptExpr !== -1 ? String(r[cm.ptExpr] || '').trim() : '';
             const matchtype = cm.matchtype !== -1 ? String(r[cm.matchtype] || '').trim() : '';
             const impressions = parseNum(r[cm.impressions]);
@@ -759,58 +761,68 @@ function buildSectionD() {
     }).join('');
 }
 
-// --- Section E: Sponsored Brands Analyse ---
+// --- Section E: Sponsored Brands Suchbegriff-Analyse ---
 function buildSectionSB() {
     const section = document.getElementById('sectionSB');
-    const sbRows = allRows.filter(r => r.format === 'SB');
-    if (sbRows.length === 0) { section.classList.add('hidden'); return; }
+    // SB Suchbegriffe kommen aus dem Search Term Sheet (kein Entity)
+    const sbSTrows = allRows.filter(r => r.format === 'SB' && !r.entity && r.keyword);
+    if (sbSTrows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
-    const campaignEntities = ['kampagne', 'campaign'];
-    const kwPtEntities = ['keyword', 'targeting', 'mot-cl', 'palabra', 'parola', 'ciblage', 'segmentación'];
-
-    // Group by campaign (only campaign-entity rows for spend)
-    const campMap = {};
-    sbRows.forEach(r => {
-        if (!campaignEntities.some(e => r.entity.includes(e))) return;
-        if (!campMap[r.campaign]) campMap[r.campaign] = { campaign: r.campaign, spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0, keywords: 0 };
-        campMap[r.campaign].spend += r.spend;
-        campMap[r.campaign].sales += r.sales;
-        campMap[r.campaign].orders += r.orders;
-        campMap[r.campaign].clicks += r.clicks;
-        campMap[r.campaign].impressions += r.impressions;
-    });
-    // Count keywords per campaign
-    sbRows.forEach(r => {
-        if (!kwPtEntities.some(e => r.entity.includes(e)) || r.entity.includes('negat')) return;
-        if (campMap[r.campaign]) campMap[r.campaign].keywords++;
+    // Top Suchbegriffe (Accountebene aggregiert)
+    const stMap = {};
+    sbSTrows.forEach(r => {
+        const searchterm = r.sheetName && r.sheetName.includes('Suchbegriff') ? r.keyword : '';
+        if (!searchterm) return;
+        const key = searchterm.toLowerCase().trim();
+        if (!stMap[key]) stMap[key] = { searchterm, campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
+        stMap[key].campaigns.add(r.campaign);
+        stMap[key].spend += r.spend;
+        stMap[key].sales += r.sales;
+        stMap[key].orders += r.orders;
+        stMap[key].clicks += r.clicks;
+        stMap[key].impressions += r.impressions;
     });
 
-    const sorted = Object.values(campMap).sort((a, b) => b.spend - a.spend);
+    const sorted = Object.values(stMap).sort((a, b) => b.sales - a.sales);
+    const top20 = sorted.slice(0, 20);
+    const wasted = sorted.filter(s => s.clicks >= 10 && (s.spend > 0 && s.sales / s.spend < 1));
 
     const head = document.getElementById('sbHead');
     const body = document.getElementById('sbBody');
-    head.innerHTML = '<tr><th>Kampagne</th><th>Keywords/Targets</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';
-    body.innerHTML = sorted.map(d => {
+
+    // Stats
+    const totalSpend = sorted.reduce((s, r) => s + r.spend, 0);
+    const totalSales = sorted.reduce((s, r) => s + r.sales, 0);
+    const wastedSpend = wasted.reduce((s, r) => s + r.spend, 0);
+
+    let html = '<div class="stats-row" style="margin-bottom:16px;">' +
+        '<div class="stat-card"><div class="stat-label">Suchbegriffe</div><div class="stat-value">' + sorted.length.toLocaleString('de-DE') + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Spend</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Sales</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + (totalSpend > 0 ? (totalSales/totalSpend).toFixed(2) : '–') + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Wasted Spend (ROAS<1)</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
+        '</div>';
+    section.querySelector('.results-container').insertAdjacentHTML('beforebegin', html);
+
+    // Top 20 table
+    head.innerHTML = '<tr><th>#</th><th>Suchbegriff</th><th>Kampagnen</th><th>Spend</th><th>Sales</th><th>ROAS</th><th>ACoS</th><th>Orders</th><th>Klicks</th></tr>';
+    body.innerHTML = top20.map((d, idx) => {
         const roas = d.spend > 0 ? (d.sales / d.spend).toFixed(2) : '–';
         const acos = d.sales > 0 ? (d.spend / d.sales * 100).toFixed(1) + '%' : '–';
+        const roasColor = d.spend > 0 ? (d.sales/d.spend >= 2 ? 'var(--success)' : d.sales/d.spend < 1 ? 'var(--error)' : 'var(--text-primary)') : '';
         return '<tr>' +
-            '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(d.campaign) + '"><strong>' + escapeHtml(d.campaign) + '</strong></td>' +
-            '<td class="num">' + d.keywords + '</td>' +
+            '<td>' + (idx + 1) + '</td>' +
+            '<td><strong>' + escapeHtml(d.searchterm) + '</strong></td>' +
+            '<td class="num">' + d.campaigns.size + '</td>' +
             '<td class="num">' + formatCurrency(d.spend) + '</td>' +
             '<td class="num">' + formatCurrency(d.sales) + '</td>' +
-            '<td class="num">' + roas + '</td>' +
+            '<td class="num" style="color:' + roasColor + '">' + roas + '</td>' +
             '<td class="num">' + acos + '</td>' +
             '<td class="num">' + d.orders.toLocaleString('de-DE') + '</td>' +
             '<td class="num">' + d.clicks.toLocaleString('de-DE') + '</td>' +
             '</tr>';
     }).join('');
-
-    // Gesamt
-    const total = sorted.reduce((a, d) => { a.spend += d.spend; a.sales += d.sales; a.orders += d.orders; a.clicks += d.clicks; a.keywords += d.keywords; return a; }, { spend: 0, sales: 0, orders: 0, clicks: 0, keywords: 0 });
-    const tRoas = total.spend > 0 ? (total.sales / total.spend).toFixed(2) : '–';
-    const tAcos = total.sales > 0 ? (total.spend / total.sales * 100).toFixed(1) + '%' : '–';
-    body.innerHTML += '<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Gesamt SB (' + sorted.length + ' Kampagnen)</td><td class="num">' + total.keywords + '</td><td class="num">' + formatCurrency(total.spend) + '</td><td class="num">' + formatCurrency(total.sales) + '</td><td class="num">' + tRoas + '</td><td class="num">' + tAcos + '</td><td class="num">' + total.orders.toLocaleString('de-DE') + '</td><td class="num">' + total.clicks.toLocaleString('de-DE') + '</td></tr>';
 }
 
 // --- Section F: Sponsored Display Analyse ---
