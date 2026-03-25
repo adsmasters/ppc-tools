@@ -100,36 +100,57 @@
     <div class="toc">
         <div class="toc-title">Inhaltsverzeichnis</div>
         <div class="toc-group">
-            <div class="toc-group-title">1. Kampagnen Ersteller</div>
+            <div class="toc-group-title">1. Dashboard</div>
+            <a href="#dashboard-overview">Übersicht</a>
+        </div>
+        <div class="toc-group">
+            <div class="toc-group-title">2. Kampagnen Ersteller</div>
             <a href="#cc-overview">Übersicht & Workflow</a>
             <a href="#cc-products">Beworbene Produkte (Vendor / Seller)</a>
+            <a href="#cc-edit">Produkte bearbeiten</a>
             <a href="#cc-keywords">Keywords & Targeting</a>
             <a href="#cc-settings">Kampagnen-Einstellungen</a>
             <a href="#cc-templates">Kampagnen-Vorlagen</a>
             <a href="#cc-tips">Tipps</a>
         </div>
         <div class="toc-group">
-            <div class="toc-group-title">2. Keyword Harvesting</div>
+            <div class="toc-group-title">3. Keyword Harvesting</div>
             <a href="#kh-overview">Übersicht</a>
             <a href="#kh-upload">Bulk Sheet hochladen</a>
             <a href="#kh-filter">Filter & Kriterien</a>
             <a href="#kh-export">Harvest Bulk Sheet erstellen</a>
         </div>
         <div class="toc-group">
-            <div class="toc-group-title">3. Wasted Ad Spend</div>
+            <div class="toc-group-title">4. Wasted Ad Spend</div>
             <a href="#ws-overview">Übersicht</a>
             <a href="#ws-filter">Filter definieren</a>
             <a href="#ws-results">Ergebnisse & Negatives Bulk Sheet</a>
         </div>
         <div class="toc-group">
-            <div class="toc-group-title">4. Bid Optimizer</div>
+            <div class="toc-group-title">5. Bid Optimizer</div>
             <a href="#bo-overview">Übersicht</a>
             <a href="#bo-corridors">ROAS-Korridore</a>
             <a href="#bo-exclusions">Ausschlüsse</a>
             <a href="#bo-export">Optimiertes Bulk Sheet</a>
         </div>
         <div class="toc-group">
-            <div class="toc-group-title">5. Audit</div>
+            <div class="toc-group-title">6. Negatives (Negative Keyword Manager)</div>
+            <a href="#neg-overview">Übersicht</a>
+            <a href="#neg-keywords">Keywords & ASINs</a>
+            <a href="#neg-settings">Einstellungen</a>
+            <a href="#neg-export">Export</a>
+        </div>
+        <div class="toc-group">
+            <div class="toc-group-title">7. ASIN Optimizer</div>
+            <a href="#asin-overview">Übersicht</a>
+            <a href="#asin-upload">Bulk Sheet hochladen</a>
+            <a href="#asin-criteria">Kriterien</a>
+            <a href="#asin-views">Zwei Ansichten</a>
+            <a href="#asin-exclusions">Ausschlüsse</a>
+            <a href="#asin-export">Export</a>
+        </div>
+        <div class="toc-group">
+            <div class="toc-group-title">8. Audit (PPC Audit)</div>
             <a href="#audit-overview">Übersicht</a>
             <a href="#audit-upload">Bulk Sheet hochladen</a>
             <a href="#audit-total">Gesamt-Performance</a>
@@ -142,23 +163,31 @@
             <a href="#audit-wasted">Wasted Spend Filter</a>
         </div>
         <div class="toc-group">
-            <div class="toc-group-title">6. ASIN Optimizer</div>
-            <a href="#asin-overview">Übersicht</a>
-            <a href="#asin-upload">Bulk Sheet hochladen</a>
-            <a href="#asin-criteria">Kriterien</a>
-            <a href="#asin-views">Zwei Ansichten</a>
-            <a href="#asin-exclusions">Ausschlüsse</a>
-            <a href="#asin-export">Export</a>
-        </div>
-        <div class="toc-group">
             <div class="toc-group-title">Allgemein</div>
             <a href="#general-bulksheet">Bulk Sheet Format</a>
             <a href="#general-upload">Datei hochladen</a>
         </div>
     </div>
 
+    <!-- ==================== DASHBOARD ==================== -->
+    <h2 class="tool-header" id="dashboard">1. Dashboard</h2>
+
+    <div class="section" id="dashboard-overview">
+        <h3>Übersicht</h3>
+        <p>Das Dashboard ist die Startseite der PPC Tools. Es zeigt alle verfügbaren Tools auf einen Blick mit kurzer Beschreibung und direktem Link. Von hier aus können alle Tools gestartet werden:</p>
+        <ul>
+            <li><strong>Campaign Creator:</strong> Kampagnen-Bulk-Sheets erstellen</li>
+            <li><strong>Keyword Harvesting:</strong> Profitable Suchbegriffe aus Auto-Kampagnen finden</li>
+            <li><strong>Wasted Ad Spend:</strong> Geldverschwender identifizieren und negieren</li>
+            <li><strong>Bid Optimizer:</strong> Gebote basierend auf ROAS-Korridoren optimieren</li>
+            <li><strong>Negative Manager:</strong> Strategische Negatives in Kampagnen einfügen</li>
+            <li><strong>PPC Audit:</strong> Umfassende PPC-Analyse über SP, SB und SD</li>
+            <li><strong>ASIN Optimizer:</strong> Unterperformende Produkte in Kampagnen pausieren</li>
+        </ul>
+    </div>
+
     <!-- ==================== KAMPAGNEN ERSTELLER ==================== -->
-    <h2 class="tool-header" id="cc">1. Kampagnen Ersteller</h2>
+    <h2 class="tool-header" id="cc">2. Kampagnen Ersteller</h2>
 
     <div class="section" id="cc-overview">
         <h3>Übersicht & Workflow</h3>
@@ -180,10 +209,13 @@
             <li><strong>Seller (SKU):</strong> Produkte werden über SKUs identifiziert.</li>
         </ul>
         <p>Jede Produktgruppe erhält eigene Kampagnen. Der Produktname wird für die Kampagnenbenennung verwendet.</p>
+    </div>
+
+    <div class="section" id="cc-edit">
         <h3>Produkte nachträglich bearbeiten</h3>
         <p>Bereits hinzugefügte Produkte können jederzeit bearbeitet werden. In der Produktliste unterhalb des Formulars gibt es zwei Buttons pro Produkt:</p>
         <ul>
-            <li><strong>Stift (✏):</strong> Lädt alle Formulardaten des Produkts zurück – Produktname, SKUs/ASINs, Keywords, Gebote und Einstellungen. Das Produkt wird aus der Liste entfernt und kann nach der Korrektur erneut hinzugefügt werden.</li>
+            <li><strong>Stift-Icon:</strong> Lädt alle Formulardaten des Produkts zurück -- Produktname, SKUs/ASINs, Keywords, Gebote und Einstellungen. Das Produkt wird aus der Liste entfernt und kann nach der Korrektur erneut hinzugefügt werden.</li>
             <li><strong>X:</strong> Entfernt das Produkt endgültig aus der Liste.</li>
         </ul>
         <p>So können z.B. falsch eingetragene SKUs oder ASINs korrigiert werden, ohne das gesamte Bulk Sheet neu erstellen zu müssen.</p>
@@ -237,7 +269,7 @@
     </div>
 
     <!-- ==================== KEYWORD HARVESTING ==================== -->
-    <h2 class="tool-header" id="kh">2. Keyword Harvesting</h2>
+    <h2 class="tool-header" id="kh">3. Keyword Harvesting</h2>
 
     <div class="section" id="kh-overview">
         <h3>Übersicht</h3>
@@ -282,7 +314,7 @@
     </div>
 
     <!-- ==================== WASTED AD SPEND ==================== -->
-    <h2 class="tool-header" id="ws">3. Wasted Ad Spend</h2>
+    <h2 class="tool-header" id="ws">4. Wasted Ad Spend</h2>
 
     <div class="section" id="ws-overview">
         <h3>Übersicht</h3>
@@ -305,17 +337,18 @@
         <ul>
             <li><strong>Aggregierte Ansicht:</strong> Suchbegriffe zusammengefasst über alle Kampagnen</li>
             <li><strong>Pro Kampagne:</strong> Detailansicht mit Kampagnen- und Anzeigengruppen-Zuordnung</li>
-            <li><strong>ASIN-Erkennung:</strong> ASIN-Suchbegriffe werden automatisch als Negative Product Targeting exportiert</li>
+            <li><strong>ASIN als Negative Product Targeting:</strong> ASIN-Suchbegriffe (B0...) werden automatisch als Negative Product Targeting exportiert, nicht als Keyword</li>
+            <li><strong>Deduplizierung:</strong> Suchbegriffe die in mehreren Anzeigengruppen derselben Kampagne vorkommen, werden im Export automatisch dedupliziert -- pro Kampagne wird nur ein negativer Eintrag erstellt</li>
             <li><strong>Bereits negiert:</strong> Suchbegriffe die schon als Negative existieren werden markiert</li>
         </ul>
         <div class="card">
             <div class="card-label">Negatives Bulk Sheet</div>
-            <p>Das exportierte Bulk Sheet enthält Campaign ID, Ad Group ID, Keyword Text und Match Type (negativeExact). Kann direkt bei Amazon hochgeladen werden.</p>
+            <p>Das exportierte Bulk Sheet enthält Campaign ID, Ad Group ID, Keyword Text und Match Type (negativeExact). ASIN-Suchbegriffe werden als Negative Product Targeting Zeilen exportiert. Kann direkt bei Amazon hochgeladen werden.</p>
         </div>
     </div>
 
     <!-- ==================== BID OPTIMIZER ==================== -->
-    <h2 class="tool-header" id="bo">4. Bid Optimizer</h2>
+    <h2 class="tool-header" id="bo">5. Bid Optimizer</h2>
 
     <div class="section" id="bo-overview">
         <h3>Übersicht</h3>
@@ -364,8 +397,83 @@
         <p>Die Ergebnistabelle zeigt standardmäßig nur Items mit Änderungen. Über das Dropdown kann auf "Alle anzeigen" gewechselt werden.</p>
     </div>
 
+    <!-- ==================== NEGATIVES ==================== -->
+    <h2 class="tool-header" id="neg">6. Negatives (Negative Keyword Manager)</h2>
+
+    <div class="section" id="neg-overview">
+        <h3>Übersicht</h3>
+        <p>Der Negative Manager ermöglicht das strategische Einfügen von negativen Keywords und negativen Product Targeting ASINs in bestehende Kampagnen. Im Gegensatz zum Wasted Ad Spend Tool werden hier keine Suchbegriffe analysiert, sondern manuell definierte Negatives in Kampagnen eingefügt.</p>
+    </div>
+
+    <div class="section" id="neg-keywords">
+        <h3>Keywords & ASINs</h3>
+        <p>Negative Keywords und ASINs können für Auto- und manuelle Kampagnen getrennt definiert werden:</p>
+        <ul>
+            <li><strong>Negative Keywords (Auto):</strong> Werden als Negatives in alle erkannten Auto-Kampagnen eingefügt</li>
+            <li><strong>Negative Keywords (Manuell):</strong> Werden nur in manuelle Kampagnen eingefügt, deren Name einen der angegebenen Begriffe enthält (Kampagnenname-Filter)</li>
+            <li><strong>Negative ASINs (Auto):</strong> Werden als Negative Product Targeting in alle Auto-Kampagnen eingefügt</li>
+            <li><strong>Negative ASINs (Manuell):</strong> Werden nur in manuelle Kampagnen eingefügt, deren Name einen der angegebenen Begriffe enthält</li>
+        </ul>
+    </div>
+
+    <div class="section" id="neg-settings">
+        <h3>Einstellungen</h3>
+        <ul>
+            <li><strong>Match Type:</strong> negativeExact, negativePhrase oder Beide (je eine Zeile pro Match Type)</li>
+            <li><strong>Ebene:</strong> Kampagnen-Ebene (Campaign negative keyword) oder Anzeigengruppen-Ebene (Negative keyword mit Ad Group)</li>
+            <li><strong>Manuell auch in Auto:</strong> Wenn aktiviert, werden die manuellen Keywords zusätzlich auch in alle Auto-Kampagnen eingefügt</li>
+        </ul>
+    </div>
+
+    <div class="section" id="neg-export">
+        <h3>Export</h3>
+        <p>Nach dem Generieren wird eine Vorschau aller Negative-Einträge angezeigt. Das exportierte Bulk Sheet enthält Campaign ID, Ad Group ID (bei Anzeigengruppen-Ebene), Keyword Text, Match Type und Entity. Kann direkt bei Amazon hochgeladen werden.</p>
+    </div>
+
+    <!-- ==================== ASIN OPTIMIZER ==================== -->
+    <h2 class="tool-header" id="asin">7. ASIN Optimizer</h2>
+
+    <div class="section" id="asin-overview">
+        <h3>Übersicht</h3>
+        <p>Identifiziert unterperformende beworbene Produkte (ASINs/SKUs) innerhalb von Kampagnen und erstellt ein Bulk Sheet um sie zu deaktivieren. Produkte werden nur in den Kampagnen deaktiviert wo sie nicht performen -- nicht im gesamten Account.</p>
+    </div>
+
+    <div class="section" id="asin-upload">
+        <h3>Bulk Sheet hochladen</h3>
+        <p>Benötigt ein Bulk Sheet mit Performance-Daten. Das Tool liest Product Ad Zeilen und deren Spend/Sales/ROAS.</p>
+    </div>
+
+    <div class="section" id="asin-criteria">
+        <h3>Kriterien</h3>
+        <p>Drei Schwellenwerte bestimmen, ob ein Produkt als unterperformend gilt:</p>
+        <ul>
+            <li><strong>Min. Spend:</strong> Nur Produkte mit mindestens diesem Betrag an Ausgaben werden berücksichtigt.</li>
+            <li><strong>Max. ROAS:</strong> Produkte mit ROAS unter diesem Wert gelten als unterperformend.</li>
+            <li><strong>Min. Klicks:</strong> Nur Produkte mit mindestens dieser Anzahl Klicks werden berücksichtigt.</li>
+        </ul>
+        <p>Alle drei Kriterien müssen erfüllt sein, damit ein Produkt als unterperformend gilt.</p>
+    </div>
+
+    <div class="section" id="asin-views">
+        <h3>Zwei Ansichten</h3>
+        <ul>
+            <li><strong>Accountebene:</strong> ASIN/SKU über alle Kampagnen aggregiert -- zeigt das Gesamtbild der Performance eines Produkts.</li>
+            <li><strong>Kampagnenebene:</strong> ASIN/SKU pro Kampagne einzeln -- hier wird sichtbar in welcher konkreten Kampagne ein Produkt nicht performt. Die Deaktivierung erfolgt auf dieser Ebene.</li>
+        </ul>
+    </div>
+
+    <div class="section" id="asin-exclusions">
+        <h3>Ausschlüsse</h3>
+        <p>ASINs/SKUs können manuell oder per CSV-Upload von der Deaktivierung ausgeschlossen werden. Zusätzlich können Kampagnen über einen Namensfilter übersprungen werden.</p>
+    </div>
+
+    <div class="section" id="asin-export">
+        <h3>Export</h3>
+        <p>Setzt die ausgewählten Product Ads auf "Paused". Benötigt die Ad ID aus dem Bulk Sheet. Funktioniert für Seller (SKU) und Vendor (ASIN).</p>
+    </div>
+
     <!-- ==================== AUDIT ==================== -->
-    <h2 class="tool-header" id="audit">5. Audit</h2>
+    <h2 class="tool-header" id="audit">8. Audit (PPC Audit)</h2>
 
     <div class="section" id="audit-overview">
         <h3>Übersicht</h3>
@@ -470,48 +578,6 @@
             <li><strong>Min. Klicks:</strong> Nur Suchbegriffe mit mindestens dieser Anzahl Klicks werden berücksichtigt. Filtert Suchbegriffe mit zu wenig Daten heraus. Standard: 10 Klicks.</li>
         </ul>
         <p>Beide Filter können direkt in der Toolbar angepasst werden. Die Tabelle und der Wasted Spend Wert aktualisieren sich sofort bei Änderung.</p>
-    </div>
-
-    <!-- ==================== ASIN OPTIMIZER ==================== -->
-    <h2 class="tool-header" id="asin">6. ASIN Optimizer</h2>
-
-    <div class="section" id="asin-overview">
-        <h3>Übersicht</h3>
-        <p>Identifiziert unterperformende beworbene Produkte (ASINs/SKUs) innerhalb von Kampagnen und erstellt ein Bulk Sheet um sie zu deaktivieren. Produkte werden nur in den Kampagnen deaktiviert wo sie nicht performen -- nicht im gesamten Account.</p>
-    </div>
-
-    <div class="section" id="asin-upload">
-        <h3>Bulk Sheet hochladen</h3>
-        <p>Benötigt ein Bulk Sheet mit Performance-Daten. Das Tool liest Product Ad Zeilen und deren Spend/Sales/ROAS.</p>
-    </div>
-
-    <div class="section" id="asin-criteria">
-        <h3>Kriterien</h3>
-        <p>Drei Schwellenwerte bestimmen, ob ein Produkt als unterperformend gilt:</p>
-        <ul>
-            <li><strong>Min. Spend:</strong> Nur Produkte mit mindestens diesem Betrag an Ausgaben werden berücksichtigt.</li>
-            <li><strong>Max. ROAS:</strong> Produkte mit ROAS unter diesem Wert gelten als unterperformend.</li>
-            <li><strong>Min. Klicks:</strong> Nur Produkte mit mindestens dieser Anzahl Klicks werden berücksichtigt.</li>
-        </ul>
-        <p>Alle drei Kriterien müssen erfüllt sein, damit ein Produkt als unterperformend gilt.</p>
-    </div>
-
-    <div class="section" id="asin-views">
-        <h3>Zwei Ansichten</h3>
-        <ul>
-            <li><strong>Accountebene:</strong> ASIN/SKU über alle Kampagnen aggregiert -- zeigt das Gesamtbild der Performance eines Produkts.</li>
-            <li><strong>Kampagnenebene:</strong> ASIN/SKU pro Kampagne einzeln -- hier wird sichtbar in welcher konkreten Kampagne ein Produkt nicht performt. Die Deaktivierung erfolgt auf dieser Ebene.</li>
-        </ul>
-    </div>
-
-    <div class="section" id="asin-exclusions">
-        <h3>Ausschlüsse</h3>
-        <p>ASINs/SKUs können manuell oder per CSV-Upload von der Deaktivierung ausgeschlossen werden. Zusätzlich können Kampagnen über einen Namensfilter übersprungen werden.</p>
-    </div>
-
-    <div class="section" id="asin-export">
-        <h3>Export</h3>
-        <p>Setzt die ausgewählten Product Ads auf "Paused". Benötigt die Ad ID aus dem Bulk Sheet. Funktioniert für Seller (SKU) und Vendor (ASIN).</p>
     </div>
 
     <!-- ==================== ALLGEMEIN ==================== -->
