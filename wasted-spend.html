@@ -1066,57 +1066,47 @@ function exportBulkSheet() {
 
     const entityType = level === 'campaign' ? t.negCampKeyword : t.negKeyword;
 
+    // Deduplicate: track unique combinations to avoid duplicate negatives
+    const exportSeen = new Set();
+
+    function addKeywordRow(entry, mt) {
+        // Deduplicate key depends on level
+        const dedupeKey = level === 'campaign'
+            ? (entry.campaignId || entry.campaign) + '|' + entry.searchterm.toLowerCase() + '|' + mt
+            : (entry.campaignId || entry.campaign) + '|' + (entry.adgroupId || entry.adgroup) + '|' + entry.searchterm.toLowerCase() + '|' + mt;
+        if (exportSeen.has(dedupeKey)) return;
+        exportSeen.add(dedupeKey);
+
+        const r = emptyRow();
+        r[hProduct] = t.product;
+        r[hEntity] = entityType;
+        r[hOp] = t.create;
+        if (entry.campaignId) r[hCampId] = entry.campaignId;
+        r[hCampName] = entry.campaign;
+        if (level === 'adgroup') {
+            if (entry.adgroupId) r[hAdGroupId] = entry.adgroupId;
+            r[hAdGroupName] = entry.adgroup;
+        }
+        r[hState] = t.enabled;
+        r[hKwText] = entry.searchterm;
+        r[hMatchType] = mt;
+        rows.push(r);
+    }
+
     if (currentView === 'aggregated') {
-        // For aggregated: add negative to each campaign the search term appeared in
         aggregatedData.forEach(agg => {
             if (!selectedTerms.has(agg.searchterm.toLowerCase())) return;
-            if (agg.isAsin) return; // ASINs werden als Negative Product Targeting behandelt, nicht als Keywords
-            // Find all campaign/adgroup combos for this search term
+            if (agg.isAsin) return;
             const entries = wastedData.filter(r => r.searchterm.toLowerCase() === agg.searchterm.toLowerCase());
-            const seen = new Set();
             entries.forEach(entry => {
-                const key = entry.campaign + '|' + entry.adgroup;
-                if (seen.has(key)) return;
-                seen.add(key);
-                matchTypes.forEach(mt => {
-                    const r = emptyRow();
-                    r[hProduct] = t.product;
-                    r[hEntity] = entityType;
-                    r[hOp] = t.create;
-                    if (entry.campaignId) r[hCampId] = entry.campaignId;
-                    r[hCampName] = entry.campaign;
-                    if (level === 'adgroup') {
-                        if (entry.adgroupId) r[hAdGroupId] = entry.adgroupId;
-                        r[hAdGroupName] = entry.adgroup;
-                    }
-                    r[hState] = t.enabled;
-                    r[hKwText] = entry.searchterm;
-                    r[hMatchType] = mt;
-                    rows.push(r);
-                });
+                matchTypes.forEach(mt => addKeywordRow(entry, mt));
             });
         });
     } else {
-        // Per campaign view
         campaignData.forEach(row => {
             if (!selectedTerms.has(row.key)) return;
-            if (row.isAsin) return; // ASINs werden als Negative Product Targeting behandelt
-            matchTypes.forEach(mt => {
-                const r = emptyRow();
-                r[hProduct] = t.product;
-                r[hEntity] = entityType;
-                r[hOp] = t.create;
-                if (row.campaignId) r[hCampId] = row.campaignId;
-                r[hCampName] = row.campaign;
-                if (level === 'adgroup') {
-                    if (row.adgroupId) r[hAdGroupId] = row.adgroupId;
-                    r[hAdGroupName] = row.adgroup;
-                }
-                r[hState] = t.enabled;
-                r[hKwText] = row.searchterm;
-                r[hMatchType] = mt;
-                rows.push(r);
-            });
+            if (row.isAsin) return;
+            matchTypes.forEach(mt => addKeywordRow(row, mt));
         });
     }
 
@@ -1125,14 +1115,19 @@ function exportBulkSheet() {
     const hPtExpr = headers[25]; // Product Targeting Expression
     const hNegPT = t.negKeyword.replace('Keyword', 'Produkt-Targeting').replace('keyword', 'product targeting'); // Fallback
 
+    const asinSeen = new Set();
+
     function addAsinNegative(entry) {
+        const dedupeKey = (entry.campaignId || entry.campaign) + '|' + (entry.adgroupId || entry.adgroup) + '|' + entry.searchterm.toLowerCase();
+        if (asinSeen.has(dedupeKey)) return;
+        asinSeen.add(dedupeKey);
+
         const r = emptyRow();
         r[hProduct] = t.product;
         r[hEntity] = t.negProdTargeting;
         r[hOp] = t.create;
         if (entry.campaignId) r[hCampId] = entry.campaignId;
         r[hCampName] = entry.campaign;
-        // Negative product targeting ALWAYS requires Ad Group ID
         if (entry.adgroupId) r[hAdGroupId] = entry.adgroupId;
         r[hAdGroupName] = entry.adgroup;
         r[hState] = t.enabled;
@@ -1140,19 +1135,12 @@ function exportBulkSheet() {
         asinRows.push(r);
     }
 
-    // Process ASINs separately
     if (currentView === 'aggregated') {
         aggregatedData.forEach(agg => {
             if (!selectedTerms.has(agg.searchterm.toLowerCase())) return;
             if (!agg.isAsin) return;
             const entries = wastedData.filter(r => r.searchterm.toLowerCase() === agg.searchterm.toLowerCase());
-            const seen = new Set();
-            entries.forEach(entry => {
-                const key = entry.campaign + '|' + entry.adgroup;
-                if (seen.has(key)) return;
-                seen.add(key);
-                addAsinNegative(entry);
-            });
+            entries.forEach(entry => addAsinNegative(entry));
         });
     } else {
         campaignData.forEach(row => {
