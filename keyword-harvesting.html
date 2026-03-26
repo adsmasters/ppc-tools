@@ -322,7 +322,8 @@ const COL = {
     entity: ['entity', 'entität', 'entité', 'entidad', 'entità'],
     asin: ['asin', 'asin (informativ)', 'asin (informational)'],
     sku: ['sku', 'sku (informativ)', 'sku (informational)'],
-    state: ['state', 'zustand', 'état', 'estado', 'stato']
+    state: ['state', 'zustand', 'état', 'estado', 'stato'],
+    ptExpression: ['product targeting expression', 'ausdruck für produkt-targeting', 'expression de ciblage']
 };
 
 function findCol(headers, key) {
@@ -433,8 +434,14 @@ function handleFileUpload(file) {
                     }
                     // Collect Product Targeting ASINs
                     if (entity.includes('product targeting') || entity.includes('produkt-targeting') || entity.includes('ciblage') || entity.includes('segmentación')) {
-                        if (kwText) bulkKeywords.add(kwText);
-                        if (asin) bulkKeywords.add(asin.toLowerCase());
+                        if (!entity.includes('negat')) {
+                            if (kwText) bulkKeywords.add(kwText);
+                            if (asin) bulkKeywords.add(asin.toLowerCase());
+                            // Extract ASIN from Product Targeting Expression (e.g. asin="B094R4HF8Y")
+                            const ptExpr = cm.ptExpression !== -1 ? String(r[cm.ptExpression] || '').trim() : '';
+                            const ptMatch = ptExpr.match(/asin="([A-Z0-9]+)"/i);
+                            if (ptMatch) bulkKeywords.add(ptMatch[1].toLowerCase());
+                        }
                     }
                     // Map ASINs to AdGroups from any entity row that has ASIN + AdGroup
                     if (asin && campName && adgroupName) {
