@@ -459,6 +459,27 @@ function processFile(file, isMulti) {
         reader.onload = function(evt) {
             const data = new Uint8Array(evt.target.result);
             const wb = XLSX.read(data, { type: 'array' });
+            // Extract existing negatives from campaign sheet(s)
+            existingNegatives.clear();
+            for (const sn of wb.SheetNames) {
+                const ws = wb.Sheets[sn];
+                const sRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                if (sRows.length < 2) continue;
+                const sH = sRows[0].map(c => String(c).toLowerCase().trim());
+                const sEntity = sH.findIndex(h => h.includes('entit'));
+                const sKw = sH.findIndex(h => h === 'keyword-text' || h === 'keyword text' || h.includes('keyword-text') || h.includes('keyword text'));
+                if (sEntity === -1 || sKw === -1) continue;
+                for (let r = 1; r < sRows.length; r++) {
+                    const ent = String(sRows[r][sEntity] || '').toLowerCase();
+                    if (ent.includes('negat') && (ent.includes('keyword') || ent.includes('mot-cl'))) {
+                        const kw = String(sRows[r][sKw] || '').trim().toLowerCase();
+                        if (kw) existingNegatives.add(kw);
+                    }
+                }
+            }
+            if (existingNegatives.size > 0) {
+                console.log('[WastedSpend] ' + existingNegatives.size + ' bestehende Negatives erkannt');
+            }
             // Find the sheet that contains search term data
             let bestRows = null;
             for (const sn of wb.SheetNames) {
