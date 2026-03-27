@@ -352,7 +352,20 @@ function parseWorkbook(wb, file) {
             }
         }
 
-        // Parse rows — collect unique campaign+adgroup combos
+        // Pass 1: Build campaign targeting type map from Campaign entity rows
+        const campAutoMap = {};
+        const entityCol = colMap.entity !== undefined ? colMap.entity : -1;
+        for (let i = headerIdx + 1; i < data.length; i++) {
+            const row = data[i];
+            const entity = entityCol !== -1 ? String(row[entityCol] || '').toLowerCase().trim() : '';
+            if (entity === 'kampagne' || entity === 'campaign') {
+                const campName = String(row[colMap.campaign] || '').trim();
+                const tt = colMap.targeting !== -1 ? String(row[colMap.targeting] || '').trim().toLowerCase() : '';
+                if (campName) campAutoMap[campName] = tt.includes('auto') || tt.includes('automatisch');
+            }
+        }
+
+        // Pass 2: Collect unique campaign+adgroup combos
         const seen = new Set();
         for (let i = headerIdx + 1; i < data.length; i++) {
             const row = data[i];
@@ -362,16 +375,15 @@ function parseWorkbook(wb, file) {
             const campaignId = colMap.campaignId !== -1 ? String(row[colMap.campaignId] || '').trim() : '';
             const adgroupName = colMap.adgroup !== -1 ? String(row[colMap.adgroup] || '').trim() : '';
             const adgroupId = colMap.adgroupId !== -1 ? String(row[colMap.adgroupId] || '').trim() : '';
-            const targetingType = colMap.targeting !== -1 ? String(row[colMap.targeting] || '').trim().toLowerCase() : '';
 
-            // Determine if auto campaign
-            const isAuto = targetingType.includes('auto') || targetingType.includes('automatisch');
+            // Use targeting type from campaign entity row
+            const isAuto = campAutoMap[campaignName] || false;
 
             const key = campaignName + '||' + adgroupName;
             if (seen.has(key)) continue;
             seen.add(key);
 
-            parsedCampaigns.push({ campaignName, campaignId, adgroupName, adgroupId, isAuto, targetingType });
+            parsedCampaigns.push({ campaignName, campaignId, adgroupName, adgroupId, isAuto });
             totalRows++;
         }
     }
