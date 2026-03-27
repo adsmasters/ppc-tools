@@ -1464,8 +1464,8 @@ autoBidIds.forEach(id => {
     });
 });
 
-document.getElementById('dailyBudget').addEventListener('input', function() {
-    const val = this.value;
+function syncBudgets() {
+    const val = document.getElementById('dailyBudget').value;
     isAutoFilling = true;
     budgetIds.forEach(id => {
         if (autoFilledBudgets.has(id)) {
@@ -1473,10 +1473,12 @@ document.getElementById('dailyBudget').addEventListener('input', function() {
         }
     });
     isAutoFilling = false;
-});
+}
+document.getElementById('dailyBudget').addEventListener('input', syncBudgets);
+document.getElementById('dailyBudget').addEventListener('change', syncBudgets);
 
-document.getElementById('overallBid').addEventListener('input', function() {
-    const val = this.value;
+function syncBids() {
+    const val = document.getElementById('overallBid').value;
     isAutoFilling = true;
     bidIds.forEach(id => {
         if (autoFilledBids.has(id)) {
@@ -1489,7 +1491,9 @@ document.getElementById('overallBid').addEventListener('input', function() {
         }
     });
     isAutoFilling = false;
-});
+}
+document.getElementById('overallBid').addEventListener('input', syncBids);
+document.getElementById('overallBid').addEventListener('change', syncBids);
 
 // --- Excel Generation ---
 function showProgress() {
