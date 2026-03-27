@@ -455,10 +455,16 @@ function handleFileUpload(file) {
                     }
                     // Build campaign map
                     if (campName) {
-                        if (!campMap[campName]) campMap[campName] = { name: campName, asins: new Set(), skus: new Set(), adgroups: new Set(), isAuto: false };
+                        if (!campMap[campName]) campMap[campName] = { name: campName, asins: new Set(), skus: new Set(), adgroups: new Set(), adgroupIds: new Map(), isAuto: false, campaignId: '' };
                         if (asin) campMap[campName].asins.add(asin);
                         if (sku) campMap[campName].skus.add(sku);
-                        if (adgroupName) campMap[campName].adgroups.add(adgroupName);
+                        if (adgroupName) {
+                            campMap[campName].adgroups.add(adgroupName);
+                            const agId = cm.adgroupId !== -1 ? String(r[cm.adgroupId] || '').trim() : '';
+                            if (agId) campMap[campName].adgroupIds.set(adgroupName, agId);
+                        }
+                        const campId = cm.campaignId !== -1 ? String(r[cm.campaignId] || '').trim() : '';
+                        if (campId && !campMap[campName].campaignId) campMap[campName].campaignId = campId;
                         if (entity.includes('kampagne') || entity.includes('campaign') || entity.includes('campagne') || entity.includes('campaña')) {
                             const tType = cm.targeting !== -1 ? String(r[cm.targeting] || '').toLowerCase().trim() : '';
                             if (tType.includes('auto') || tType.includes('automatisch') || tType.includes('automatique') || tType.includes('automático')) {
@@ -512,7 +518,8 @@ function handleFileUpload(file) {
             });
 
             bulkCampaigns = Object.values(campMap).map(c => ({
-                name: c.name, asins: [...c.asins], skus: [...c.skus], adgroups: [...c.adgroups]
+                name: c.name, asins: [...c.asins], skus: [...c.skus], adgroups: [...c.adgroups], isAuto: c.isAuto || false,
+                campaignId: c.campaignId || '', adgroupIds: c.adgroupIds ? Object.fromEntries(c.adgroupIds) : {}
             }));
 
             finishUpload(file);
@@ -757,9 +764,9 @@ function renderTable() {
     const thead = document.getElementById('tableHead');
     const tbody = document.getElementById('tableBody');
 
-    // Find harvest campaigns for dropdown
-    const harvestCamps = bulkCampaigns.filter(c => c.name.toLowerCase().includes('harvest'));
-    const campOptions = '<option value="">Neue Kampagne</option>' + harvestCamps.map(c => '<option value="' + escapeHtml(c.name) + '">' + escapeHtml(c.name) + '</option>').join('');
+    // Find manual SP campaigns for dropdown (exclude auto campaigns)
+    const manualCamps = bulkCampaigns.filter(c => !c.isAuto).sort((a, b) => a.name.localeCompare(b.name));
+    const campOptions = '<option value="">Neue Kampagne</option>' + manualCamps.map(c => '<option value="' + escapeHtml(c.name) + '">' + escapeHtml(c.name) + '</option>').join('');
 
     let data = harvestData.filter(r => !search || r.searchterm.toLowerCase().includes(search));
 
@@ -790,7 +797,10 @@ function renderTable() {
         { id: 'targetCampaign', label: 'Ziel-Kampagne' }
     ];
 
-    thead.innerHTML = '<tr>' + cols.map(c => {
+    // Build datalist for campaign search
+    const datalistHtml = '<datalist id="campList">' + manualCamps.map(c => '<option value="' + escapeHtml(c.name) + '">').join('') + '</datalist>';
+
+    thead.innerHTML = datalistHtml + '<tr>' + cols.map(c => {
         const arrow = c.id === sortCol ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
         const click = c.sort ? ` onclick="sortTable('${c.id}')"` : '';
         return `<th${click}>${c.label}${arrow}</th>`;
@@ -813,7 +823,8 @@ function renderTable() {
 
         const mtSelect = `<select onchange="harvestData[${globalIdx}].matchType=this.value"><option value="exact"${row.matchType==='exact'?' selected':''}>Exact</option><option value="broad"${row.matchType==='broad'?' selected':''}>Broad</option><option value="phrase"${row.matchType==='phrase'?' selected':''}>Phrase</option></select>`;
         const bidInput = `<input type="number" value="${row.suggestedBid.toFixed(2)}" step="0.01" min="0.02" onchange="harvestData[${globalIdx}].suggestedBid=parseFloat(this.value)||0.50">`;
-        const campSelect = `<select onchange="harvestData[${globalIdx}].targetCampaign=this.value" style="max-width:160px;">${campOptions}</select>`;
+        const selectedCamp = row.targetCampaign || '';
+        const campSelect = `<input list="campList" value="${escapeHtml(selectedCamp)}" placeholder="Neue Kampagne" onchange="harvestData[${globalIdx}].targetCampaign=this.value" style="max-width:200px;font-size:11px;padding:3px 5px;border:1px solid var(--border);border-radius:4px;background:var(--bg-secondary);color:var(--text-primary);">`;
 
         let productCol = '';
         if (row.productAsins && row.productAsins.length > 0) {
