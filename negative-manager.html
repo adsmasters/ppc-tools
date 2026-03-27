@@ -582,9 +582,15 @@ function exportBulkSheet() {
 
     function addKeywordRow(campaign, keyword, mt) {
         const entity = level === 'campaign' ? 'Campaign negative keyword' : 'Negative keyword';
-        const dedupKey = campaign.campaignName + '|' + campaign.adgroupName + '|' + keyword.toLowerCase() + '|' + mt + '|' + entity;
+        // For campaign-level: deduplicate by campaign only (ignore adgroup)
+        const dedupKey = level === 'campaign'
+            ? campaign.campaignName + '|' + keyword.toLowerCase() + '|' + mt
+            : campaign.campaignName + '|' + campaign.adgroupName + '|' + keyword.toLowerCase() + '|' + mt;
         if (dedup.has(dedupKey)) return;
         dedup.add(dedupKey);
+
+        // For adgroup-level, skip rows without Ad Group ID
+        if (level === 'adgroup' && !campaign.adgroupId) return;
 
         const r = emptyRow();
         r[H['Product']] = 'Sponsored Products';
@@ -593,7 +599,7 @@ function exportBulkSheet() {
         if (campaign.campaignId) r[H['Campaign ID']] = campaign.campaignId;
         r[H['Campaign Name']] = campaign.campaignName;
         if (level === 'adgroup') {
-            if (campaign.adgroupId) r[H['Ad Group ID']] = campaign.adgroupId;
+            r[H['Ad Group ID']] = campaign.adgroupId;
             r[H['Ad Group Name']] = campaign.adgroupName;
         }
         r[H['State']] = 'Enabled';
@@ -605,7 +611,9 @@ function exportBulkSheet() {
     function addAsinRow(campaign, asin) {
         const entity = 'Negative product targeting';
         const cleanAsin = asin.toUpperCase().trim();
-        const dedupKey = campaign.campaignName + '|' + campaign.adgroupName + '|' + cleanAsin + '|' + entity;
+        // NPT always needs Ad Group ID — skip rows without it
+        if (!campaign.adgroupId) return;
+        const dedupKey = campaign.campaignName + '|' + campaign.adgroupName + '|' + cleanAsin;
         if (dedup.has(dedupKey)) return;
         dedup.add(dedupKey);
 
@@ -615,8 +623,7 @@ function exportBulkSheet() {
         r[H['Operation']] = 'Create';
         if (campaign.campaignId) r[H['Campaign ID']] = campaign.campaignId;
         r[H['Campaign Name']] = campaign.campaignName;
-        // Negative product targeting ALWAYS needs Ad Group ID
-        if (campaign.adgroupId) r[H['Ad Group ID']] = campaign.adgroupId;
+        r[H['Ad Group ID']] = campaign.adgroupId;
         r[H['Ad Group Name']] = campaign.adgroupName;
         r[H['State']] = 'Enabled';
         r[H['Product Targeting Expression']] = 'asin="' + cleanAsin + '"';
