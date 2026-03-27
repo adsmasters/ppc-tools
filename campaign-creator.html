@@ -1516,6 +1516,10 @@ function finishProgress(bar) {
 
 // generateRows: returns { rows, warnings, errors, productName, itemCount, campaignCount } or null on error
 function generateRows() {
+    // Sync Step 3 values to Step 4 before generating
+    syncBudgets();
+    syncBids();
+
     const errorContainer = document.getElementById('errorContainer');
     errorContainer.innerHTML = '';
     const errors = [];
