@@ -1508,9 +1508,27 @@ function syncBids() {
 document.getElementById('overallBid').addEventListener('input', syncBids);
 document.getElementById('overallBid').addEventListener('change', syncBids);
 
+// Sync Auto campaign bid to sub-bids (close, loose, substitutes, complements)
+const autoSubBidIds = ['bid-auto-close', 'bid-auto-loose', 'bid-auto-substitutes', 'bid-auto-complements'];
+const autoSubAutoFilled = new Set(autoSubBidIds);
+function syncAutoBid() {
+    const val = document.getElementById('bid-auto').value;
+    autoSubBidIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && autoSubAutoFilled.has(id)) el.value = val;
+    });
+}
+document.getElementById('bid-auto').addEventListener('input', syncAutoBid);
+document.getElementById('bid-auto').addEventListener('change', syncAutoBid);
+autoSubBidIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() { autoSubAutoFilled.delete(id); });
+});
+
 // Initial sync on page load
 syncBudgets();
 syncBids();
+syncAutoBid();
 
 // --- Excel Generation ---
 function showProgress() {
