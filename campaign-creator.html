@@ -1466,14 +1466,24 @@ autoBidIds.forEach(id => {
 
 function syncBudgets() {
     const val = document.getElementById('dailyBudget').value;
+    console.log('[Sync] Budget:', val, 'autoFilled:', [...autoFilledBudgets]);
     isAutoFilling = true;
     budgetIds.forEach(id => {
-        if (autoFilledBudgets.has(id)) {
-            document.getElementById(id).value = val;
+        const el = document.getElementById(id);
+        if (el && autoFilledBudgets.has(id)) {
+            el.value = val;
         }
     });
     isAutoFilling = false;
 }
+// Also sync on scroll into view / focus of Step 4
+document.addEventListener('scroll', function() {
+    const step4 = document.getElementById('step4');
+    if (step4 && step4.getBoundingClientRect().top < window.innerHeight) {
+        syncBudgets();
+        syncBids();
+    }
+}, { passive: true });
 document.getElementById('dailyBudget').addEventListener('input', syncBudgets);
 document.getElementById('dailyBudget').addEventListener('change', syncBudgets);
 
@@ -1494,6 +1504,10 @@ function syncBids() {
 }
 document.getElementById('overallBid').addEventListener('input', syncBids);
 document.getElementById('overallBid').addEventListener('change', syncBids);
+
+// Initial sync on page load
+syncBudgets();
+syncBids();
 
 // --- Excel Generation ---
 function showProgress() {
