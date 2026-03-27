@@ -1449,17 +1449,20 @@ autoBidIds.forEach(id => autoFilledBids.add(id));
 
 // When user manually edits a Step 4 field, remove it from auto-filled set
 budgetIds.forEach(id => {
-    document.getElementById(id).addEventListener('input', function() {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() {
         if (!isAutoFilling) autoFilledBudgets.delete(id);
     });
 });
 bidIds.forEach(id => {
-    document.getElementById(id).addEventListener('input', function() {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() {
         if (!isAutoFilling) autoFilledBids.delete(id);
     });
 });
 autoBidIds.forEach(id => {
-    document.getElementById(id).addEventListener('input', function() {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', function() {
         if (!isAutoFilling) autoFilledBids.delete(id);
     });
 });
