@@ -455,7 +455,7 @@ function handleFileUpload(file) {
                     }
                     // Build campaign map
                     if (campName) {
-                        if (!campMap[campName]) campMap[campName] = { name: campName, asins: new Set(), skus: new Set(), adgroups: new Set(), adgroupIds: new Map(), isAuto: false, campaignId: '' };
+                        if (!campMap[campName]) campMap[campName] = { name: campName, asins: new Set(), skus: new Set(), adgroups: new Set(), adgroupIds: new Map(), isAuto: false, campaignId: '', state: '' };
                         if (asin) campMap[campName].asins.add(asin);
                         if (sku) campMap[campName].skus.add(sku);
                         if (adgroupName) {
@@ -470,6 +470,8 @@ function handleFileUpload(file) {
                             if (tType.includes('auto') || tType.includes('automatisch') || tType.includes('automatique') || tType.includes('automático')) {
                                 campMap[campName].isAuto = true;
                             }
+                            const st = cm.state !== -1 ? String(r[cm.state] || '').toLowerCase().trim() : '';
+                            if (st) campMap[campName].state = st;
                         }
                     }
                 }
@@ -519,7 +521,8 @@ function handleFileUpload(file) {
 
             bulkCampaigns = Object.values(campMap).map(c => ({
                 name: c.name, asins: [...c.asins], skus: [...c.skus], adgroups: [...c.adgroups], isAuto: c.isAuto || false,
-                campaignId: c.campaignId || '', adgroupIds: c.adgroupIds ? Object.fromEntries(c.adgroupIds) : {}
+                campaignId: c.campaignId || '', adgroupIds: c.adgroupIds ? Object.fromEntries(c.adgroupIds) : {},
+                state: c.state || ''
             }));
 
             finishUpload(file);
@@ -764,8 +767,9 @@ function renderTable() {
     const thead = document.getElementById('tableHead');
     const tbody = document.getElementById('tableBody');
 
-    // Find manual SP campaigns for dropdown (exclude auto campaigns)
-    const manualCamps = bulkCampaigns.filter(c => !c.isAuto).sort((a, b) => a.name.localeCompare(b.name));
+    // Find active manual SP campaigns for dropdown (exclude auto + paused/archived)
+    const activeSt = ['enabled', 'aktiviert', 'activé', 'activado', 'attivo', ''];
+    const manualCamps = bulkCampaigns.filter(c => !c.isAuto && activeSt.includes(c.state.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
     const campOptions = '<option value="">Neue Kampagne</option>' + manualCamps.map(c => '<option value="' + escapeHtml(c.name) + '">' + escapeHtml(c.name) + '</option>').join('');
 
     let data = harvestData.filter(r => !search || r.searchterm.toLowerCase().includes(search));
