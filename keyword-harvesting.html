@@ -182,6 +182,10 @@
                 <input type="number" id="minRoas" value="" step="0.1" min="0" placeholder="z.B. 3.0" oninput="updateLiveCounter()">
             </div>
         </div>
+        <div class="field" style="margin-top:12px;">
+            <label>Kampagnen ausschließen <span class="tooltip-icon" data-tip="Kampagnennamen oder Teile davon (kommagetrennt). Suchbegriffe aus diesen Kampagnen werden nicht als Harvest-Kandidaten berücksichtigt. Z.B. 'ALLE, Catch-All' um Sammel-Kampagnen auszuschließen.">?</span></label>
+            <input type="text" id="excludeCampaigns" placeholder="z.B. ALLE, Catch-All, Sammelkampagne" oninput="updateLiveCounter()" style="width:100%;">
+        </div>
         <div class="field-row">
             <div class="field">
                 <label>Min. Klicks <span class="tooltip-icon" data-tip="Mindestanzahl Klicks für statistische Relevanz.">?</span></label>
@@ -619,11 +623,18 @@ function getFilteredData() {
     const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
     const minCtr = parseFloat(document.getElementById('minCtr').value);
     const autoOnly = document.getElementById('filterAutoOnly').value === 'yes';
+    const excludeInput = (document.getElementById('excludeCampaigns').value || '').trim();
+    const excludeTerms = excludeInput ? excludeInput.split(',').map(s => s.trim().toLowerCase()).filter(Boolean) : [];
 
     // Aggregate by search term
     const aggMap = {};
     strData.forEach(row => {
         if (autoOnly && !row.isAuto) return;
+        // Skip excluded campaigns
+        if (excludeTerms.length > 0) {
+            const campLower = row.campaign.toLowerCase();
+            if (excludeTerms.some(t => campLower.includes(t))) return;
+        }
         const key = row.searchterm.toLowerCase();
         if (!aggMap[key]) aggMap[key] = { searchterm: row.searchterm, impressions: 0, clicks: 0, spend: 0, sales: 0, orders: 0, campaigns: new Set(), isAsin: row.isAsin, productAsins: new Set(), sourceCampaigns: new Set() };
         aggMap[key].impressions += row.impressions;
