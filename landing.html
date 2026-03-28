@@ -105,6 +105,7 @@ tailwind.config = {
     .bg-primary-container span, .bg-primary-container div,
     .bg-primary-container .text-secondary, .bg-primary-container .text-on-surface-variant { color: #fff !important; }
     .bg-primary-container .opacity-80 { opacity: 0.85 !important; }
+    .hero-gradient p, .hero-gradient h2, .hero-gradient span, .hero-gradient div { color: #fff !important; }
     .reveal {
         opacity: 0;
         transform: translateY(32px);
@@ -210,8 +211,8 @@ tailwind.config = {
                 Stunden manuelle Arbeit auf Minuten reduzieren. Keine Ad-Spend-Beteiligung, kein Agentur-Lock-in, monatlich kündbar. Professionelle PPC-Optimierung ab 49€/Monat — für Seller und Vendoren, die ihre Werbung selbst in der Hand behalten wollen.
             </p>
             <div class="flex flex-wrap gap-4">
-                <a href="#kontakt" class="hero-gradient text-white px-10 py-4 rounded-xl text-lg font-bold shadow-xl active:scale-95 transition-all hover:shadow-2xl">Kostenloses Audit starten</a>
-                <a href="#kontakt" class="bg-surface-container-high text-on-surface px-10 py-4 rounded-xl text-lg font-bold active:scale-95 transition-all hover:bg-surface-container-highest">Jetzt starten</a>
+                <a href="#kontakt" class="hero-gradient text-white px-10 py-4 rounded-xl text-lg font-bold shadow-xl active:scale-95 transition-all hover:shadow-2xl">Jetzt starten — ab 49€/Monat</a>
+                <a href="#tools" class="bg-surface-container-high text-on-surface px-10 py-4 rounded-xl text-lg font-bold active:scale-95 transition-all hover:bg-surface-container-highest">Tools entdecken</a>
             </div>
         </div>
         <div class="lg:w-1/2 relative reveal visible" style="transition-delay:200ms">
@@ -335,8 +336,68 @@ tailwind.config = {
     </div>
 </section>
 
+<!-- COMPARISON TABLE -->
+<section class="py-24 px-6 lg:px-8 bg-surface-container-low">
+    <div class="max-w-5xl mx-auto">
+        <div class="text-center mb-16 reveal">
+            <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">99€ Flat. Keine Zusatzkosten. Punkt.</h2>
+            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Andere PPC-Tools nehmen 500€+ im Monat plus eine Gebühr auf deinen Ad Spend — und du hast keine Kontrolle. Bei uns zahlst du maximal 99€ Flat Fee, behältst die volle Kontrolle und bist monatlich kündbar.</p>
+        </div>
+        <div class="bg-white rounded-3xl overflow-hidden reveal">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-surface-container">
+                        <th class="py-5 px-6 lg:px-8 text-sm font-bold text-on-surface-variant font-['Work_Sans'] uppercase tracking-wider"></th>
+                        <th class="py-5 px-4 lg:px-8 text-center"><div class="text-primary font-black text-lg">AdsMasters</div></th>
+                        <th class="py-5 px-4 lg:px-8 text-center"><div class="text-on-surface-variant font-bold text-lg">Typisches PPC-Tool</div></th>
+                        <th class="py-5 px-4 lg:px-8 text-center hidden md:table-cell"><div class="text-on-surface-variant font-bold text-lg">PPC-Agentur</div></th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    <tr class="border-t border-surface-container-high/50">
+                        <td class="py-4 px-6 lg:px-8 font-medium">Monatliche Kosten</td>
+                        <td class="py-4 px-4 lg:px-8 text-center font-black text-primary">ab 49€</td>
+                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant">ab 500€</td>
+                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant hidden md:table-cell">ab 1.000€</td>
+                    </tr>
+                    <tr class="border-t border-surface-container-high/50">
+                        <td class="py-4 px-6 lg:px-8 font-medium">Ad-Spend-Beteiligung</td>
+                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span><span class="block text-xs mt-1 font-bold text-primary">Keine</span></td>
+                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1 text-on-surface-variant">3-10% vom Spend</span></td>
+                        <td class="py-4 px-4 lg:px-8 text-center hidden md:table-cell"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1 text-on-surface-variant">10-15% vom Spend</span></td>
+                    </tr>
+                    <tr class="border-t border-surface-container-high/50">
+                        <td class="py-4 px-6 lg:px-8 font-medium">Kosten bei 50.000€ Ad Spend</td>
+                        <td class="py-4 px-4 lg:px-8 text-center font-black text-primary">99€</td>
+                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant">2.000-5.500€</td>
+                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant hidden md:table-cell">6.000-8.500€</td>
+                    </tr>
+                    <tr class="border-t border-surface-container-high/50">
+                        <td class="py-4 px-6 lg:px-8 font-medium">Datenspeicherung</td>
+                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span><span class="block text-xs mt-1 font-bold text-primary">100% lokal</span></td>
+                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1 text-on-surface-variant">Cloud / API</span></td>
+                        <td class="py-4 px-4 lg:px-8 text-center hidden md:table-cell"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1 text-on-surface-variant">Agentur-Zugriff</span></td>
+                    </tr>
+                    <tr class="border-t border-surface-container-high/50">
+                        <td class="py-4 px-6 lg:px-8 font-medium">Volle Kontrolle</td>
+                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span></td>
+                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span></td>
+                        <td class="py-4 px-4 lg:px-8 text-center hidden md:table-cell"><span class="material-symbols-outlined text-error">cancel</span></td>
+                    </tr>
+                    <tr class="border-t border-surface-container-high/50">
+                        <td class="py-4 px-6 lg:px-8 font-medium">Vertragsbindung</td>
+                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span><span class="block text-xs mt-1 font-black text-primary">Monatlich kündbar</span></td>
+                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1">Jährlich</span></td>
+                        <td class="py-4 px-4 lg:px-8 text-center hidden md:table-cell"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1">6-12 Monate</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
 <!-- HOW IT WORKS -->
-<section class="py-24 px-6 lg:px-8 bg-surface-container-low" id="workflow">
+<section class="py-24 px-6 lg:px-8 bg-white" id="workflow">
     <div class="max-w-7xl mx-auto">
         <div class="text-center mb-16 reveal">
             <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">So funktioniert es.</h2>
@@ -520,76 +581,10 @@ tailwind.config = {
                     <li class="flex items-center gap-3 text-sm font-bold"><span class="material-symbols-outlined text-lg">check_circle</span>Wasted Ad Spend Analyzer</li>
                     <li class="flex items-center gap-3 text-sm font-bold"><span class="material-symbols-outlined text-lg">check_circle</span>Bid Optimizer</li>
                     <li class="flex items-center gap-3 text-sm font-bold"><span class="material-symbols-outlined text-lg">check_circle</span>ASIN Optimizer</li>
-                    <li class="flex items-center gap-3 text-sm font-bold"><span class="material-symbols-outlined text-lg">check_circle</span>Prioritäts-Support</li>
+                    <li class="flex items-center gap-3 text-sm font-bold"><span class="material-symbols-outlined text-lg">check_circle</span>E-Mail Support</li>
                 </ul>
                 <a href="#kontakt" class="w-full py-4 rounded-xl font-bold bg-primary text-white hover:opacity-90 shadow-xl transition-all text-center block">Professional starten</a>
             </div>
-        </div>
-    </div>
-</section>
-
-<!-- COMPARISON TABLE -->
-<section class="py-24 px-6 lg:px-8 bg-surface-container-low">
-    <div class="max-w-5xl mx-auto">
-        <div class="text-center mb-16 reveal">
-            <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">99€ Flat. Keine Zusatzkosten. Punkt.</h2>
-            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Andere PPC-Tools nehmen 500€+ im Monat plus eine Gebühr auf deinen Ad Spend — und du hast keine Kontrolle. Bei uns zahlst du maximal 99€ Flat Fee, behältst die volle Kontrolle und bist monatlich kündbar.</p>
-        </div>
-        <div class="bg-white rounded-3xl overflow-hidden reveal">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="bg-surface-container">
-                        <th class="py-5 px-6 lg:px-8 text-sm font-bold text-on-surface-variant font-['Work_Sans'] uppercase tracking-wider"></th>
-                        <th class="py-5 px-4 lg:px-8 text-center">
-                            <div class="text-primary font-black text-lg">AdsMasters</div>
-                        </th>
-                        <th class="py-5 px-4 lg:px-8 text-center">
-                            <div class="text-on-surface-variant font-bold text-lg">Typisches PPC-Tool</div>
-                        </th>
-                        <th class="py-5 px-4 lg:px-8 text-center hidden md:table-cell">
-                            <div class="text-on-surface-variant font-bold text-lg">PPC-Agentur</div>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm">
-                    <tr class="border-t border-surface-container-high/50">
-                        <td class="py-4 px-6 lg:px-8 font-medium">Monatliche Kosten</td>
-                        <td class="py-4 px-4 lg:px-8 text-center font-black text-primary">ab 49€</td>
-                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant">ab 500€</td>
-                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant hidden md:table-cell">ab 1.000€</td>
-                    </tr>
-                    <tr class="border-t border-surface-container-high/50">
-                        <td class="py-4 px-6 lg:px-8 font-medium">Ad-Spend-Beteiligung</td>
-                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span><span class="block text-xs mt-1 font-bold text-primary">Keine</span></td>
-                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1 text-on-surface-variant">3-10% vom Spend</span></td>
-                        <td class="py-4 px-4 lg:px-8 text-center hidden md:table-cell"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1 text-on-surface-variant">10-15% vom Spend</span></td>
-                    </tr>
-                    <tr class="border-t border-surface-container-high/50">
-                        <td class="py-4 px-6 lg:px-8 font-medium">Kosten bei 50.000€ Ad Spend</td>
-                        <td class="py-4 px-4 lg:px-8 text-center font-black text-primary">99€</td>
-                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant">2.000-5.500€</td>
-                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant hidden md:table-cell">6.000-8.500€</td>
-                    </tr>
-                    <tr class="border-t border-surface-container-high/50">
-                        <td class="py-4 px-6 lg:px-8 font-medium">Datenspeicherung</td>
-                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span><span class="block text-xs mt-1 font-bold text-primary">100% lokal</span></td>
-                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1 text-on-surface-variant">Cloud / API</span></td>
-                        <td class="py-4 px-4 lg:px-8 text-center hidden md:table-cell"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1 text-on-surface-variant">Agentur-Zugriff</span></td>
-                    </tr>
-                    <tr class="border-t border-surface-container-high/50">
-                        <td class="py-4 px-6 lg:px-8 font-medium">Volle Kontrolle</td>
-                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span></td>
-                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span></td>
-                        <td class="py-4 px-4 lg:px-8 text-center hidden md:table-cell"><span class="material-symbols-outlined text-error">cancel</span></td>
-                    </tr>
-                    <tr class="border-t border-surface-container-high/50">
-                        <td class="py-4 px-6 lg:px-8 font-medium">Vertragsbindung</td>
-                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-primary">check_circle</span><span class="block text-xs mt-1 font-black text-primary">Monatlich kündbar</span></td>
-                        <td class="py-4 px-4 lg:px-8 text-center"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1">Jährlich</span></td>
-                        <td class="py-4 px-4 lg:px-8 text-center hidden md:table-cell"><span class="material-symbols-outlined text-error">cancel</span><span class="block text-xs mt-1">6-12 Monate</span></td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
     </div>
 </section>
@@ -660,10 +655,9 @@ tailwind.config = {
     <div class="max-w-7xl mx-auto hero-gradient rounded-3xl p-12 lg:p-24 text-center text-white relative overflow-hidden reveal">
         <div class="relative z-10">
             <h2 class="text-4xl lg:text-7xl font-black tracking-tighter mb-8 leading-[0.9]">Bereit für mehr<br/>Performance?</h2>
-            <p class="text-lg lg:text-xl opacity-90 mb-12 max-w-2xl mx-auto">Starte jetzt mit einem kostenlosen PPC-Audit und entdecke, wie viel Potenzial in deinen Amazon-Kampagnen steckt.</p>
+            <p class="text-lg lg:text-xl opacity-90 mb-12 max-w-2xl mx-auto" style="color:#fff !important;">Ab 49€/Monat. Monatlich kündbar. Keine Ad-Spend-Beteiligung. Starte jetzt und optimiere dein Amazon PPC selbst.</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="mailto:hallo@adsmasters.de?subject=Kostenloses%20PPC%20Audit" class="bg-white text-primary px-10 py-5 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-xl">Kostenloses Audit starten</a>
-                <a href="mailto:hallo@adsmasters.de?subject=PPC%20Tools%20starten" class="bg-white/10 backdrop-blur-md border border-white/20 px-10 py-5 rounded-xl text-lg font-bold hover:bg-white/20 transition-all">Jetzt starten</a>
+                <a href="mailto:hallo@adsmasters.de?subject=PPC%20Tools%20starten" class="bg-white text-primary px-10 py-5 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-xl">Jetzt starten — ab 49€/Monat</a>
             </div>
         </div>
         <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-[100px]"></div>
