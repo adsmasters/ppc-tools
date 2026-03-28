@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>AdsMasters | Amazon PPC Tools — Präzision für dein Advertising</title>
+<title>AdsMasters | Amazon PPC Tools für Seller und Vendoren</title>
 <meta name="description" content="AdsMasters PPC Tools: Professionelle Amazon Advertising Software für Kampagnenerstellung, Keyword Harvesting, Gebotsoptimierung und Wasted Spend Analyse. Jetzt kostenloses Audit starten."/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -97,15 +97,18 @@ tailwind.config = {
         font-size: 16px;
         line-height: 1.6;
     }
-    /* Ensure body text is dark and readable */
-    p, li, td { color: #1c1b1b; }
-    .text-secondary, .text-on-surface-variant { color: #333 !important; }
-    /* White text on blue backgrounds */
-    .bg-primary-container p, .bg-primary-container li, .bg-primary-container td,
-    .bg-primary-container span, .bg-primary-container div,
-    .bg-primary-container .text-secondary, .bg-primary-container .text-on-surface-variant { color: #fff !important; }
+    /* ALL text dark and readable on light backgrounds */
+    p, li, td, span, div { color: #1c1b1b; }
+    [class*="text-secondary"] { color: #1c1b1b !important; }
+    [class*="text-on-surface-variant"] { color: #1c1b1b !important; }
+    [class*="text-on-surface"] { color: #1c1b1b !important; }
+    /* White text on blue/dark backgrounds */
+    .bg-primary-container *, .hero-gradient *, .glass-card *, .dashboard-visual *, .abstract-visual * { color: #fff !important; }
     .bg-primary-container .opacity-80 { opacity: 0.85 !important; }
-    .hero-gradient p, .hero-gradient h2, .hero-gradient span, .hero-gradient div { color: #fff !important; }
+    /* Keep primary blue text blue */
+    [class*="text-primary"]:not(.bg-primary-container *):not(.hero-gradient *) { color: #3452FF !important; }
+    /* Keep error red */
+    [class*="text-error"] { color: #ba1a1a !important; }
     .reveal {
         opacity: 0;
         transform: translateY(32px);
@@ -208,10 +211,10 @@ tailwind.config = {
                 Amazon PPC<br/>selbst steuern.<br/><span class="text-primary">Ohne Agentur.</span>
             </h1>
             <p class="text-lg text-secondary max-w-lg mb-10 leading-relaxed">
-                Stunden manuelle Arbeit auf Minuten reduzieren. Keine Ad-Spend-Beteiligung, kein Agentur-Lock-in, monatlich kündbar. Professionelle PPC-Optimierung ab 49€/Monat — für Seller und Vendoren, die ihre Werbung selbst in der Hand behalten wollen.
+                Stunden manuelle Arbeit auf Minuten reduzieren. Keine Ad-Spend-Beteiligung, kein Agentur-Lock-in, monatlich kündbar. Professionelle PPC-Optimierung ab 49€/Monat. Für Seller und Vendoren, die ihre Werbung selbst in der Hand behalten wollen.
             </p>
             <div class="flex flex-wrap gap-4">
-                <a href="#kontakt" class="hero-gradient text-white px-10 py-4 rounded-xl text-lg font-bold shadow-xl active:scale-95 transition-all hover:shadow-2xl">Jetzt starten — ab 49€/Monat</a>
+                <a href="#kontakt" class="hero-gradient text-white px-10 py-4 rounded-xl text-lg font-bold shadow-xl active:scale-95 transition-all hover:shadow-2xl">Jetzt starten, ab 49€/Monat</a>
                 <a href="#tools" class="bg-surface-container-high text-on-surface px-10 py-4 rounded-xl text-lg font-bold active:scale-95 transition-all hover:bg-surface-container-highest">Tools entdecken</a>
             </div>
         </div>
@@ -313,7 +316,7 @@ tailwind.config = {
     <div class="max-w-7xl mx-auto">
         <div class="text-center mb-16 reveal">
             <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">Spare 24 Stunden im Monat.</h2>
-            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Das sind 3 volle Arbeitstage, die du jeden Monat zurückbekommst. Statt 32 Stunden manuelle PPC-Arbeit brauchst du mit AdsMasters nur noch 8 — und erzielst bessere Ergebnisse.</p>
+            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Das sind 3 volle Arbeitstage, die du jeden Monat zurückbekommst. Statt 32 Stunden manuelle PPC-Arbeit brauchst du mit AdsMasters nur noch 8. Und erzielst bessere Ergebnisse.</p>
         </div>
 
         <!-- Time comparison cards -->
@@ -349,7 +352,7 @@ tailwind.config = {
             <div class="bg-surface-container rounded-3xl p-8 reveal">
                 <div class="text-on-surface-variant font-['Work_Sans'] font-bold text-xs tracking-widest uppercase mb-4">PPC-Agentur</div>
                 <div class="text-5xl font-black text-on-background mb-2">0h</div>
-                <div class="text-secondary text-sm mb-6">für dich — aber…</div>
+                <div class="text-secondary text-sm mb-6">für dich, aber...</div>
                 <ul class="space-y-3 text-sm text-on-surface-variant">
                     <li class="flex items-start gap-2"><span class="text-error mt-0.5">&#9679;</span>1.000€+ monatliche Kosten</li>
                     <li class="flex items-start gap-2"><span class="text-error mt-0.5">&#9679;</span>10-15% Ad-Spend-Beteiligung</li>
@@ -367,7 +370,7 @@ tailwind.config = {
             </div>
             <div>
                 <h3 class="text-xl font-bold mb-2 text-on-primary-fixed">Auch ohne PPC-Erfahrung sofort starten</h3>
-                <p class="text-on-primary-fixed/80 text-base leading-relaxed">Unsere Tools führen dich Schritt für Schritt. Bulk Sheet hochladen, Ergebnisse prüfen, optimiertes Sheet herunterladen — fertig. Kein Vorwissen nötig. Viele Kunden berichten, dass sie innerhalb einer Woche von PPC-Anfänger zum eigenständigen Manager wurden.</p>
+                <p class="text-on-primary-fixed/80 text-base leading-relaxed">Du lädst dein Bulk Sheet hoch, prüfst die Ergebnisse und lädst das optimierte Sheet wieder runter. Kein Vorwissen nötig. Unsere Kunden berichten, dass sie innerhalb einer Woche ihre PPC-Kampagnen eigenständig steuern konnten.</p>
             </div>
         </div>
     </div>
@@ -378,7 +381,7 @@ tailwind.config = {
     <div class="max-w-5xl mx-auto">
         <div class="text-center mb-16 reveal">
             <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">Flat Fee. Keine versteckten Kosten.</h2>
-            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Andere PPC-Tools nehmen 500€+ im Monat plus eine Gebühr auf deinen Ad Spend — und du hast keine Kontrolle. Bei uns zahlst du ab 49€ Flat Fee, behältst die volle Kontrolle und bist monatlich kündbar. Egal ob 5.000€ oder 500.000€ Ad Spend.</p>
+            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Andere PPC-Tools nehmen 500€+ im Monat plus eine Gebühr auf deinen Ad Spend. Und du hast trotzdem keine Kontrolle. Bei uns zahlst du ab 49€ Flat Fee, behältst die volle Kontrolle und bist monatlich kündbar. Egal ob 5.000€ oder 500.000€ Ad Spend.</p>
         </div>
         <div class="bg-white rounded-3xl overflow-hidden reveal">
             <table class="w-full text-left">
@@ -438,7 +441,7 @@ tailwind.config = {
     <div class="max-w-7xl mx-auto">
         <div class="text-center mb-16 reveal">
             <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">So funktioniert es.</h2>
-            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Lade dein Amazon Bulk Sheet hoch — unsere Tools analysieren, optimieren und erstellen in Sekunden neue Bulk Sheets zum Hochladen.</p>
+            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Lade dein Amazon Bulk Sheet hoch. Unsere Tools analysieren, optimieren und erstellen in Sekunden neue Bulk Sheets zum Hochladen.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 stagger">
             <div class="text-center reveal">
@@ -455,7 +458,7 @@ tailwind.config = {
                 </div>
                 <div class="text-primary font-['Work_Sans'] font-bold text-xs tracking-widest uppercase mb-3">Schritt 02</div>
                 <h3 class="text-xl font-bold mb-3">Analyse & Optimierung</h3>
-                <p class="text-secondary text-base leading-relaxed">Unsere Algorithmen identifizieren profitable Keywords, Wasted Spend und optimale Gebote — in Sekunden statt Stunden.</p>
+                <p class="text-secondary text-base leading-relaxed">Unsere Algorithmen identifizieren profitable Keywords, Wasted Spend und optimale Gebote. In Sekunden statt Stunden.</p>
             </div>
             <div class="text-center reveal">
                 <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary mx-auto mb-6">
@@ -463,7 +466,7 @@ tailwind.config = {
                 </div>
                 <div class="text-primary font-['Work_Sans'] font-bold text-xs tracking-widest uppercase mb-3">Schritt 03</div>
                 <h3 class="text-xl font-bold mb-3">Bulk Sheet herunterladen</h3>
-                <p class="text-secondary text-base leading-relaxed">Lade das optimierte Bulk Sheet herunter und importiere es direkt in Amazon — fertig. Sofortige Umsetzung, kein manuelles Arbeiten.</p>
+                <p class="text-secondary text-base leading-relaxed">Lade das optimierte Bulk Sheet herunter und importiere es direkt in Amazon. Sofortige Umsetzung, kein manuelles Arbeiten.</p>
             </div>
         </div>
     </div>
@@ -483,43 +486,43 @@ tailwind.config = {
             <div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-4px] transition-transform duration-300 reveal">
                 <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center text-primary mb-6"><span class="material-symbols-outlined text-2xl">add_circle</span></div>
                 <h3 class="text-xl font-bold mb-3 font-headline">Kampagnen Ersteller</h3>
-                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Erstelle komplette Kampagnenstrukturen nach Best Practices in Sekunden — Auto, Exact, Broad, Brand und Wettbewerber-Kampagnen auf Knopfdruck.</p>
+                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Komplette Kampagnenstrukturen nach Best Practices in Sekunden erstellen. Auto, Exact, Broad, Brand und Wettbewerber-Kampagnen auf Knopfdruck.</p>
                 <span class="text-primary font-bold text-xs tracking-widest uppercase flex items-center gap-2">Bulk Sheet Export <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
             </div>
             <div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-4px] transition-transform duration-300 reveal">
                 <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center text-primary mb-6"><span class="material-symbols-outlined text-2xl">travel_explore</span></div>
                 <h3 class="text-xl font-bold mb-3 font-headline">Keyword Harvesting</h3>
-                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Finde automatisch profitable Suchbegriffe aus deinen Auto-Kampagnen und überführe sie in manuelle Kampagnen — mit automatischem Duplikat-Abgleich.</p>
+                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Automatisch profitable Suchbegriffe aus deinen Auto-Kampagnen finden und in manuelle Kampagnen überführen. Mit automatischem Duplikat-Abgleich.</p>
                 <span class="text-primary font-bold text-xs tracking-widest uppercase flex items-center gap-2">Intelligente Filterung <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
             </div>
             <div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-4px] transition-transform duration-300 reveal">
                 <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center text-primary mb-6"><span class="material-symbols-outlined text-2xl">leak_remove</span></div>
                 <h3 class="text-xl font-bold mb-3 font-headline">Wasted Ad Spend</h3>
-                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Identifiziere Suchbegriffe ohne Conversions, die dein Budget verbrennen — und erstelle negative Keywords als Bulk Sheet zum sofortigen Upload.</p>
+                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Suchbegriffe ohne Conversions finden, die dein Budget verbrennen. Negative Keywords als Bulk Sheet zum sofortigen Upload erstellen.</p>
                 <span class="text-primary font-bold text-xs tracking-widest uppercase flex items-center gap-2">Budget schützen <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
             </div>
             <div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-4px] transition-transform duration-300 reveal">
                 <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center text-primary mb-6"><span class="material-symbols-outlined text-2xl">dynamic_form</span></div>
                 <h3 class="text-xl font-bold mb-3 font-headline">Bid Optimizer</h3>
-                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Algorithmische Gebotsanpassungen basierend auf deinem Ziel-ACoS. Tausende Keywords in Sekunden optimiert — mit individuellen Regeln pro Kampagne.</p>
+                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Gebote automatisch an deinen Ziel-ACoS anpassen. Tausende Keywords in Sekunden optimiert, mit individuellen Regeln pro Kampagne.</p>
                 <span class="text-primary font-bold text-xs tracking-widest uppercase flex items-center gap-2">Ziel-ACoS setzen <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
             </div>
             <div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-4px] transition-transform duration-300 reveal">
                 <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center text-primary mb-6"><span class="material-symbols-outlined text-2xl">block</span></div>
                 <h3 class="text-xl font-bold mb-3 font-headline">Negative Manager</h3>
-                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Verwalte negative Keywords und ASINs über alle Kampagnen hinweg — mit automatischer Zuordnung zu Auto- und manuellen Kampagnen.</p>
+                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Negative Keywords und ASINs über alle Kampagnen hinweg verwalten. Automatische Zuordnung zu Auto- und manuellen Kampagnen.</p>
                 <span class="text-primary font-bold text-xs tracking-widest uppercase flex items-center gap-2">Bulk Negation <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
             </div>
             <div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-4px] transition-transform duration-300 reveal">
                 <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center text-primary mb-6"><span class="material-symbols-outlined text-2xl">fact_check</span></div>
                 <h3 class="text-xl font-bold mb-3 font-headline">PPC Audit</h3>
-                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Detaillierte Gesundheitsanalyse deiner PPC-Performance — Top-Keywords, Wasted Spend, Kampagnenstruktur und konkrete Handlungsempfehlungen.</p>
+                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Komplette Analyse deiner PPC-Performance. Top-Keywords, Wasted Spend, Kampagnenstruktur und konkrete Empfehlungen auf einen Blick.</p>
                 <span class="text-primary font-bold text-xs tracking-widest uppercase flex items-center gap-2">Sofort-Analyse <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
             </div>
             <div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-4px] transition-transform duration-300 reveal md:col-span-2 lg:col-span-1">
                 <div class="w-12 h-12 bg-primary-fixed rounded-lg flex items-center justify-center text-primary mb-6"><span class="material-symbols-outlined text-2xl">tune</span></div>
                 <h3 class="text-xl font-bold mb-3 font-headline">ASIN Optimizer</h3>
-                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Optimiere die Performance einzelner ASINs — analysiere Werbekosten, Conversion-Raten und identifiziere Verbesserungspotenzial pro Produkt.</p>
+                <p class="text-on-surface-variant text-base leading-relaxed mb-6">Performance einzelner ASINs analysieren. Werbekosten, Conversion-Raten und Verbesserungspotenzial pro Produkt auf einen Blick.</p>
                 <span class="text-primary font-bold text-xs tracking-widest uppercase flex items-center gap-2">Produkt-Analyse <span class="material-symbols-outlined text-sm">arrow_forward</span></span>
             </div>
         </div>
@@ -558,7 +561,7 @@ tailwind.config = {
                     </div>
                 </div>
                 <h3 class="text-lg font-bold mt-4 mb-1">Wasted Ad Spend Analyse</h3>
-                <p class="text-secondary text-sm">Suchbegriffe ohne Conversions identifizieren und als Negatives einbuchen — in unter 2 Minuten.</p>
+                <p class="text-secondary text-sm">Suchbegriffe ohne Conversions identifizieren und als Negatives einbuchen. In unter 2 Minuten.</p>
             </div>
             <!-- Video 3 -->
             <div class="reveal">
@@ -571,7 +574,7 @@ tailwind.config = {
                     </div>
                 </div>
                 <h3 class="text-lg font-bold mt-4 mb-1">Bid Optimizer</h3>
-                <p class="text-secondary text-sm">Tausende Gebote in Sekunden an deinen Ziel-ACoS anpassen — mit dem Bulk Sheet Workflow.</p>
+                <p class="text-secondary text-sm">Tausende Gebote in Sekunden an deinen Ziel-ACoS anpassen. Per Bulk Sheet Workflow.</p>
             </div>
         </div>
     </div>
@@ -638,7 +641,7 @@ tailwind.config = {
                 <div>
                     <span class="text-primary font-bold tracking-widest uppercase text-xs mb-4 block font-['Work_Sans']">01 / Automation</span>
                     <h3 class="text-3xl font-black tracking-tight mb-4">Einrichten.<br/>Zurücklehnen.<br/>Wachsen.</h3>
-                    <p class="text-secondary max-w-sm">Unsere Tools arbeiten rund um die Uhr — du konzentrierst dich auf deine Marke, wir optimieren deine Werbung.</p>
+                    <p class="text-secondary max-w-sm">Unsere Tools arbeiten rund um die Uhr. Du konzentrierst dich auf deine Marke, die Tools optimieren deine Werbung.</p>
                 </div>
                 <div class="mt-8 rounded-xl overflow-hidden">
                     <div class="abstract-visual h-48 rounded-xl flex items-center justify-center">
@@ -653,15 +656,15 @@ tailwind.config = {
                 <div class="flex items-start gap-6">
                     <div class="shrink-0 w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-primary text-3xl">shield</span></div>
                     <div>
-                        <h3 class="text-2xl font-bold mb-2">100% lokal — keine Daten in der Cloud</h3>
-                        <p class="text-secondary">Deine Amazon-Daten verlassen nie deinen Browser. Wir speichern nichts in unserer Datenbank — alles wird direkt auf deinem Gerät verarbeitet. Maximale Datensicherheit, ohne Kompromisse.</p>
+                        <h3 class="text-2xl font-bold mb-2">100% lokal, keine Daten in der Cloud</h3>
+                        <p class="text-secondary">Deine Amazon-Daten verlassen nie deinen Browser. Wir speichern nichts in unserer Datenbank. Alles wird direkt auf deinem Gerät verarbeitet.</p>
                     </div>
                 </div>
             </div>
             <div class="bg-surface-container-lowest p-8 rounded-3xl reveal">
                 <div class="text-primary font-black text-4xl mb-4">98%</div>
                 <h4 class="font-bold mb-2">Zeitersparnis</h4>
-                <p class="text-xs text-on-surface-variant leading-relaxed">Durchschnittliche Reduktion manueller PPC-Arbeit — von Stunden auf Minuten.</p>
+                <p class="text-xs text-on-surface-variant leading-relaxed">Durchschnittliche Reduktion manueller PPC-Arbeit. Von Stunden auf Minuten.</p>
             </div>
             <div class="bg-surface-container-lowest p-8 rounded-3xl reveal">
                 <div class="text-primary font-black text-4xl mb-4">2.4x</div>
@@ -678,12 +681,12 @@ tailwind.config = {
         <div class="flex flex-col md:flex-row gap-12 items-center reveal">
             <!-- Photo placeholder -->
             <div class="shrink-0 w-64 h-64 md:w-80 md:h-80 rounded-3xl overflow-hidden">
-                <img src="tobias.jpg" alt="Tobias Dziuba — Gründer AdsMasters" class="w-full h-full object-cover object-top">
+                <img src="tobias.jpg" alt="Tobias Dziuba, Gründer AdsMasters" class="w-full h-full object-cover object-top">
             </div>
             <div>
                 <div class="text-primary font-['Work_Sans'] font-bold text-xs tracking-widest uppercase mb-4">Über den Gründer</div>
                 <h2 class="text-3xl lg:text-4xl font-black tracking-tight mb-4">Tobias Dziuba</h2>
-                <p class="text-on-surface-variant text-base leading-relaxed mb-4">Amazon-Advertising-Experte und Gründer von AdsMasters. Seit 2018 berät Tobias Marken und Seller bei der Optimierung ihrer Amazon PPC-Kampagnen — von aufstrebenden Startups bis zu den größten Marken Deutschlands.</p>
+                <p class="text-on-surface-variant text-base leading-relaxed mb-4">Amazon-Advertising-Experte und Gründer von AdsMasters. Seit 2018 berät Tobias Marken und Seller bei der Optimierung ihrer Amazon PPC-Kampagnen. Von aufstrebenden Startups bis zu den größten Marken Deutschlands.</p>
                 <p class="text-on-surface-variant text-base leading-relaxed mb-6">Die PPC Tools sind aus der täglichen Praxis entstanden: Werkzeuge, die Tobias und sein Team selbst nutzen, um hunderte Kampagnen effizient zu managen. Jetzt erstmals als eigenständiges Produkt verfügbar.</p>
                 <div class="flex flex-wrap gap-3">
                     <span class="px-4 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-bold font-['Work_Sans']">Amazon Ads Certified</span>
@@ -702,10 +705,10 @@ tailwind.config = {
             <h2 class="text-3xl font-black text-on-background tracking-tight mb-8">Amazon PPC Management auf einem neuen Level</h2>
             <p class="mb-6 leading-relaxed text-base">Im zunehmend kompetitiven Amazon-Marketplace reichen manuelle Gebotsanpassungen und Excel-basierte Keyword-Recherche nicht mehr aus. Für nachhaltiges Wachstum benötigen Seller und Vendoren eine professionelle <strong class="text-on-background">PPC-Software</strong>, die als Performance-Architekt fungiert. AdsMasters liefert die technische Grundlage, um <strong class="text-on-background">Amazon Sponsored Products</strong>, Sponsored Brands und Display-Anzeigen mit chirurgischer Präzision zu optimieren.</p>
             <h3 class="text-xl font-bold text-on-background mb-4 mt-10">Algorithmische Gebotsoptimierung</h3>
-            <p class="mb-6 leading-relaxed text-base">Unser <strong class="text-on-background">Bid Optimizer</strong> analysiert historische Daten und passt Gebote in Echtzeit an deinen Ziel-ACoS an. Im Gegensatz zu einfachen regelbasierten Systemen berücksichtigt unsere Architektur Saisonalität, Marktvolatilität und individuelle Kampagnenziele — für tausende Keywords gleichzeitig.</p>
+            <p class="mb-6 leading-relaxed text-base">Unser <strong class="text-on-background">Bid Optimizer</strong> analysiert historische Daten und passt Gebote in Echtzeit an deinen Ziel-ACoS an. Im Gegensatz zu einfachen regelbasierten Systemen berücksichtigt unsere Logik Saisonalität, Marktvolatilität und individuelle Kampagnenziele. Für tausende Keywords gleichzeitig.</p>
             <h3 class="text-xl font-bold text-on-background mb-4 mt-10">Strategisches Keyword Harvesting & Negative Management</h3>
-            <p class="mb-6 leading-relaxed text-base">Amazon-Wachstum erfordert die kontinuierliche Entdeckung konvertierender Suchbegriffe. Unser <strong class="text-on-background">Keyword Harvesting Tool</strong> automatisiert den Prozess — profitable Begriffe werden aus Auto-Kampagnen in Exact, Broad und Phrase-Match-Strukturen überführt. Gleichzeitig identifiziert der Negative Manager irrelevante Suchanfragen und stoppt verschwendetes Budget sofort.</p>
-            <blockquote class="font-medium text-primary mt-12 italic border-l-4 border-primary pl-6">"Der Wechsel von manueller Verwaltung zum AdsMasters-Framework hat unseren ACoS von 35% auf 18% gesenkt — bei gleichzeitig 60% mehr Umsatz in nur einem Quartal."</blockquote>
+            <p class="mb-6 leading-relaxed text-base">Amazon-Wachstum erfordert die kontinuierliche Entdeckung konvertierender Suchbegriffe. Unser <strong class="text-on-background">Keyword Harvesting Tool</strong> automatisiert den Prozess. Profitable Begriffe werden aus Auto-Kampagnen in Exact, Broad und Phrase-Match-Strukturen überführt. Gleichzeitig identifiziert der Negative Manager irrelevante Suchanfragen und stoppt verschwendetes Budget sofort.</p>
+            <blockquote class="font-medium text-primary mt-12 italic border-l-4 border-primary pl-6">"Der Wechsel von manueller Verwaltung zum AdsMasters-Framework hat unseren ACoS von 35% auf 18% gesenkt, bei gleichzeitig 60% mehr Umsatz in nur einem Quartal."</blockquote>
         </div>
     </div>
 </section>
@@ -717,7 +720,7 @@ tailwind.config = {
             <h2 class="text-4xl lg:text-7xl font-black tracking-tighter mb-8 leading-[0.9]">Bereit für mehr<br/>Performance?</h2>
             <p class="text-lg lg:text-xl opacity-90 mb-12 max-w-2xl mx-auto" style="color:#fff !important;">Ab 49€/Monat. Monatlich kündbar. Keine Ad-Spend-Beteiligung. Starte jetzt und optimiere dein Amazon PPC selbst.</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="mailto:hallo@adsmasters.de?subject=PPC%20Tools%20starten" class="bg-white text-primary px-10 py-5 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-xl">Jetzt starten — ab 49€/Monat</a>
+                <a href="mailto:hallo@adsmasters.de?subject=PPC%20Tools%20starten" class="bg-white text-primary px-10 py-5 rounded-xl text-lg font-bold hover:scale-105 transition-transform shadow-xl">Jetzt starten, ab 49€/Monat</a>
             </div>
         </div>
         <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-[100px]"></div>
