@@ -210,7 +210,8 @@
     </style>
 </head>
 <body>
-<script>if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="auth-guard.js"></script>
 
 <div class="topbar">
     <div class="topbar-left">
@@ -230,7 +231,7 @@
     <div class="topbar-right">
         <button class="lang-toggle" id="uiLangToggle" onclick="toggleUILang()" title="Sprache / Language"><span class="lang-opt active" id="langOptDE">DE</span><span class="lang-opt" id="langOptEN">EN</span></button>
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Theme wechseln"><span id="themeIcon">🌙</span> <span id="themeLabel">Dark</span></button>
-        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';" data-i18n="btn_logout">Logout</button>
+        <button class="btn-logout" onclick="ppcLogout()" data-i18n="btn_logout">Logout</button>
     </div>
 </div>
 

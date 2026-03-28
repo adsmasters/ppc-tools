@@ -59,7 +59,7 @@
 </head>
 <body>
 <script>
-    if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
+    // Auth handled by auth-guard.js
     const saved = localStorage.getItem('ppc_theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
     function toggleTheme() {
@@ -88,7 +88,7 @@
     </div>
     <div class="topbar-right">
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9790;</button>
-        <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+        <button class="btn-logout" onclick="ppcLogout()">Logout</button>
     </div>
 </div>
 <script>document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'light') === 'dark' ? '&#9788;' : '&#9790;';</script>

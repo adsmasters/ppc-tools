@@ -45,7 +45,7 @@
         </div>
         <div class="topbar-right">
             <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9788;</button>
-            <button class="btn-logout" onclick="sessionStorage.removeItem('ppc_auth'); window.location.href='index.html';">Logout</button>
+            <button class="btn-logout" onclick="ppcLogout()">Logout</button>
         </div>
     </div>
     <div class="main">
@@ -97,7 +97,7 @@
         </div>
     </div>
     <script>
-        if (!sessionStorage.getItem('ppc_auth')) window.location.href = 'index.html';
+        // Auth handled by auth-guard.js
         // Theme toggle
         const savedTheme = localStorage.getItem('ppc_theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);

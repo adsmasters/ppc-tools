@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paket wählen - AdsMasters PPC Tools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', Arial, sans-serif; background: #fcf9f8; color: #1c1b1b; min-height: 100vh; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .topbar { background: #fff; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .topbar img { height: 28px; }
+        .topbar a { color: #3452FF; font-weight: 600; font-size: 14px; text-decoration: none; }
+        .container { max-width: 900px; margin: 0 auto; padding: 60px 24px; }
+        h1 { text-align: center; font-size: 2.2rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 8px; }
+        .subtitle { text-align: center; color: #555; margin-bottom: 48px; font-size: 1rem; }
+        .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 640px) { .plans { grid-template-columns: 1fr; } }
+        .plan { background: #fff; border-radius: 16px; padding: 36px; display: flex; flex-direction: column; }
+        .plan.pro { background: #3452ff; color: #fff; transform: scale(1.03); box-shadow: 0 8px 40px rgba(52,82,255,0.25); position: relative; overflow: hidden; }
+        .plan.pro .badge { position: absolute; top: 0; right: 0; background: #0332e8; color: #fff; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; padding: 6px 20px; transform: rotate(45deg) translate(18px, -8px); }
+        .plan-name { font-size: 1.4rem; font-weight: 800; text-transform: uppercase; letter-spacing: -0.02em; margin-bottom: 4px; }
+        .plan-desc { font-size: 0.85rem; opacity: 0.7; margin-bottom: 24px; }
+        .plan-price { font-size: 3rem; font-weight: 900; margin-bottom: 4px; }
+        .plan-price span { font-size: 1rem; font-weight: 500; opacity: 0.7; }
+        .plan-period { font-size: 0.8rem; opacity: 0.6; margin-bottom: 28px; }
+        .features { list-style: none; flex-grow: 1; margin-bottom: 28px; }
+        .features li { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; padding: 8px 0; }
+        .features li.disabled { opacity: 0.35; text-decoration: line-through; }
+        .features .material-symbols-outlined { font-size: 18px; }
+        .plan:not(.pro) .features .material-symbols-outlined { color: #3452FF; }
+        .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .btn-outline { background: #f0edec; color: #1c1b1b; }
+        .btn-outline:hover { background: #e5e2e1; }
+        .btn-white { background: #fff; color: #3452FF; }
+        .btn-white:hover { background: #f0f0ff; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .manage { text-align: center; margin-top: 32px; }
+        .manage a { color: #3452FF; font-weight: 600; font-size: 14px; cursor: pointer; text-decoration: underline; }
+        .msg { text-align: center; padding: 12px; border-radius: 8px; margin-bottom: 24px; font-size: 0.85rem; display: none; }
+        .msg.error { background: #fee2e2; color: #dc2626; display: block; }
+        .msg.success { background: #dcfce7; color: #16a34a; display: block; }
+        .current-plan { text-align: center; margin-bottom: 24px; padding: 12px 20px; background: #dcfce7; color: #16a34a; border-radius: 8px; font-weight: 600; font-size: 0.9rem; display: none; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <a href="dashboard.html"><img src="logo.png" alt="AdsMasters"></a>
+        <a href="dashboard.html">Zurück zum Dashboard</a>
+    </div>
+    <div class="container">
+        <h1>Dein Paket wählen</h1>
+        <p class="subtitle">Monatlich kündbar. Keine Ad-Spend-Beteiligung. Keine versteckten Kosten.</p>
+        <div id="currentPlan" class="current-plan"></div>
+        <div id="msg" class="msg"></div>
+        <div class="plans">
+            <!-- Starter -->
+            <div class="plan">
+                <div class="plan-name">Starter</div>
+                <div class="plan-desc">3 Tools für den Einstieg</div>
+                <div class="plan-price">49€ <span>netto</span></div>
+                <div class="plan-period">pro Monat, zzgl. MwSt</div>
+                <ul class="features">
+                    <li><span class="material-symbols-outlined">check_circle</span>Kampagnen Ersteller</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>PPC Audit</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>Negative Manager</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>E-Mail Support</li>
+                    <li class="disabled"><span class="material-symbols-outlined">cancel</span>Keyword Harvesting</li>
+                    <li class="disabled"><span class="material-symbols-outlined">cancel</span>Wasted Ad Spend</li>
+                    <li class="disabled"><span class="material-symbols-outlined">cancel</span>Bid Optimizer</li>
+                    <li class="disabled"><span class="material-symbols-outlined">cancel</span>ASIN Optimizer</li>
+                </ul>
+                <button class="btn btn-outline" id="btn-starter" onclick="checkout('starter')">Starter wählen</button>
+            </div>
+            <!-- Professional -->
+            <div class="plan pro">
+                <div class="badge">Beliebt</div>
+                <div class="plan-name">Professional</div>
+                <div class="plan-desc">Alle 7 Tools, volle Kontrolle</div>
+                <div class="plan-price">99€ <span>netto</span></div>
+                <div class="plan-period">pro Monat, zzgl. MwSt</div>
+                <ul class="features">
+                    <li><span class="material-symbols-outlined">check_circle</span>Kampagnen Ersteller</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>PPC Audit</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>Negative Manager</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>Keyword Harvesting</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>Wasted Ad Spend</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>Bid Optimizer</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>ASIN Optimizer</li>
+                    <li><span class="material-symbols-outlined">check_circle</span>E-Mail Support</li>
+                </ul>
+                <button class="btn btn-white" id="btn-pro" onclick="checkout('professional')">Professional starten</button>
+            </div>
+        </div>
+        <div class="manage" id="manageSection" style="display:none;">
+            <a onclick="openPortal()">Abo verwalten (Kündigen, Zahlungsmethode ändern)</a>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const { createClient } = window.supabase;
+const SUPABASE_URL = 'https://lgrnmiszhhahfcmctmwo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxncm5taXN6aGhhaGZjbWN0bXdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjE2NDksImV4cCI6MjA4OTIzNzY0OX0.FDZRGMESves7XbAMs_oMLWmvnywMlVqe8p7f1kt06qk';
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentSession = null;
+
+(async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { location.href = 'index.html'; return; }
+    currentSession = session;
+
+    const { data: sub } = await sb.from('ppc_subscriptions')
+        .select('plan, status')
+        .eq('user_id', session.user.id)
+        .single();
+
+    if (sub && sub.status === 'active') {
+        const planName = sub.plan === 'professional' ? 'Professional' : 'Starter';
+        document.getElementById('currentPlan').style.display = 'block';
+        document.getElementById('currentPlan').textContent = 'Dein aktuelles Paket: ' + planName;
+        document.getElementById('manageSection').style.display = 'block';
+
+        if (sub.plan === 'starter') {
+            document.getElementById('btn-starter').textContent = 'Aktuelles Paket';
+            document.getElementById('btn-starter').disabled = true;
+            document.getElementById('btn-pro').textContent = 'Auf Professional upgraden';
+        } else {
+            document.getElementById('btn-pro').textContent = 'Aktuelles Paket';
+            document.getElementById('btn-pro').disabled = true;
+            document.getElementById('btn-starter').textContent = 'Auf Starter downgraden';
+        }
+    }
+
+    // Check for pre-selected plan from landing page
+    const selectedPlan = sessionStorage.getItem('ppc_selected_plan');
+    if (selectedPlan && (!sub || sub.status !== 'active')) {
+        sessionStorage.removeItem('ppc_selected_plan');
+        checkout(selectedPlan);
+    }
+})();
+
+async function checkout(plan) {
+    const btn = plan === 'starter' ? document.getElementById('btn-starter') : document.getElementById('btn-pro');
+    btn.disabled = true;
+    btn.textContent = 'Weiterleitung zu Stripe...';
+
+    try {
+        const res = await fetch(SUPABASE_URL + '/functions/v1/create-checkout-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + currentSession.access_token,
+            },
+            body: JSON.stringify({ plan }),
+        });
+        const data = await res.json();
+        if (data.url) {
+            location.href = data.url;
+        } else {
+            document.getElementById('msg').className = 'msg error';
+            document.getElementById('msg').textContent = 'Fehler: ' + (data.error || 'Unbekannter Fehler');
+            btn.disabled = false;
+            btn.textContent = plan === 'starter' ? 'Starter wählen' : 'Professional starten';
+        }
+    } catch (e) {
+        document.getElementById('msg').className = 'msg error';
+        document.getElementById('msg').textContent = 'Verbindungsfehler. Bitte versuche es erneut.';
+        btn.disabled = false;
+        btn.textContent = plan === 'starter' ? 'Starter wählen' : 'Professional starten';
+    }
+}
+
+async function openPortal() {
+    try {
+        const res = await fetch(SUPABASE_URL + '/functions/v1/create-portal-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + currentSession.access_token,
+            },
+            body: '{}',
+        });
+        const data = await res.json();
+        if (data.url) location.href = data.url;
+    } catch (e) {
+        alert('Fehler beim Öffnen des Kundenportals.');
+    }
+}
+</script>
+</body>
+</html>
