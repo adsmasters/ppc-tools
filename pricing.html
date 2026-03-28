@@ -164,6 +164,7 @@ async function checkout(plan) {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + currentSession.access_token,
+                'apikey': SUPABASE_KEY,
             },
             body: JSON.stringify({ plan }),
         });
@@ -191,6 +192,7 @@ async function openPortal() {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + currentSession.access_token,
+                'apikey': SUPABASE_KEY,
             },
             body: '{}',
         });
