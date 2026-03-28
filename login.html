@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmelden - AdsMasters PPC Tools</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', Arial, sans-serif; background: #fcf9f8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .wrap { width: 100%; max-width: 440px; padding: 24px; }
+        .logo { text-align: center; margin-bottom: 32px; }
+        .logo img { height: 32px; width: auto; margin-bottom: 8px; }
+        .logo-sub { font-size: 0.82rem; color: #6b7280; margin-top: 4px; }
+        .card { background: #fff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 32px rgba(53,81,255,0.08); }
+        .tabs { display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 28px; }
+        .tab { flex: 1; padding: 12px; text-align: center; font-weight: 600; font-size: 0.9rem; color: #9ca3af; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .tab.active { color: #3452FF; border-bottom-color: #3452FF; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 0.82rem; font-weight: 700; color: #374151; margin-bottom: 6px; }
+        input { width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-size: 0.92rem; color: #111; outline: none; transition: border-color 0.2s; background: #fff; }
+        input:focus { border-color: #3452FF; }
+        .btn { width: 100%; padding: 13px; background: #3452FF; color: #fff; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700; cursor: pointer; margin-top: 6px; transition: filter 0.2s; }
+        .btn:hover { filter: brightness(1.1); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; filter: none; }
+        .msg { padding: 11px 14px; border-radius: 8px; font-size: 0.83rem; margin-bottom: 14px; display: none; }
+        .msg.error { background: #fee2e2; border: 1px solid #fca5a5; color: #dc2626; }
+        .msg.success { background: #dcfce7; border: 1px solid #86efac; color: #16a34a; }
+        .link-btn { width: 100%; padding: 10px; background: none; border: none; color: #3452FF; font-size: 0.82rem; cursor: pointer; margin-top: 8px; text-decoration: underline; }
+        .back-btn { width: 100%; padding: 10px; background: none; border: none; color: #9ca3af; font-size: 0.82rem; cursor: pointer; margin-top: 8px; }
+        @media (max-width: 768px) {
+            .wrap { padding: 16px; }
+            .card { padding: 24px; border-radius: 14px; }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+<div class="wrap">
+    <div class="logo">
+        <img src="logo.png" alt="AdsMasters">
+        <div class="logo-sub">PPC Tools</div>
+    </div>
+    <div class="card">
+        <div class="tabs">
+            <div class="tab active" data-tab="login">Anmelden</div>
+            <div class="tab" data-tab="register">Registrieren</div>
+        </div>
+        <div id="msg" class="msg"></div>
+        <div class="panel active" id="panel-login">
+            <div class="form-group"><label>E-Mail</label><input type="email" id="l-email" placeholder="deine@email.de" autocomplete="email"></div>
+            <div class="form-group"><label>Passwort</label><input type="password" id="l-pass" placeholder="Passwort" autocomplete="current-password"></div>
+            <button class="btn" id="login-btn">Anmelden</button>
+            <button type="button" class="link-btn" id="forgot-btn">Passwort vergessen?</button>
+        </div>
+        <div class="panel" id="panel-reset">
+            <div class="form-group"><label>E-Mail-Adresse</label><input type="email" id="reset-email" placeholder="deine@email.de" autocomplete="email"></div>
+            <button class="btn" id="reset-btn">Link zum Zurücksetzen senden</button>
+            <button type="button" class="back-btn" id="back-to-login">Zurück zum Login</button>
+        </div>
+        <div class="panel" id="panel-register">
+            <div class="form-group"><label>Firmenname</label><input type="text" id="r-company" placeholder="Muster GmbH"></div>
+            <div class="form-group"><label>E-Mail</label><input type="email" id="r-email" placeholder="deine@email.de"></div>
+            <div class="form-group"><label>Passwort (min. 8 Zeichen)</label><input type="password" id="r-pass" placeholder="Passwort"></div>
+            <button class="btn" id="reg-btn">Konto erstellen</button>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const { createClient } = window.supabase;
+const sb = createClient('https://lgrnmiszhhahfcmctmwo.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxncm5taXN6aGhhaGZjbWN0bXdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjE2NDksImV4cCI6MjA4OTIzNzY0OX0.FDZRGMESves7XbAMs_oMLWmvnywMlVqe8p7f1kt06qk');
+
+// If already logged in, redirect
+sb.auth.getSession().then(async ({ data: { session } }) => {
+    if (!session) return;
+    location.href = 'dashboard.html';
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-' + t.dataset.tab).classList.add('active');
+    hideMsg();
+}));
+
+function showMsg(text, type) { const el = document.getElementById('msg'); el.textContent = text; el.className = 'msg ' + type; el.style.display = 'block'; }
+function hideMsg() { document.getElementById('msg').style.display = 'none'; }
+
+// Login
+document.getElementById('login-btn').addEventListener('click', async () => {
+    const email = document.getElementById('l-email').value.trim();
+    const pass = document.getElementById('l-pass').value;
+    if (!email || !pass) { showMsg('Bitte alle Felder ausfüllen', 'error'); return; }
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true; btn.textContent = 'Anmelden...';
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) { showMsg('Fehler: ' + error.message, 'error'); btn.disabled = false; btn.textContent = 'Anmelden'; return; }
+    location.href = 'dashboard.html';
+});
+
+// Register
+document.getElementById('reg-btn').addEventListener('click', async () => {
+    const company = document.getElementById('r-company').value.trim();
+    const email = document.getElementById('r-email').value.trim();
+    const pass = document.getElementById('r-pass').value;
+    if (!company || !email || !pass) { showMsg('Bitte alle Felder ausfüllen', 'error'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMsg('Bitte eine gültige E-Mail-Adresse eingeben', 'error'); return; }
+    if (pass.length < 8) { showMsg('Passwort muss mind. 8 Zeichen lang sein', 'error'); return; }
+    const btn = document.getElementById('reg-btn');
+    btn.disabled = true; btn.textContent = 'Erstelle Konto...';
+    const { data, error } = await sb.auth.signUp({
+        email,
+        password: pass,
+        options: {
+            data: { company_name: company },
+            emailRedirectTo: location.origin + '/ppc-tools/login.html'
+        }
+    });
+    if (error) { showMsg('Fehler: ' + error.message, 'error'); btn.disabled = false; btn.textContent = 'Konto erstellen'; return; }
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+        showMsg('Diese E-Mail ist bereits registriert. Bitte melde dich an.', 'error');
+        btn.disabled = false; btn.textContent = 'Konto erstellen';
+        return;
+    }
+    if (data.user) {
+        await sb.from('ppc_profiles').upsert({ user_id: data.user.id, company_name: company });
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) { location.href = 'dashboard.html'; return; }
+    }
+    showMsg('Konto erstellt! Bitte bestätige deine E-Mail, dann melde dich an.', 'success');
+    btn.disabled = false; btn.textContent = 'Konto erstellen';
+});
+
+// Forgot password
+document.getElementById('forgot-btn').addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    document.getElementById('panel-reset').classList.add('active');
+    hideMsg();
+    const e = document.getElementById('l-email').value.trim();
+    if (e) document.getElementById('reset-email').value = e;
+});
+
+document.getElementById('back-to-login').addEventListener('click', () => {
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    document.getElementById('panel-login').classList.add('active');
+    document.querySelector('[data-tab="login"]').classList.add('active');
+    hideMsg();
+});
+
+document.getElementById('reset-btn').addEventListener('click', async () => {
+    const email = document.getElementById('reset-email').value.trim();
+    if (!email) { showMsg('Bitte E-Mail-Adresse eingeben', 'error'); return; }
+    const btn = document.getElementById('reset-btn');
+    btn.disabled = true; btn.textContent = 'Wird gesendet...';
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+        redirectTo: location.origin + '/ppc-tools/reset-password.html'
+    });
+    if (error) { showMsg('Fehler: ' + error.message, 'error'); }
+    else { showMsg('Link zum Zurücksetzen wurde an ' + email + ' gesendet.', 'success'); }
+    btn.disabled = false; btn.textContent = 'Link zum Zurücksetzen senden';
+});
+
+// Enter key
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const active = document.querySelector('.panel.active');
+    if (active.id === 'panel-login') document.getElementById('login-btn').click();
+    else if (active.id === 'panel-register') document.getElementById('reg-btn').click();
+    else document.getElementById('reset-btn').click();
+});
+
+// Check URL params for plan pre-selection
+const params = new URLSearchParams(location.search);
+if (params.get('plan')) {
+    sessionStorage.setItem('ppc_selected_plan', params.get('plan'));
+    // Switch to register tab
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    document.querySelector('[data-tab="register"]').classList.add('active');
+    document.getElementById('panel-register').classList.add('active');
+}
+</script>
+</body>
+</html>

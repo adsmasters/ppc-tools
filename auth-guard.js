@@ -25,7 +25,7 @@ document.body.style.visibility = 'hidden';
 
     // Not logged in -> redirect to login
     if (!session) {
-        location.href = 'index.html';
+        location.href = 'login.html';
         return;
     }
 
@@ -67,6 +67,6 @@ document.body.style.visibility = 'hidden';
 // Logout helper
 function ppcLogout() {
     sb.auth.signOut().then(() => {
-        location.href = 'index.html';
+        location.href = 'login.html';
     });
 }

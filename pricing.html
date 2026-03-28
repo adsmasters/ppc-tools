@@ -110,7 +110,7 @@ let currentSession = null;
 
 (async () => {
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { location.href = 'index.html'; return; }
+    if (!session) { location.href = 'login.html'; return; }
     currentSession = session;
 
     const { data: sub } = await sb.from('ppc_subscriptions')
