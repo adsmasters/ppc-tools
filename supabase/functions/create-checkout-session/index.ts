@@ -90,9 +90,12 @@ Deno.serve(async (req: Request) => {
     }
 
     // Create checkout session
+    const priceId = PRICE_IDS[plan];
+    console.log("[Checkout] Plan:", plan, "Price ID:", priceId, "Customer:", customerId);
+
     const session = await stripePost("/checkout/sessions", {
       customer: customerId,
-      "line_items[0][price]": PRICE_IDS[plan],
+      "line_items[0][price]": priceId,
       "line_items[0][quantity]": "1",
       mode: "subscription",
       success_url: "https://adsmasters.github.io/ppc-tools/dashboard.html?checkout=success",
@@ -102,6 +105,22 @@ Deno.serve(async (req: Request) => {
       "subscription_data[metadata][user_id]": user.id,
       "subscription_data[metadata][plan]": plan,
     });
+
+    console.log("[Checkout] Stripe response:", JSON.stringify(session));
+
+    if (session.error) {
+      return new Response(JSON.stringify({ error: session.error.message || session.error.type }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!session.url) {
+      return new Response(JSON.stringify({ error: "Stripe hat keine Checkout-URL zurückgegeben", debug: session }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
