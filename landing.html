@@ -100,6 +100,11 @@ tailwind.config = {
     /* Ensure body text is dark and readable */
     p, li, td { color: #1c1b1b; }
     .text-secondary, .text-on-surface-variant { color: #333 !important; }
+    /* White text on blue backgrounds */
+    .bg-primary-container p, .bg-primary-container li, .bg-primary-container td,
+    .bg-primary-container span, .bg-primary-container div,
+    .bg-primary-container .text-secondary, .bg-primary-container .text-on-surface-variant { color: #fff !important; }
+    .bg-primary-container .opacity-80 { opacity: 0.85 !important; }
     .reveal {
         opacity: 0;
         transform: translateY(32px);
@@ -269,7 +274,7 @@ tailwind.config = {
 <section class="py-24 px-6 lg:px-8 bg-white">
     <div class="max-w-7xl mx-auto">
         <div class="text-center mb-16 reveal">
-            <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">Von 32 Stunden auf 6.</h2>
+            <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">Von 32 Stunden auf 8.</h2>
             <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">PPC-Optimierung frisst Zeit. Mit AdsMasters automatisierst du die repetitiven Aufgaben und konzentrierst dich auf Strategie statt Tabellen.</p>
         </div>
 
@@ -290,9 +295,9 @@ tailwind.config = {
             </div>
             <!-- AdsMasters -->
             <div class="bg-primary-container text-on-primary-container rounded-3xl p-8 shadow-2xl md:scale-105 relative overflow-hidden reveal">
-                <div class="absolute top-0 right-0 bg-primary text-white text-[10px] font-black uppercase tracking-widest px-5 py-1.5 rotate-45 translate-x-6 translate-y-3">-81%</div>
+                <div class="absolute top-0 right-0 bg-primary text-white text-[10px] font-black uppercase tracking-widest px-5 py-1.5 rotate-45 translate-x-6 translate-y-3">-75%</div>
                 <div class="font-['Work_Sans'] font-bold text-xs tracking-widest uppercase mb-4 opacity-80">AdsMasters PPC Tools</div>
-                <div class="text-5xl font-black mb-2">6h</div>
+                <div class="text-5xl font-black mb-2">8h</div>
                 <div class="opacity-80 text-sm mb-6">pro Monat</div>
                 <ul class="space-y-3 text-sm">
                     <li class="flex items-start gap-2"><span class="mt-0.5">&#10003;</span>Keywords in Sekunden analysiert</li>
@@ -308,7 +313,7 @@ tailwind.config = {
                 <div class="text-5xl font-black text-on-background mb-2">0h</div>
                 <div class="text-secondary text-sm mb-6">für dich — aber…</div>
                 <ul class="space-y-3 text-sm text-on-surface-variant">
-                    <li class="flex items-start gap-2"><span class="text-error mt-0.5">&#9679;</span>1.500€+ monatliche Kosten</li>
+                    <li class="flex items-start gap-2"><span class="text-error mt-0.5">&#9679;</span>1.000€+ monatliche Kosten</li>
                     <li class="flex items-start gap-2"><span class="text-error mt-0.5">&#9679;</span>10-15% Ad-Spend-Beteiligung</li>
                     <li class="flex items-start gap-2"><span class="text-error mt-0.5">&#9679;</span>Keine Kontrolle über Änderungen</li>
                     <li class="flex items-start gap-2"><span class="text-error mt-0.5">&#9679;</span>Lock-in durch Vertragsbindung</li>
@@ -527,8 +532,8 @@ tailwind.config = {
 <section class="py-24 px-6 lg:px-8 bg-surface-container-low">
     <div class="max-w-5xl mx-auto">
         <div class="text-center mb-16 reveal">
-            <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">Warum AdsMasters günstiger ist.</h2>
-            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Andere PPC-Tools kosten 500€+ pro Monat und skalieren mit deinem Ad Spend. Wir nicht.</p>
+            <h2 class="text-4xl lg:text-5xl font-black tracking-tighter mb-4">99€ Flat. Keine Zusatzkosten. Punkt.</h2>
+            <p class="text-on-surface-variant max-w-2xl mx-auto font-medium">Andere PPC-Tools nehmen 500€+ im Monat plus eine Gebühr auf deinen Ad Spend — und du hast keine Kontrolle. Bei uns zahlst du maximal 99€ Flat Fee, behältst die volle Kontrolle und bist monatlich kündbar.</p>
         </div>
         <div class="bg-white rounded-3xl overflow-hidden reveal">
             <table class="w-full text-left">
@@ -551,7 +556,7 @@ tailwind.config = {
                         <td class="py-4 px-6 lg:px-8 font-medium">Monatliche Kosten</td>
                         <td class="py-4 px-4 lg:px-8 text-center font-black text-primary">ab 49€</td>
                         <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant">ab 500€</td>
-                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant hidden md:table-cell">ab 1.500€</td>
+                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant hidden md:table-cell">ab 1.000€</td>
                     </tr>
                     <tr class="border-t border-surface-container-high/50">
                         <td class="py-4 px-6 lg:px-8 font-medium">Ad-Spend-Beteiligung</td>
@@ -563,7 +568,7 @@ tailwind.config = {
                         <td class="py-4 px-6 lg:px-8 font-medium">Kosten bei 50.000€ Ad Spend</td>
                         <td class="py-4 px-4 lg:px-8 text-center font-black text-primary">99€</td>
                         <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant">2.000-5.500€</td>
-                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant hidden md:table-cell">6.500-9.000€</td>
+                        <td class="py-4 px-4 lg:px-8 text-center text-on-surface-variant hidden md:table-cell">6.000-8.500€</td>
                     </tr>
                     <tr class="border-t border-surface-container-high/50">
                         <td class="py-4 px-6 lg:px-8 font-medium">Datenspeicherung</td>
