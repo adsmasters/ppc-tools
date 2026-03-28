@@ -170,8 +170,10 @@
     </style>
 </head>
 <body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="auth-guard.js"></script>
 <script>
-    // Auth handled by auth-guard.js
+    // Auth loaded via external scripts
     // Theme
     const saved = localStorage.getItem('ppc_theme') || 'light';
     document.documentElement.setAttribute('data-theme', saved);
