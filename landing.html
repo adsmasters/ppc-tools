@@ -104,6 +104,8 @@ tailwind.config = {
     [class*="text-on-surface"] { color: #1c1b1b !important; }
     /* White text on blue/dark backgrounds */
     .bg-primary-container *, .hero-gradient *, .glass-card *, .dashboard-visual *, .abstract-visual * { color: #fff !important; }
+    /* But NOT white buttons on blue background - keep their own colors */
+    .hero-gradient a.bg-white, .hero-gradient a.bg-white * { color: #3452FF !important; }
     .bg-primary-container .opacity-80 { opacity: 0.85 !important; }
     /* Keep primary blue text blue */
     [class*="text-primary"]:not(.bg-primary-container *):not(.hero-gradient *) { color: #3452FF !important; }
