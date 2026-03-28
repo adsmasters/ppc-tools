@@ -35,18 +35,14 @@ document.body.style.visibility = 'hidden';
         .eq('user_id', session.user.id)
         .single();
 
-    // Dashboard is always accessible (shows upgrade prompts)
-    if (currentPage === 'dashboard') {
-        window.ppcUser = session.user;
-        window.ppcPlan = sub?.status === 'active' ? sub.plan : null;
-        window.ppcSub = sub;
-        document.body.style.visibility = 'visible';
-        return;
-    }
-
-    // No active subscription -> pricing page
+    // No active subscription -> pricing page (except dashboard with active sub)
     if (!sub || sub.status !== 'active') {
-        location.href = 'pricing.html';
+        if (currentPage === 'dashboard') {
+            // Dashboard without sub -> redirect to pricing
+            location.href = 'pricing.html';
+        } else {
+            location.href = 'pricing.html';
+        }
         return;
     }
 

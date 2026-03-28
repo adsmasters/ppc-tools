@@ -99,8 +99,14 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     btn.disabled = true; btn.textContent = 'Anmelden...';
     const { error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) { showMsg('Fehler: ' + error.message, 'error'); btn.disabled = false; btn.textContent = 'Anmelden'; return; }
-    const plan = sessionStorage.getItem('ppc_selected_plan');
-    location.href = plan ? 'pricing.html' : 'dashboard.html';
+    // Check if user has active subscription
+    const { data: { user } } = await sb.auth.getUser();
+    const { data: sub } = await sb.from('ppc_subscriptions').select('status').eq('user_id', user.id).single();
+    if (sub && sub.status === 'active') {
+        location.href = 'dashboard.html';
+    } else {
+        location.href = 'pricing.html';
+    }
 });
 
 // Register
@@ -131,9 +137,7 @@ document.getElementById('reg-btn').addEventListener('click', async () => {
         await sb.from('ppc_profiles').upsert({ user_id: data.user.id, company_name: company });
         const { data: { session } } = await sb.auth.getSession();
         if (session) {
-            // If a plan was selected, go to pricing for checkout
-            const plan = sessionStorage.getItem('ppc_selected_plan');
-            location.href = plan ? 'pricing.html' : 'dashboard.html';
+            location.href = 'pricing.html';
             return;
         }
     }
