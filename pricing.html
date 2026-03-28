@@ -148,7 +148,7 @@ let isLoggedIn = false;
 
 async function checkout(plan) {
     // Not logged in? Save plan and redirect to registration
-    if (!isLoggedIn) {
+    if (!isLoggedIn || !currentSession) {
         sessionStorage.setItem('ppc_selected_plan', plan);
         location.href = 'login.html?plan=' + plan;
         return;
@@ -173,13 +173,13 @@ async function checkout(plan) {
             location.href = data.url;
         } else {
             document.getElementById('msg').className = 'msg error';
-            document.getElementById('msg').textContent = 'Fehler: ' + (data.error || 'Unbekannter Fehler');
+            document.getElementById('msg').textContent = 'Fehler: ' + (data.error || data.message || JSON.stringify(data));
             btn.disabled = false;
             btn.textContent = plan === 'starter' ? 'Starter wählen' : 'Professional starten';
         }
     } catch (e) {
         document.getElementById('msg').className = 'msg error';
-        document.getElementById('msg').textContent = 'Verbindungsfehler. Bitte versuche es erneut.';
+        document.getElementById('msg').textContent = 'Fehler: ' + e.message;
         btn.disabled = false;
         btn.textContent = plan === 'starter' ? 'Starter wählen' : 'Professional starten';
     }
