@@ -47,8 +47,8 @@
 </head>
 <body>
     <div class="topbar">
-        <a href="dashboard.html"><img src="logo.png" alt="AdsMasters"></a>
-        <a href="dashboard.html">Zurück zum Dashboard</a>
+        <a href="index.html"><img src="logo.png" alt="AdsMasters"></a>
+        <a href="index.html" id="backLink">Zurück</a>
     </div>
     <div class="container">
         <h1>Dein Paket wählen</h1>
@@ -107,43 +107,53 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentSession = null;
+let isLoggedIn = false;
 
 (async () => {
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { location.href = 'login.html'; return; }
-    currentSession = session;
+    if (session) {
+        currentSession = session;
+        isLoggedIn = true;
 
-    const { data: sub } = await sb.from('ppc_subscriptions')
-        .select('plan, status')
-        .eq('user_id', session.user.id)
-        .single();
+        const { data: sub } = await sb.from('ppc_subscriptions')
+            .select('plan, status')
+            .eq('user_id', session.user.id)
+            .single();
 
-    if (sub && sub.status === 'active') {
-        const planName = sub.plan === 'professional' ? 'Professional' : 'Starter';
-        document.getElementById('currentPlan').style.display = 'block';
-        document.getElementById('currentPlan').textContent = 'Dein aktuelles Paket: ' + planName;
-        document.getElementById('manageSection').style.display = 'block';
+        if (sub && sub.status === 'active') {
+            const planName = sub.plan === 'professional' ? 'Professional' : 'Starter';
+            document.getElementById('currentPlan').style.display = 'block';
+            document.getElementById('currentPlan').textContent = 'Dein aktuelles Paket: ' + planName;
+            document.getElementById('manageSection').style.display = 'block';
 
-        if (sub.plan === 'starter') {
-            document.getElementById('btn-starter').textContent = 'Aktuelles Paket';
-            document.getElementById('btn-starter').disabled = true;
-            document.getElementById('btn-pro').textContent = 'Auf Professional upgraden';
-        } else {
-            document.getElementById('btn-pro').textContent = 'Aktuelles Paket';
-            document.getElementById('btn-pro').disabled = true;
-            document.getElementById('btn-starter').textContent = 'Auf Starter downgraden';
+            if (sub.plan === 'starter') {
+                document.getElementById('btn-starter').textContent = 'Aktuelles Paket';
+                document.getElementById('btn-starter').disabled = true;
+                document.getElementById('btn-pro').textContent = 'Auf Professional upgraden';
+            } else {
+                document.getElementById('btn-pro').textContent = 'Aktuelles Paket';
+                document.getElementById('btn-pro').disabled = true;
+                document.getElementById('btn-starter').textContent = 'Auf Starter downgraden';
+            }
         }
-    }
 
-    // Check for pre-selected plan from landing page
-    const selectedPlan = sessionStorage.getItem('ppc_selected_plan');
-    if (selectedPlan && (!sub || sub.status !== 'active')) {
-        sessionStorage.removeItem('ppc_selected_plan');
-        checkout(selectedPlan);
+        // Auto-checkout if redirected back after registration
+        const selectedPlan = sessionStorage.getItem('ppc_selected_plan');
+        if (selectedPlan && (!sub || sub.status !== 'active')) {
+            sessionStorage.removeItem('ppc_selected_plan');
+            checkout(selectedPlan);
+        }
     }
 })();
 
 async function checkout(plan) {
+    // Not logged in? Save plan and redirect to registration
+    if (!isLoggedIn) {
+        sessionStorage.setItem('ppc_selected_plan', plan);
+        location.href = 'login.html?plan=' + plan;
+        return;
+    }
+
     const btn = plan === 'starter' ? document.getElementById('btn-starter') : document.getElementById('btn-pro');
     btn.disabled = true;
     btn.textContent = 'Weiterleitung zu Stripe...';

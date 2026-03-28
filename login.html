@@ -99,7 +99,8 @@ document.getElementById('login-btn').addEventListener('click', async () => {
     btn.disabled = true; btn.textContent = 'Anmelden...';
     const { error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) { showMsg('Fehler: ' + error.message, 'error'); btn.disabled = false; btn.textContent = 'Anmelden'; return; }
-    location.href = 'dashboard.html';
+    const plan = sessionStorage.getItem('ppc_selected_plan');
+    location.href = plan ? 'pricing.html' : 'dashboard.html';
 });
 
 // Register
@@ -129,7 +130,12 @@ document.getElementById('reg-btn').addEventListener('click', async () => {
     if (data.user) {
         await sb.from('ppc_profiles').upsert({ user_id: data.user.id, company_name: company });
         const { data: { session } } = await sb.auth.getSession();
-        if (session) { location.href = 'dashboard.html'; return; }
+        if (session) {
+            // If a plan was selected, go to pricing for checkout
+            const plan = sessionStorage.getItem('ppc_selected_plan');
+            location.href = plan ? 'pricing.html' : 'dashboard.html';
+            return;
+        }
     }
     showMsg('Konto erstellt! Bitte bestätige deine E-Mail, dann melde dich an.', 'success');
     btn.disabled = false; btn.textContent = 'Konto erstellen';
