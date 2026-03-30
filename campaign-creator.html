@@ -1438,8 +1438,8 @@ const autoFilledBudgets = new Set();
 const autoFilledBids = new Set();
 let isAutoFilling = false;
 
-const budgetIds = ['budget-auto', 'budget-generic-exact', 'budget-generic-broad', 'budget-brand-exact', 'budget-brand-broad', 'budget-brand-phrase', 'budget-comp-exact', 'budget-comp-broad', 'budget-pt-comp', 'budget-pt-brand', 'budget-single', 'budget-sd-pt-comp', 'budget-sd-pt-brand'];
-const bidIds = ['bid-auto', 'bid-generic-exact', 'bid-generic-broad', 'bid-brand-exact', 'bid-brand-broad', 'bid-brand-phrase', 'bid-comp-exact', 'bid-comp-broad', 'bid-pt-comp', 'bid-pt-brand', 'bid-single', 'bid-sd-pt-comp', 'bid-sd-pt-brand'];
+const budgetIds = ['budget-auto', 'budget-generic-exact', 'budget-generic-broad', 'budget-brand-exact', 'budget-brand-broad', 'budget-brand-phrase', 'budget-comp-exact', 'budget-comp-broad', 'budget-pt-comp', 'budget-pt-brand', 'budget-single'];
+const bidIds = ['bid-auto', 'bid-generic-exact', 'bid-generic-broad', 'bid-brand-exact', 'bid-brand-broad', 'bid-brand-phrase', 'bid-comp-exact', 'bid-comp-broad', 'bid-pt-comp', 'bid-pt-brand', 'bid-single'];
 const autoBidIds = ['bid-auto-close', 'bid-auto-loose', 'bid-auto-substitutes', 'bid-auto-complements'];
 
 // Mark all as auto-filled initially
@@ -1494,14 +1494,12 @@ function syncBids() {
     const val = document.getElementById('overallBid').value;
     isAutoFilling = true;
     bidIds.forEach(id => {
-        if (autoFilledBids.has(id)) {
-            document.getElementById(id).value = val;
-        }
+        const el = document.getElementById(id);
+        if (el && autoFilledBids.has(id)) el.value = val;
     });
     autoBidIds.forEach(id => {
-        if (autoFilledBids.has(id)) {
-            document.getElementById(id).value = val;
-        }
+        const el = document.getElementById(id);
+        if (el && autoFilledBids.has(id)) el.value = val;
     });
     isAutoFilling = false;
 }
