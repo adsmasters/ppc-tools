@@ -40,43 +40,17 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Verify auth
+    // Verify auth via Supabase getUser (works without gateway JWT verification)
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "No auth header" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Decode user from JWT payload (already validated by Supabase gateway)
-    const token = authHeader.replace("Bearer ", "");
-    const parts = token.split(".");
-    if (parts.length !== 3) {
-      return new Response(JSON.stringify({ error: "Invalid token format" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    let payload: { sub?: string; email?: string };
-    try {
-      payload = JSON.parse(atob(parts[1]));
-    } catch {
-      return new Response(JSON.stringify({ error: "Invalid token payload" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const userId = payload.sub;
-    const userEmail = payload.email;
-    if (!userId) {
-      return new Response(JSON.stringify({ error: "No user in token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const user = { id: userId, email: userEmail };
+    const token = authHeader?.replace("Bearer ", "") || "";
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    const { data: { user }, error: authError } = await sb.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Nicht eingeloggt. Bitte neu anmelden." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Parse plan
     const { plan } = await req.json();
