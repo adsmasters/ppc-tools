@@ -6,8 +6,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LEXOFFICE_API_KEY = Deno.env.get("LEXOFFICE_API_KEY") || "";
 
-async function createLexOfficeInvoice(customerName: string, customerEmail: string, periodLabel: string) {
-  if (!LEXOFFICE_API_KEY) return;
+async function createLexOfficeInvoice(customerName: string, customerEmail: string, periodLabel: string): Promise<string | null> {
+  if (!LEXOFFICE_API_KEY) return null;
   const now = new Date().toISOString();
   const body = {
     voucherDate: now,
@@ -39,9 +39,10 @@ async function createLexOfficeInvoice(customerName: string, customerEmail: strin
   const data = await res.json();
   if (!res.ok) {
     console.error("[LexOffice] Invoice creation failed:", JSON.stringify(data));
-  } else {
-    console.log("[LexOffice] Invoice created:", data.id);
+    return null;
   }
+  console.log("[LexOffice] Invoice created:", data.id);
+  return data.id as string;
 }
 
 const corsHeaders = {
@@ -135,7 +136,17 @@ Deno.serve(async (req: Request) => {
       }
       const periodStart = new Date(sub.current_period_start * 1000).toLocaleDateString("de-DE");
       const periodEnd = new Date(sub.current_period_end * 1000).toLocaleDateString("de-DE");
-      await createLexOfficeInvoice(customerName, customerEmail, `Abonnement ${periodStart} – ${periodEnd}`);
+      const periodLabel = `Abonnement ${periodStart} – ${periodEnd}`;
+      const lexInvoiceId = await createLexOfficeInvoice(customerName, customerEmail, periodLabel);
+      if (lexInvoiceId) {
+        await sb.from("ppc_invoices").insert({
+          user_id: userId,
+          lexoffice_invoice_id: lexInvoiceId,
+          amount_net: 99.00,
+          amount_gross: 117.81,
+          period_label: periodLabel,
+        });
+      }
     }
 
     if (event.type === "customer.subscription.updated") {
@@ -191,7 +202,17 @@ Deno.serve(async (req: Request) => {
       }
       const periodStart = new Date(invoice.lines?.data?.[0]?.period?.start * 1000).toLocaleDateString("de-DE");
       const periodEnd = new Date(invoice.lines?.data?.[0]?.period?.end * 1000).toLocaleDateString("de-DE");
-      await createLexOfficeInvoice(customerName, customerEmail, `Abonnement ${periodStart} – ${periodEnd}`);
+      const recurringLabel = `Abonnement ${periodStart} – ${periodEnd}`;
+      const recurringLexId = await createLexOfficeInvoice(customerName, customerEmail, recurringLabel);
+      if (recurringLexId && subRowForInvoice?.user_id) {
+        await sb.from("ppc_invoices").insert({
+          user_id: subRowForInvoice.user_id,
+          lexoffice_invoice_id: recurringLexId,
+          amount_net: 99.00,
+          amount_gross: 117.81,
+          period_label: recurringLabel,
+        });
+      }
       console.log(`[PPC Webhook] Recurring invoice created for ${customerEmail}`);
     }
 
