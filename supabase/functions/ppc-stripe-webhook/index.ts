@@ -4,6 +4,45 @@ const STRIPE_SECRET = Deno.env.get("STRIPE_SECRET_KEY")!;
 const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const LEXOFFICE_API_KEY = Deno.env.get("LEXOFFICE_API_KEY") || "";
+
+async function createLexOfficeInvoice(customerName: string, customerEmail: string, periodLabel: string) {
+  if (!LEXOFFICE_API_KEY) return;
+  const now = new Date().toISOString();
+  const body = {
+    voucherDate: now,
+    address: { name: customerName || customerEmail },
+    lineItems: [{
+      type: "custom",
+      name: "AdsMasters PPC Tools – Professional",
+      description: periodLabel,
+      quantity: 1,
+      unitName: "Monat",
+      unitPrice: { currency: "EUR", netAmount: 99.00, taxRatePercentage: 19 },
+      discountPercentage: 0,
+    }],
+    taxConditions: { taxType: "net" },
+    paymentConditions: { paymentTermLabel: "Sofort fällig", paymentTermDuration: 0 },
+    shippingConditions: { shippingDate: now, shippingType: "serviceperiod" },
+    totalPrice: { currency: "EUR" },
+    title: "Rechnung",
+  };
+  const res = await fetch("https://api.lexoffice.io/v1/invoices?finalize=true", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${LEXOFFICE_API_KEY}`,
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    console.error("[LexOffice] Invoice creation failed:", JSON.stringify(data));
+  } else {
+    console.log("[LexOffice] Invoice created:", data.id);
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,6 +121,21 @@ Deno.serve(async (req: Request) => {
       }
 
       console.log(`[PPC Webhook] Subscription activated: ${userId} -> ${plan}`);
+
+      // Create LexOffice invoice for first payment
+      // Prefer company name from custom_fields, fall back to customer name
+      const companyField = session.custom_fields?.find((f: { key: string }) => f.key === "company_name");
+      const companyName = companyField?.text?.value || session.customer_details?.name || "";
+      const customerName = companyName;
+      const customerEmail = session.customer_details?.email || session.customer_email || "";
+
+      // Save company name to ppc_profiles for future use
+      if (companyName) {
+        await sb.from("ppc_profiles").update({ company_name: companyName }).eq("user_id", userId);
+      }
+      const periodStart = new Date(sub.current_period_start * 1000).toLocaleDateString("de-DE");
+      const periodEnd = new Date(sub.current_period_end * 1000).toLocaleDateString("de-DE");
+      await createLexOfficeInvoice(customerName, customerEmail, `Abonnement ${periodStart} – ${periodEnd}`);
     }
 
     if (event.type === "customer.subscription.updated") {
@@ -111,6 +165,34 @@ Deno.serve(async (req: Request) => {
       }).eq("user_id", userId);
 
       console.log(`[PPC Webhook] Subscription canceled: ${userId}`);
+    }
+
+    if (event.type === "invoice.payment_succeeded") {
+      const invoice = event.data.object;
+      // Skip the first invoice (already handled by checkout.session.completed)
+      if (invoice.billing_reason === "subscription_create") {
+        return new Response(JSON.stringify({ received: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const customerEmail = invoice.customer_email || "";
+      // Look up company name from ppc_profiles (saved at checkout)
+      const { data: subRowForInvoice } = await sb.from("ppc_subscriptions")
+        .select("user_id")
+        .eq("stripe_subscription_id", invoice.subscription)
+        .single();
+      let customerName = invoice.customer_name || "";
+      if (subRowForInvoice?.user_id) {
+        const { data: profileForInvoice } = await sb.from("ppc_profiles")
+          .select("company_name")
+          .eq("user_id", subRowForInvoice.user_id)
+          .single();
+        if (profileForInvoice?.company_name) customerName = profileForInvoice.company_name;
+      }
+      const periodStart = new Date(invoice.lines?.data?.[0]?.period?.start * 1000).toLocaleDateString("de-DE");
+      const periodEnd = new Date(invoice.lines?.data?.[0]?.period?.end * 1000).toLocaleDateString("de-DE");
+      await createLexOfficeInvoice(customerName, customerEmail, `Abonnement ${periodStart} – ${periodEnd}`);
+      console.log(`[PPC Webhook] Recurring invoice created for ${customerEmail}`);
     }
 
     if (event.type === "invoice.payment_failed") {

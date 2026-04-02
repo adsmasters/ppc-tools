@@ -49,15 +49,34 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    // Decode user from JWT payload (already validated by Supabase gateway)
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await sb.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      return new Response(JSON.stringify({ error: "Invalid token format" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    let payload: { sub?: string; email?: string };
+    try {
+      payload = JSON.parse(atob(parts[1]));
+    } catch {
+      return new Response(JSON.stringify({ error: "Invalid token payload" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = payload.sub;
+    const userEmail = payload.email;
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "No user in token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const user = { id: userId, email: userEmail };
+    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
     // Parse plan
     const { plan } = await req.json();
@@ -69,8 +88,9 @@ Deno.serve(async (req: Request) => {
     }
 
     // Find or create Stripe customer
-    const { data: profile } = await sb.from("ppc_profiles").select("stripe_customer_id").eq("user_id", user.id).single();
+    const { data: profile } = await sb.from("ppc_profiles").select("stripe_customer_id, company_name").eq("user_id", user.id).single();
     let customerId = profile?.stripe_customer_id;
+    const companyName = profile?.company_name || "";
 
     if (!customerId) {
       // Search by email first
@@ -80,6 +100,7 @@ Deno.serve(async (req: Request) => {
       } else {
         const customer = await stripePost("/customers", {
           email: user.email || "",
+          name: companyName,
           "metadata[user_id]": user.id,
           "metadata[source]": "ppc_tools",
         });
@@ -87,6 +108,9 @@ Deno.serve(async (req: Request) => {
       }
       // Save to profile
       await sb.from("ppc_profiles").update({ stripe_customer_id: customerId }).eq("user_id", user.id);
+    } else if (companyName) {
+      // Update existing customer with company name
+      await stripePost(`/customers/${customerId}`, { name: companyName });
     }
 
     // Create checkout session
@@ -98,8 +122,16 @@ Deno.serve(async (req: Request) => {
       "line_items[0][price]": priceId,
       "line_items[0][quantity]": "1",
       mode: "subscription",
-      success_url: "https://adsmasters.github.io/ppc-tools/dashboard.html?checkout=success",
-      cancel_url: "https://adsmasters.github.io/ppc-tools/pricing.html",
+      billing_address_collection: "required",
+      "customer_update[address]": "auto",
+      "customer_update[name]": "auto",
+      "custom_fields[0][key]": "company_name",
+      "custom_fields[0][label][type]": "custom",
+      "custom_fields[0][label][custom]": "Unternehmensname",
+      "custom_fields[0][type]": "text",
+      "custom_fields[0][optional]": "false",
+      success_url: "https://adsmasters.github.io/ppc-tools-app/dashboard.html?checkout=success",
+      cancel_url: "https://adsmasters.github.io/ppc-tools-app/pricing.html",
       "metadata[user_id]": user.id,
       "metadata[plan]": plan,
       "subscription_data[metadata][user_id]": user.id,
