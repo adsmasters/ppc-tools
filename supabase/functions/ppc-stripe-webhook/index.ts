@@ -6,12 +6,13 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LEXOFFICE_API_KEY = Deno.env.get("LEXOFFICE_API_KEY") || "";
 
-async function createLexOfficeInvoice(customerName: string, customerEmail: string, periodLabel: string): Promise<string | null> {
+async function createLexOfficeInvoice(customerName: string, customerEmail: string, periodLabel: string, periodStartDate?: Date, periodEndDate?: Date): Promise<string | null> {
   if (!LEXOFFICE_API_KEY) return null;
-  const now = new Date().toISOString();
+  const start = periodStartDate || new Date();
+  const end = periodEndDate || new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000);
   const body = {
-    voucherDate: now,
-    address: { name: customerName || customerEmail },
+    voucherDate: start.toISOString(),
+    address: { name: customerName || customerEmail, countryCode: "DE" },
     lineItems: [{
       type: "custom",
       name: "AdsMasters PPC Tools – Professional",
@@ -23,7 +24,11 @@ async function createLexOfficeInvoice(customerName: string, customerEmail: strin
     }],
     taxConditions: { taxType: "net" },
     paymentConditions: { paymentTermLabel: "Sofort fällig", paymentTermDuration: 0 },
-    shippingConditions: { shippingDate: now, shippingType: "serviceperiod" },
+    shippingConditions: {
+      shippingDate: start.toISOString(),
+      shippingEndDate: end.toISOString(),
+      shippingType: "serviceperiod",
+    },
     totalPrice: { currency: "EUR" },
     title: "Rechnung",
   };
@@ -106,13 +111,21 @@ Deno.serve(async (req: Request) => {
       });
       const sub = await subRes.json();
 
+      const periodEnd = sub.current_period_end
+        ? new Date(sub.current_period_end * 1000).toISOString()
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // fallback: +30 days
+
+      const periodStart = sub.current_period_start
+        ? new Date(sub.current_period_start * 1000)
+        : new Date();
+
       // Upsert subscription
       await sb.from("ppc_subscriptions").upsert({
         user_id: userId,
         stripe_subscription_id: subscriptionId,
         plan: plan,
         status: "active",
-        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+        current_period_end: periodEnd,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
 
@@ -134,10 +147,10 @@ Deno.serve(async (req: Request) => {
       if (companyName) {
         await sb.from("ppc_profiles").update({ company_name: companyName }).eq("user_id", userId);
       }
-      const periodStart = new Date(sub.current_period_start * 1000).toLocaleDateString("de-DE");
-      const periodEnd = new Date(sub.current_period_end * 1000).toLocaleDateString("de-DE");
-      const periodLabel = `Abonnement ${periodStart} – ${periodEnd}`;
-      const lexInvoiceId = await createLexOfficeInvoice(customerName, customerEmail, periodLabel);
+      const periodStartStr = periodStart.toLocaleDateString("de-DE");
+      const periodEndStr = new Date(periodEnd).toLocaleDateString("de-DE");
+      const periodLabel = `Abonnement ${periodStartStr} – ${periodEndStr}`;
+      const lexInvoiceId = await createLexOfficeInvoice(customerName, customerEmail, periodLabel, periodStart, new Date(periodEnd));
       if (lexInvoiceId) {
         await sb.from("ppc_invoices").insert({
           user_id: userId,
@@ -203,7 +216,9 @@ Deno.serve(async (req: Request) => {
       const periodStart = new Date(invoice.lines?.data?.[0]?.period?.start * 1000).toLocaleDateString("de-DE");
       const periodEnd = new Date(invoice.lines?.data?.[0]?.period?.end * 1000).toLocaleDateString("de-DE");
       const recurringLabel = `Abonnement ${periodStart} – ${periodEnd}`;
-      const recurringLexId = await createLexOfficeInvoice(customerName, customerEmail, recurringLabel);
+      const recurringStart = new Date(invoice.lines?.data?.[0]?.period?.start * 1000);
+      const recurringEnd = new Date(invoice.lines?.data?.[0]?.period?.end * 1000);
+      const recurringLexId = await createLexOfficeInvoice(customerName, customerEmail, recurringLabel, recurringStart, recurringEnd);
       if (recurringLexId && subRowForInvoice?.user_id) {
         await sb.from("ppc_invoices").insert({
           user_id: subRowForInvoice.user_id,
