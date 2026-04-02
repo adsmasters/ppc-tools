@@ -95,6 +95,7 @@ Deno.serve(async (req: Request) => {
       customer: customerId,
       "line_items[0][price]": priceId,
       "line_items[0][quantity]": "1",
+      "line_items[0][tax_rates][0]": "txr_1THhGBFWwBX9iTf2AYRVIaMa",
       mode: "subscription",
       billing_address_collection: "required",
       "customer_update[address]": "auto",
