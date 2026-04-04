@@ -5,6 +5,29 @@ const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LEXOFFICE_API_KEY = Deno.env.get("LEXOFFICE_API_KEY") || "";
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
+
+async function sendNewCustomerNotification(customerName: string, customerEmail: string, plan: string) {
+  if (!RESEND_API_KEY) return;
+  const body = [
+    `🎉 Neuer Kunde!`,
+    ``,
+    `Name: ${customerName || "–"}`,
+    `E-Mail: ${customerEmail}`,
+    `Plan: ${plan}`,
+    `Zeitpunkt: ${new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
+  ].join("\n");
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: "PPC Tools <noreply@adsmasters.de>",
+      to: ["hi@adsmasters.de"],
+      subject: `🎉 Neuer Kunde: ${customerName || customerEmail}`,
+      text: body,
+    }),
+  });
+}
 
 async function createLexOfficeInvoice(customerName: string, customerEmail: string, periodLabel: string, periodStartDate?: Date, periodEndDate?: Date): Promise<string | null> {
   if (!LEXOFFICE_API_KEY) return null;
@@ -135,6 +158,11 @@ Deno.serve(async (req: Request) => {
       }
 
       console.log(`[PPC Webhook] Subscription activated: ${userId} -> ${plan}`);
+
+      // Notify AdsMasters about new customer
+      const notifyEmail = session.customer_details?.email || session.customer_email || "";
+      const notifyName = session.custom_fields?.find((f: { key: string }) => f.key === "company_name")?.text?.value || session.customer_details?.name || "";
+      await sendNewCustomerNotification(notifyName, notifyEmail, plan);
 
       // Create LexOffice invoice for first payment
       // Prefer company name from custom_fields, fall back to customer name
