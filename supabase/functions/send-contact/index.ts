@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
     let emailBody: string;
 
     if (type === "feature_request") {
-      emailTo = "hi@adsmasters.de";
+      emailTo = "hallo@adsmasters.de";
       emailSubject = `[Feature Request] ${what?.substring(0, 80) || "Neuer Wunsch"}`;
       emailBody = [
         `FEATURE REQUEST`,
@@ -70,8 +70,28 @@ Deno.serve(async (req: Request) => {
         ``,
         `ERWARTETER OUTPUT: ${output}`,
       ].join("\n");
+    } else if (subject === "Datenlöschung (DSGVO)") {
+      emailTo = "hallo@adsmasters.de";
+      emailSubject = `[DSGVO Löschantrag] ${company || user.email}`;
+      emailBody = [
+        `DSGVO LÖSCHANTRAG`,
+        ``,
+        `Von: ${company ? company + " — " : ""}${user.email}`,
+        `User-ID: ${user.id}`,
+        `Plan: ${plan}`,
+        ``,
+        `Der Nutzer beantragt die Löschung aller gespeicherten personenbezogenen Daten`,
+        `gemäß Art. 17 DSGVO (Recht auf Löschung).`,
+        ``,
+        `Zu löschende Daten:`,
+        `- Supabase Auth Account (user_id: ${user.id})`,
+        `- ppc_profiles, ppc_subscriptions, ppc_invoices`,
+        `- Stripe Customer (falls vorhanden)`,
+        ``,
+        `Frist: 30 Tage ab Eingang dieses Antrags.`,
+      ].join("\n");
     } else {
-      emailTo = "hi@adsmasters.de";
+      emailTo = "hallo@adsmasters.de";
       emailSubject = `[PPC Tools Support] ${subject || "Neue Anfrage"}`;
       emailBody = [
         `SUPPORT-ANFRAGE`,

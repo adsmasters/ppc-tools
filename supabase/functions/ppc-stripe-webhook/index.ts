@@ -404,7 +404,6 @@ Deno.serve(async (req: Request) => {
       const subscriptionId = invoice.subscription;
       if (!subscriptionId) return new Response("ok", { status: 200 });
 
-      // Find user by subscription ID
       const { data: subRow } = await sb.from("ppc_subscriptions")
         .select("user_id")
         .eq("stripe_subscription_id", subscriptionId)
@@ -417,6 +416,42 @@ Deno.serve(async (req: Request) => {
         }).eq("user_id", subRow.user_id);
 
         console.log(`[PPC Webhook] Payment failed: ${subRow.user_id}`);
+
+        // Email to customer
+        const customerEmail = invoice.customer_email || "";
+        const { data: prof } = await sb.from("ppc_profiles").select("company_name").eq("user_id", subRow.user_id).single();
+        const customerName = prof?.company_name || "";
+        const nextAttempt = invoice.next_payment_attempt
+          ? new Date(invoice.next_payment_attempt * 1000).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+          : null;
+        if (customerEmail) {
+          await sendEmail(customerEmail, "Zahlung für AdsMasters PPC Tools fehlgeschlagen", [
+            `Hallo${customerName ? " " + customerName : ""},`,
+            ``,
+            `leider konnte deine letzte Zahlung für die AdsMasters PPC Tools nicht verarbeitet werden.`,
+            ``,
+            nextAttempt
+              ? `Stripe versucht die Zahlung automatisch erneut am ${nextAttempt}.`
+              : `Bitte aktualisiere deine Zahlungsmethode, damit dein Zugang nicht unterbrochen wird.`,
+            ``,
+            `Zahlungsmethode aktualisieren:`,
+            `https://adsmasters.github.io/ppc-tools-app/dashboard.html`,
+            `(→ "Abo verwalten" im Dashboard)`,
+            ``,
+            `Bei Fragen: hallo@adsmasters.de`,
+            ``,
+            `Dein AdsMasters Team`,
+          ].join("\n"));
+
+          // Also notify AdsMasters
+          await sendEmail("hallo@adsmasters.de", `⚠️ Zahlung fehlgeschlagen: ${customerName || customerEmail}`, [
+            `Zahlung fehlgeschlagen`,
+            ``,
+            `Kunde: ${customerName || "–"}`,
+            `E-Mail: ${customerEmail}`,
+            `Nächster Versuch: ${nextAttempt || "–"}`,
+          ].join("\n"));
+        }
       }
     }
 
