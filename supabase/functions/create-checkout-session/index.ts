@@ -107,6 +107,8 @@ Deno.serve(async (req: Request) => {
       "custom_fields[0][optional]": "false",
       success_url: "https://adsmasters.github.io/ppc-tools-app/dashboard.html?checkout=success",
       cancel_url: "https://adsmasters.github.io/ppc-tools-app/pricing.html",
+      "consent_collection[terms_of_service]": "required",
+      "custom_text[terms_of_service_acceptance][message]": "Ich stimme den [AGB](https://adsmasters.github.io/ppc-tools-app/agb.html) und der [Datenschutzerklärung](https://adsmasters.github.io/ppc-tools-app/datenschutz.html) zu.",
       "metadata[user_id]": user.id,
       "metadata[plan]": plan,
       "subscription_data[metadata][user_id]": user.id,
