@@ -51,7 +51,7 @@ Deno.serve(async (req: Request) => {
       },
       body: new URLSearchParams({
         customer: profile.stripe_customer_id,
-        return_url: "https://adsmasters.github.io/ppc-tools/dashboard.html",
+        return_url: "https://adsmasters.github.io/ppc-tools-app/dashboard.html",
       }).toString(),
     });
     const session = await res.json();

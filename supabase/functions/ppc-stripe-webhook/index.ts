@@ -231,6 +231,84 @@ Deno.serve(async (req: Request) => {
       console.log(`[PPC Webhook] Recurring invoice created for ${customerEmail}`);
     }
 
+    if (event.type === "charge.refunded") {
+      const charge = event.data.object;
+      const customerId = charge.customer;
+      if (!customerId) {
+        return new Response(JSON.stringify({ received: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Find user by stripe_customer_id
+      const { data: profile } = await sb.from("ppc_profiles")
+        .select("user_id")
+        .eq("stripe_customer_id", customerId)
+        .single();
+
+      if (!profile?.user_id) {
+        console.log(`[PPC Webhook] No user found for customer ${customerId}`);
+        return new Response(JSON.stringify({ received: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Find the most recent LexOffice invoice for this user
+      const { data: invoiceRow } = await sb.from("ppc_invoices")
+        .select("lexoffice_invoice_id, period_label, amount_net")
+        .eq("user_id", profile.user_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!invoiceRow?.lexoffice_invoice_id) {
+        console.log(`[PPC Webhook] No LexOffice invoice found for user ${profile.user_id}`);
+        return new Response(JSON.stringify({ received: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Get customer name for credit note
+      const { data: profileFull } = await sb.from("ppc_profiles")
+        .select("company_name")
+        .eq("user_id", profile.user_id)
+        .single();
+      const customerName = profileFull?.company_name || "Kunde";
+
+      // Create LexOffice credit note (Gutschrift) as counter-booking
+      // Note: LexOffice API v1 has no cancel endpoint for finalized invoices.
+      // The credit note offsets the amount; manual storno in LexOffice UI is required to change invoice status.
+      const now = new Date().toISOString();
+      const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const creditNoteRes = await fetch("https://api.lexoffice.io/v1/credit-notes?finalize=true", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${LEXOFFICE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          relatedVouchers: [{ id: invoiceRow.lexoffice_invoice_id, voucherType: "invoice" }],
+          voucherDate: now,
+          address: { name: customerName, countryCode: "DE" },
+          lineItems: [{
+            type: "custom",
+            name: "Storno: AdsMasters PPC Tools – Professional",
+            description: invoiceRow.period_label || "",
+            quantity: 1,
+            unitName: "Monat",
+            unitPrice: { currency: "EUR", netAmount: invoiceRow.amount_net || 99.00, taxRatePercentage: 19 },
+            discountPercentage: 0,
+          }],
+          taxConditions: { taxType: "net" },
+          shippingConditions: { shippingDate: now, shippingEndDate: endDate, shippingType: "serviceperiod" },
+          totalPrice: { currency: "EUR" },
+          title: "Gutschrift",
+        }),
+      });
+
+      if (creditNoteRes.ok) {
+        const creditNote = await creditNoteRes.json();
+        console.log(`[PPC Webhook] Credit note created: ${creditNote.id} for user ${profile.user_id}`);
+      } else {
+        const err = await creditNoteRes.json();
+        console.error("[PPC Webhook] Credit note failed:", JSON.stringify(err));
+      }
+    }
+
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object;
       const subscriptionId = invoice.subscription;
