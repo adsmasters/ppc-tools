@@ -22,7 +22,7 @@ async function sendNewCustomerNotification(customerName: string, customerEmail: 
     headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       from: "PPC Tools <noreply@adsmasters.de>",
-      to: ["hi@adsmasters.de"],
+      to: ["hallo@adsmasters.de"],
       subject: `🎉 Neuer Kunde: ${customerName || customerEmail}`,
       text: body,
     }),
