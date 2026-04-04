@@ -7,8 +7,21 @@ const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LEXOFFICE_API_KEY = Deno.env.get("LEXOFFICE_API_KEY") || "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
 
-async function sendNewCustomerNotification(customerName: string, customerEmail: string, plan: string) {
+async function sendEmail(to: string, subject: string, text: string) {
   if (!RESEND_API_KEY) return;
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: "AdsMasters PPC Tools <noreply@adsmasters.de>",
+      to: [to],
+      subject,
+      text,
+    }),
+  });
+}
+
+async function sendNewCustomerNotification(customerName: string, customerEmail: string, plan: string) {
   const body = [
     `🎉 Neuer Kunde!`,
     ``,
@@ -17,16 +30,28 @@ async function sendNewCustomerNotification(customerName: string, customerEmail: 
     `Plan: ${plan}`,
     `Zeitpunkt: ${new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
   ].join("\n");
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: "PPC Tools <noreply@adsmasters.de>",
-      to: ["hallo@adsmasters.de"],
-      subject: `🎉 Neuer Kunde: ${customerName || customerEmail}`,
-      text: body,
-    }),
-  });
+  await sendEmail("hallo@adsmasters.de", `🎉 Neuer Kunde: ${customerName || customerEmail}`, body);
+}
+
+async function sendWelcomeEmail(customerEmail: string, customerName: string, periodEnd: string) {
+  const body = [
+    `Hallo${customerName ? " " + customerName : ""},`,
+    ``,
+    `dein Zugang zu den AdsMasters PPC Tools ist jetzt aktiv! 🎉`,
+    ``,
+    `Du kannst dich ab sofort hier einloggen:`,
+    `https://adsmasters.github.io/ppc-tools-app/login.html`,
+    ``,
+    `Dein Abo läuft monatlich und verlängert sich automatisch.`,
+    `Aktuelle Abrechnungsperiode bis: ${periodEnd}`,
+    ``,
+    `Bei Fragen erreichst du uns jederzeit über das Kontaktformular im Tool`,
+    `oder direkt per E-Mail an hallo@adsmasters.de.`,
+    ``,
+    `Viel Erfolg mit deinen Kampagnen!`,
+    `Dein AdsMasters Team`,
+  ].join("\n");
+  await sendEmail(customerEmail, "Dein Zugang zu den AdsMasters PPC Tools ist aktiv", body);
 }
 
 async function createLexOfficeInvoice(customerName: string, customerEmail: string, periodLabel: string, periodStartDate?: Date, periodEndDate?: Date): Promise<string | null> {
@@ -164,6 +189,10 @@ Deno.serve(async (req: Request) => {
       const notifyName = session.custom_fields?.find((f: { key: string }) => f.key === "company_name")?.text?.value || session.customer_details?.name || "";
       await sendNewCustomerNotification(notifyName, notifyEmail, plan);
 
+      // Welcome email to customer
+      const periodEndStr = new Date(periodEnd).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+      await sendWelcomeEmail(notifyEmail, notifyName, periodEndStr);
+
       // Create LexOffice invoice for first payment
       // Prefer company name from custom_fields, fall back to customer name
       const companyField = session.custom_fields?.find((f: { key: string }) => f.key === "company_name");
@@ -196,14 +225,47 @@ Deno.serve(async (req: Request) => {
       if (!userId) return new Response("ok", { status: 200 });
 
       const status = sub.status === "active" ? "active" : sub.status === "past_due" ? "past_due" : "inactive";
+      const periodEnd = new Date(sub.current_period_end * 1000);
 
       await sb.from("ppc_subscriptions").update({
         status,
-        current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+        current_period_end: periodEnd.toISOString(),
         updated_at: new Date().toISOString(),
       }).eq("user_id", userId);
 
       console.log(`[PPC Webhook] Subscription updated: ${userId} -> ${status}`);
+
+      // If customer just set cancel_at_period_end → send cancellation notice
+      const prev = event.data.previous_attributes;
+      if (sub.cancel_at_period_end === true && prev?.cancel_at_period_end === false) {
+        const { data: profile } = await sb.from("ppc_profiles").select("company_name").eq("user_id", userId).single();
+        const { data: userRow } = await sb.auth.admin.getUserById(userId);
+        const customerEmail = userRow?.user?.email || "";
+        const customerName = profile?.company_name || "";
+        const endStr = periodEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+        const cancelBody = [
+          `Hallo${customerName ? " " + customerName : ""},`,
+          ``,
+          `deine Kündigung wurde bestätigt.`,
+          ``,
+          `Du hast noch bis zum ${endStr} vollen Zugriff auf alle PPC Tools.`,
+          `Danach wird dein Zugang automatisch deaktiviert.`,
+          ``,
+          `Möchtest du dein Abo doch fortführen? Kein Problem — melde dich einfach bei uns:`,
+          `hallo@adsmasters.de`,
+          ``,
+          `Dein AdsMasters Team`,
+        ].join("\n");
+        await sendEmail(customerEmail, "Deine Kündigung der AdsMasters PPC Tools", cancelBody);
+        // Also notify AdsMasters
+        await sendEmail("hallo@adsmasters.de", `⚠️ Kündigung: ${customerName || customerEmail}`, [
+          `Kündigung eingegangen`,
+          ``,
+          `Kunde: ${customerName || "–"}`,
+          `E-Mail: ${customerEmail}`,
+          `Zugriff bis: ${endStr}`,
+        ].join("\n"));
+      }
     }
 
     if (event.type === "customer.subscription.deleted") {
