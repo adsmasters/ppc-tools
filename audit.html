@@ -749,7 +749,7 @@ function buildSectionC() {
         '<div class="stat-card"><div class="stat-label">Spend</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Sales</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + (totalSpend > 0 ? (totalSales/totalSpend).toFixed(2) : '–') + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Wasted Spend (Suchbegriffe, ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Wasted Spend (Suchbegriffe, ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + (totalSpend > 0 ? ' <span style="font-size:14px;font-weight:400;opacity:0.85;">(' + (wastedSpend / totalSpend * 100).toFixed(1) + '%)</span>' : '') + '</div></div>' +
         '</div>';
 
     // Total SP Sales aus Kampagnen-Zeilen
@@ -1009,7 +1009,7 @@ function buildSectionSB() {
         '<div class="stat-card"><div class="stat-label">Spend (Suchbegriffe)</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Sales (Suchbegriffe)</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + (totalSpend > 0 ? (totalSales/totalSpend).toFixed(2) : '–') + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Wasted Spend (ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Wasted Spend (ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + (totalSpend > 0 ? ' <span style="font-size:14px;font-weight:400;opacity:0.85;">(' + (wastedSpend / totalSpend * 100).toFixed(1) + '%)</span>' : '') + '</div></div>' +
         '</div>' + coverageHint;
 
     // Wasted oder Top anzeigen
