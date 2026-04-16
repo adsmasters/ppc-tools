@@ -299,6 +299,9 @@ function findCol(headers, key) {
     return -1;
 }
 
+// Erkennt Search-Term-Sheets auf Deutsch und Englisch
+function isSearchTermSheet(sn) { return sn && (sn.includes('Suchbegriff') || sn.toLowerCase().includes('search term')); }
+
 function parseNum(v) { if (v == null || v === '') return 0; return parseFloat(String(v).replace(/[^0-9.,\-]/g, '').replace(',', '.')) || 0; }
 function formatCurrency(v) { return v.toLocaleString('de-DE', { style: 'currency', currency: detectedCurrency }); }
 function formatPct(v) { return (v * 100).toFixed(1) + '%'; }
@@ -681,7 +684,7 @@ function buildSectionC() {
     const keywordRows = allRows.filter(r => r.format === 'SP' && r.keyword && kwPtEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat'));
 
     // Wasted Ad Spend: Search Term Zeilen (was der Kunde gesucht hat)
-    const searchTermRows = allRows.filter(r => r.format === 'SP' && r.keyword && !r.entity && r.sheetName && r.sheetName.includes('Suchbegriff'));
+    const searchTermRows = allRows.filter(r => r.format === 'SP' && r.keyword && !r.entity && isSearchTermSheet(r.sheetName));
 
     // Keywords, Top Suchbegriffe oder Wasted
     const kwRows = spMode === 'keywords' ? keywordRows : searchTermRows;
@@ -874,7 +877,7 @@ function buildCumulativeChart(sorted, totalSales) {
 function buildSectionD() {
     const section = document.getElementById('sectionD');
     // Nur SP Gebotsanpassung-Zeilen für Platzierungsanalyse (nicht SB/SD mischen)
-    const placementRows = allRows.filter(r => r.format === 'SP' && r.placement && r.placement.trim() !== '' && r.entity.includes('gebotsanpassung'));
+    const placementRows = allRows.filter(r => r.format === 'SP' && r.placement && r.placement.trim() !== '' && (r.entity.includes('gebotsanpassung') || r.entity.includes('bidding adjustment')));
     if (placementRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
@@ -951,7 +954,7 @@ function buildSectionSB() {
 
     const stMap = {};
     sbSTrows.forEach(r => {
-        const searchterm = r.sheetName && r.sheetName.includes('Suchbegriff') ? r.keyword : '';
+        const searchterm = isSearchTermSheet(r.sheetName) ? r.keyword : '';
         if (!searchterm) return;
         if (sbView === 'account') {
             const key = searchterm.toLowerCase().trim();
