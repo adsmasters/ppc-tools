@@ -384,7 +384,7 @@ function parseWorkbook(wb, file) {
             if (seen.has(key)) continue;
             seen.add(key);
 
-            parsedCampaigns.push({ campaignName, campaignId, adgroupName, adgroupId, isAuto });
+            parsedCampaigns.push({ campaignName, campaignId, adgroupName, adgroupId, isAuto, product: colMap.product !== -1 ? String(row[colMap.product] || '').trim() || 'Sponsored Products' : 'Sponsored Products' });
             totalRows++;
         }
     }
@@ -606,7 +606,7 @@ function exportBulkSheet() {
         if (level === 'adgroup' && !campaign.adgroupId) return;
 
         const r = emptyRow();
-        r[H['Product']] = 'Sponsored Products';
+        r[H['Product']] = campaign.product || 'Sponsored Products';
         r[H['Entity']] = entity;
         r[H['Operation']] = 'Create';
         if (campaign.campaignId) r[H['Campaign ID']] = campaign.campaignId;
@@ -631,7 +631,7 @@ function exportBulkSheet() {
         dedup.add(dedupKey);
 
         const r = emptyRow();
-        r[H['Product']] = 'Sponsored Products';
+        r[H['Product']] = campaign.product || 'Sponsored Products';
         r[H['Entity']] = entity;
         r[H['Operation']] = 'Create';
         if (campaign.campaignId) r[H['Campaign ID']] = campaign.campaignId;

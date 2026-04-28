@@ -321,9 +321,16 @@
                 </select>
             </div>
             <div class="field">
-                <label>&nbsp;</label>
-                <button class="btn btn-primary" onclick="exportBulkSheet()" style="width:100%;">Bulk Sheet erstellen</button>
+                <label>Werbeformat</label>
+                <select id="exportProductType">
+                    <option value="Sponsored Products">Sponsored Products (SP)</option>
+                    <option value="Sponsored Brands">Sponsored Brands (SB)</option>
+                    <option value="Sponsored Display">Sponsored Display (SD)</option>
+                </select>
             </div>
+        </div>
+        <div style="margin-top:12px;">
+            <button class="btn btn-primary" onclick="exportBulkSheet()">Bulk Sheet erstellen</button>
         </div>
         <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;" id="selectedCount">0 Keywords ausgewählt</div>
     </div>
@@ -1067,6 +1074,7 @@ function exportBulkSheet() {
     const marketplace = document.getElementById('exportMarketplace').value;
     const matchType = document.getElementById('exportMatchType').value;
     const level = document.getElementById('exportLevel').value;
+    const productType = document.getElementById('exportProductType').value;
     const t = TRANSLATIONS[marketplace] || TRANSLATIONS['de'];
     const headers = t.headers;
 
@@ -1100,7 +1108,7 @@ function exportBulkSheet() {
         exportSeen.add(dedupeKey);
 
         const r = emptyRow();
-        r[hProduct] = t.product;
+        r[hProduct] = productType;
         r[hEntity] = entityType;
         r[hOp] = t.create;
         if (entry.campaignId) r[hCampId] = entry.campaignId;
@@ -1145,7 +1153,7 @@ function exportBulkSheet() {
         asinSeen.add(dedupeKey);
 
         const r = emptyRow();
-        r[hProduct] = t.product;
+        r[hProduct] = productType;
         r[hEntity] = t.negProdTargeting;
         r[hOp] = t.create;
         if (entry.campaignId) r[hCampId] = entry.campaignId;

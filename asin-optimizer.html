@@ -426,6 +426,7 @@ function parseWorkbook(wb, fileName, fileSize) {
             }
 
             allProductAds.push({
+                product: ci.product !== -1 ? String(row[ci.product] || '').trim() : 'Sponsored Products',
                 campaignName: ci.campaign !== -1 ? String(row[ci.campaign] || '').trim() : '',
                 campaignId: ci.campaignId !== -1 ? String(row[ci.campaignId] || '').trim() : '',
                 adgroupName: ci.adgroup !== -1 ? String(row[ci.adgroup] || '').trim() : '',
@@ -830,7 +831,7 @@ function generateBulkSheet() {
 
     selected.forEach(r => {
         const row = new Array(18).fill('');
-        row[0] = 'Sponsored Products';
+        row[0] = r.product || 'Sponsored Products';
         row[1] = 'Product Ad';
         row[2] = 'Update';
         row[3] = r.campaignId;
