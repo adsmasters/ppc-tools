@@ -273,10 +273,6 @@
                     <label class="productListLabel" id="productListLabel" data-i18n="lbl_skus">SKUs (eine pro Zeile)</label>
                     <textarea id="productList" rows="4" placeholder="B0XXXXXX&#10;B0YYYYYY"></textarea>
                 </div>
-                <div class="field">
-                    <label><span data-i18n="lbl_portfolio_id">Portfolio-ID</span> <span style="font-weight:400;color:#8b949e;" data-i18n="lbl_optional">(optional)</span></label>
-                    <input type="text" id="portfolioId" placeholder="z.B. 123456789" data-i18n-ph="ph_portfolio_id">
-                </div>
             </div>
 
             <!-- STEP 2 -->
@@ -1107,7 +1103,7 @@ function gatherFormState() {
     state.products = [{
         name: document.getElementById('productName').value,
         list: document.getElementById('productList').value,
-        portfolioId: document.getElementById('portfolioId').value
+
     }];
     // Text fields
     const textIds = ['genericKw', 'genericAlloc', 'brandKw', 'compKw', 'compKwAlloc', 'singleKw', 'brandAsins', 'compAsins', 'compAsinAlloc', 'negKwExact', 'negKwPhrase', 'campNegKwExact', 'campNegKwPhrase', 'negProdTargeting'];
@@ -1141,7 +1137,7 @@ function applyFormState(state) {
     const p = (state.products || [{}])[0] || {};
     document.getElementById('productName').value = p.name || '';
     document.getElementById('productList').value = p.list || '';
-    document.getElementById('portfolioId').value = p.portfolioId || '';
+
     // Text fields
     if (state.texts) {
         Object.entries(state.texts).forEach(([id, val]) => {
@@ -1402,7 +1398,7 @@ function resetAll() {
     // Reset product fields
     document.getElementById('productName').value = '';
     document.getElementById('productList').value = '';
-    document.getElementById('portfolioId').value = '';
+
     document.querySelectorAll('input[type="number"]').forEach(el => {
         if (el.id.startsWith('bid')) el.value = '0.50';
         else if (el.id.startsWith('budget')) el.value = '10.00';
@@ -1588,7 +1584,7 @@ function generateRows() {
     const productName = document.getElementById('productName').value.trim();
     const listText = document.getElementById('productList').value;
     const productItems = listText.split('\n').map(s => s.trim()).filter(Boolean);
-    const portfolioId = document.getElementById('portfolioId').value.trim();
+
 
     if (!productName && productItems.length > 0) {
         errors.push(uiDict.err_has_items_no_name.replace('{0}', isVendor ? 'ASINs' : 'SKUs'));
@@ -1777,7 +1773,6 @@ function generateRows() {
             r[hCampName] = campName;
             r[hStartDate] = startDate;
             if (endDate) r[hEndDate] = endDate;
-            if (portfolioId) r[hPortfolioId] = portfolioId;
             r[hTargetType] = targetType;
             r[hState] = state;
             r[hBudget] = budget;
@@ -2146,7 +2141,7 @@ function addToAccumulator() {
         // Clear product-specific fields (keep campaign settings)
         document.getElementById('productName').value = '';
         document.getElementById('productList').value = '';
-        document.getElementById('portfolioId').value = '';
+    
         // Clear keyword textareas
         ['genericKw', 'genericAlloc', 'brandKw', 'compKw', 'compKwAlloc', 'singleKw'].forEach(id => {
             document.getElementById(id).value = '';
