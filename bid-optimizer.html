@@ -192,6 +192,10 @@
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere ROAS-Bereiche und die jeweilige Gebots-Aktion. Das Tool passt die Gebote entsprechend an.</p>
 
         <div class="corridor-list" id="corridorList"></div>
+        <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 14px;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.3);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--text-secondary);line-height:1.5;">
+            <span style="font-size:14px;flex-shrink:0;">&#128274;</span>
+            <span><strong>Korridore werden lokal in deinem Browser gespeichert</strong> und sind beim nächsten Besuch automatisch vorausgefüllt. Die Daten liegen nur auf diesem Gerät – beim Löschen von Browser-Cache oder Cookies gehen sie verloren.</span>
+        </div>
         <div class="corridor-buttons">
             <button class="btn-sm" onclick="addCorridor()" style="color:var(--success);border-color:var(--success);">+ Korridor hinzufügen</button>
         </div>
@@ -323,6 +327,40 @@ let detectedCurrency = 'EUR';
 const CURRENCY_MAP = { '\u20AC': 'EUR', '$': 'USD', '\u00A3': 'GBP' };
 
 // --- ROAS Corridors ---
+const SETTINGS_KEY = 'bidOptimizer_settings';
+
+function saveSettings() {
+    const useMinBid = document.getElementById('useMinBid');
+    const useMaxBid = document.getElementById('useMaxBid');
+    const settings = {
+        corridors,
+        useMinBid: useMinBid ? useMinBid.checked : false,
+        minBid: document.getElementById('minBid') ? document.getElementById('minBid').value : '',
+        useMaxBid: useMaxBid ? useMaxBid.checked : false,
+        maxBid: document.getElementById('maxBid') ? document.getElementById('maxBid').value : '',
+        minClicks: document.getElementById('minClicks') ? document.getElementById('minClicks').value : '',
+        excludeKeywords: document.getElementById('excludeKeywords') ? document.getElementById('excludeKeywords').value : '',
+        excludeCampaigns: document.getElementById('excludeCampaigns') ? document.getElementById('excludeCampaigns').value : ''
+    };
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e) {}
+}
+
+function loadSettings() {
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return;
+        const s = JSON.parse(raw);
+        if (s.corridors && Array.isArray(s.corridors) && s.corridors.length >= 2) corridors = s.corridors;
+        if (s.useMinBid) { document.getElementById('useMinBid').checked = true; document.getElementById('minBid').disabled = false; }
+        if (s.minBid) document.getElementById('minBid').value = s.minBid;
+        if (s.useMaxBid) { document.getElementById('useMaxBid').checked = true; document.getElementById('maxBid').disabled = false; }
+        if (s.maxBid) document.getElementById('maxBid').value = s.maxBid;
+        if (s.minClicks !== undefined) document.getElementById('minClicks').value = s.minClicks;
+        if (s.excludeKeywords) document.getElementById('excludeKeywords').value = s.excludeKeywords;
+        if (s.excludeCampaigns) document.getElementById('excludeCampaigns').value = s.excludeCampaigns;
+    } catch(e) {}
+}
+
 let corridors = [
     { from: 0, to: 1, pct: -50, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
     { from: 1, to: 2, pct: -20, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' },
@@ -342,12 +380,12 @@ function renderCorridors() {
             '<input type="number" value="' + (c.from || '') + '" step="0.1" min="0" onchange="corridors[' + i + '].from=this.value?parseFloat(this.value):0;syncCorridorBounds()">' +
             '<span class="arrow">–</span>' +
             '<input type="number" value="' + (c.to || '') + '" step="0.1" min="0" placeholder="leer = offen" onchange="corridors[' + i + '].to=this.value?parseFloat(this.value):\'\';syncCorridorBounds()">' +
-            '<input type="number" value="' + c.pct + '" step="5" onchange="corridors[' + i + '].pct=parseFloat(this.value)||0"' + inputDisabled + ' placeholder="z.B. -30">' +
-            '<input type="number" value="' + (c.minBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].minBid=this.value?parseFloat(this.value):\'\'">' +
-            '<input type="number" value="' + (c.maxBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].maxBid=this.value?parseFloat(this.value):\'\'">' +
-            '<input type="number" value="' + (c.minClicks || '') + '" step="1" min="0" placeholder="opt." onchange="corridors[' + i + '].minClicks=this.value?parseInt(this.value):\'\'">' +
-            '<input type="number" value="' + (c.minOrders || '') + '" step="1" min="0" placeholder="opt." onchange="corridors[' + i + '].minOrders=this.value?parseInt(this.value):\'\'">' +
-            '<label style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer;" title="Keywords/Targets deaktivieren"><input type="checkbox"' + pauseChecked + ' style="width:16px;height:16px;accent-color:var(--error);cursor:pointer;" onchange="corridors[' + i + '].pause=this.checked;renderCorridors()"></label>' +
+            '<input type="number" value="' + c.pct + '" step="5" onchange="corridors[' + i + '].pct=parseFloat(this.value)||0;saveSettings()"' + inputDisabled + ' placeholder="z.B. -30">' +
+            '<input type="number" value="' + (c.minBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].minBid=this.value?parseFloat(this.value):\'\';saveSettings()">' +
+            '<input type="number" value="' + (c.maxBid || '') + '" step="0.01" min="0" placeholder="optional"' + (c.pause ? ' disabled style="opacity:0.4"' : '') + ' onchange="corridors[' + i + '].maxBid=this.value?parseFloat(this.value):\'\';saveSettings()">' +
+            '<input type="number" value="' + (c.minClicks || '') + '" step="1" min="0" placeholder="opt." onchange="corridors[' + i + '].minClicks=this.value?parseInt(this.value):\'\';saveSettings()">' +
+            '<input type="number" value="' + (c.minOrders || '') + '" step="1" min="0" placeholder="opt." onchange="corridors[' + i + '].minOrders=this.value?parseInt(this.value):\'\';saveSettings()">' +
+            '<label style="display:flex;align-items:center;justify-content:center;margin:0;cursor:pointer;" title="Keywords/Targets deaktivieren"><input type="checkbox"' + pauseChecked + ' style="width:16px;height:16px;accent-color:var(--error);cursor:pointer;" onchange="corridors[' + i + '].pause=this.checked;renderCorridors();saveSettings()"></label>' +
             '<button class="remove-corridor" onclick="removeCorridor(' + i + ')" title="Korridor entfernen">&times;</button>' +
             '</div>';
     }).join('');
@@ -359,6 +397,7 @@ function syncCorridorBounds() {
         if (corridors[i - 1].to !== '') corridors[i].from = corridors[i - 1].to;
     }
     renderCorridors();
+    saveSettings();
 }
 
 function addCorridor() {
@@ -368,6 +407,7 @@ function addCorridor() {
     last.from = newTo;
     corridors.splice(corridors.length - 1, 0, { from: newFrom, to: newTo, pct: 0, minBid: '', maxBid: '', pause: false, minClicks: '', minOrders: '' });
     renderCorridors();
+    saveSettings();
 }
 
 function removeCorridor(idx) {
@@ -379,6 +419,7 @@ function removeCorridor(idx) {
         corridors[i].from = corridors[i - 1].to || corridors[i].from;
     }
     renderCorridors();
+    saveSettings();
 }
 
 function formatCurrency(v) { return v.toLocaleString('de-DE', { style: 'currency', currency: detectedCurrency }); }
@@ -925,6 +966,20 @@ function exportBulkSheet() {
     document.getElementById('resultMsg').innerHTML = '<div class="success-msg">"' + fileName + '" erstellt (' + selected.length + ' Gebote angepasst).</div>';
     setTimeout(() => { const el = document.getElementById('resultMsg').querySelector('.success-msg'); if (el) el.remove(); }, 4000);
 }
+
+// --- Init ---
+document.addEventListener('DOMContentLoaded', () => {
+    loadSettings();
+    renderCorridors();
+    ['minBid', 'maxBid', 'minClicks', 'excludeKeywords', 'excludeCampaigns'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', saveSettings);
+    });
+    ['useMinBid', 'useMaxBid'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', saveSettings);
+    });
+});
 
 // --- Analysis Export ---
 function exportAnalysis() {
