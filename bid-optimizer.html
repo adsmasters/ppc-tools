@@ -471,6 +471,7 @@ function handleUpload(file) {
             if (entity.includes('negat')) continue;
 
             const product = cm.product !== -1 ? String(r[cm.product] || '').trim() : 'Sponsored Products';
+            if (product && product !== 'Sponsored Products') continue; // SP only
             const campaignId = cm.campaignId !== -1 ? String(r[cm.campaignId] || '').trim() : '';
             const adgroupId = cm.adgroupId !== -1 ? String(r[cm.adgroupId] || '').trim() : '';
             const keywordId = cm.keywordId !== -1 ? String(r[cm.keywordId] || '').trim() : '';
@@ -906,15 +907,15 @@ function exportBulkSheet() {
         return r;
     });
 
+    const today = new Date();
+    const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const fileName = 'Bid-Optimization ' + dateStr + '.xlsx';
+
     const wsData = [h, ...rows.map(r => h.map(c => r[c] || ''))];
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = h.map(() => ({ wch: 20 }));
     XLSX.utils.book_append_sheet(wb, ws, 'Sponsored Products Campaigns');
-
-    const today = new Date();
-    const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-    const fileName = 'Bid-Optimization ' + dateStr + '.xlsx';
     XLSX.writeFile(wb, fileName);
 
     document.getElementById('resultMsg').innerHTML = '<div class="success-msg">"' + fileName + '" erstellt (' + selected.length + ' Gebote angepasst).</div>';

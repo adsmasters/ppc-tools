@@ -845,9 +845,14 @@ function generateBulkSheet() {
         rows.push(row);
     });
 
+    const sheetNameMap = { 'Sponsored Products': 'Sponsored Products Campaigns', 'Sponsored Brands': 'Sponsored Brands Campaigns', 'Sponsored Display': 'Sponsored Display Campaigns' };
+    const byProduct = {};
+    rows.slice(1).forEach(r => { const pt = r[0] || 'Sponsored Products'; if (!byProduct[pt]) byProduct[pt] = []; byProduct[pt].push(r); });
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, 'Sponsored Products Campaigns');
+    Object.entries(byProduct).forEach(([pt, ptRows]) => {
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...ptRows]);
+        XLSX.utils.book_append_sheet(wb, ws, sheetNameMap[pt] || pt);
+    });
     XLSX.writeFile(wb, 'ASIN_Optimizer_Bulk_' + new Date().toISOString().slice(0, 10) + '.xlsx');
 }
 </script>
