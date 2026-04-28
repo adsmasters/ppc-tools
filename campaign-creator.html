@@ -1773,6 +1773,7 @@ function generateRows() {
             r[hProduct] = productLabel;
             r[hEntity] = ent.campaign;
             r[hOp] = op;
+            r[hCampId] = campName;
             r[hCampName] = campName;
             r[hStartDate] = startDate;
             if (endDate) r[hEndDate] = endDate;
@@ -1790,6 +1791,7 @@ function generateRows() {
                 const pr = emptyRow();
                 pr[hProduct] = productLabel;
                 pr[hEntity] = t.biddingAdj;
+                pr[hCampId] = campName;
                 pr[hPlacement] = t.placeTos;
                 pr[hPercentage] = tosVal;
                 rows.push(pr);
@@ -1798,6 +1800,7 @@ function generateRows() {
                 const pr = emptyRow();
                 pr[hProduct] = productLabel;
                 pr[hEntity] = t.biddingAdj;
+                pr[hCampId] = campName;
                 pr[hPlacement] = t.placePp;
                 pr[hPercentage] = ppVal;
                 rows.push(pr);
@@ -1809,6 +1812,7 @@ function generateRows() {
             r[hProduct] = productLabel;
             r[hEntity] = ent.adGroup;
             r[hOp] = op;
+            r[hCampId] = campName;
             r[hAdGroupId] = adGroupName;
             r[hAdGroupName] = adGroupName;
             r[hState] = state;
@@ -1823,6 +1827,7 @@ function generateRows() {
                 r[hProduct] = productLabel;
                 r[hEntity] = ent.productAd;
                 r[hOp] = op;
+                r[hCampId] = campName;
                 r[hAdGroupId] = adGroupName;
                 r[hState] = state;
                 if (isVendor) {
@@ -1839,6 +1844,7 @@ function generateRows() {
             r[hProduct] = productLabel;
             r[hEntity] = ent.keyword;
             r[hOp] = op;
+            r[hCampId] = campName;
             r[hAdGroupId] = adGroupName;
             r[hState] = state;
             r[hKwText] = kwText;
@@ -1856,6 +1862,7 @@ function generateRows() {
             r[hProduct] = productLabel;
             r[hEntity] = ent.negKeyword;
             r[hOp] = op;
+            r[hCampId] = campName;
             r[hAdGroupId] = adGroupName;
             r[hState] = state;
             r[hKwText] = kwText;
@@ -1868,6 +1875,7 @@ function generateRows() {
             r[hProduct] = productLabel;
             r[hEntity] = ent.negCampKeyword;
             r[hOp] = op;
+            r[hCampId] = campName;
             r[hState] = state;
             r[hKwText] = kwText;
             r[hMatchType] = matchType;
@@ -1879,6 +1887,7 @@ function generateRows() {
             r[hProduct] = productLabel;
             r[hEntity] = ent.prodTargeting;
             r[hOp] = op;
+            r[hCampId] = campName;
             r[hAdGroupId] = adGroupName;
             r[hState] = state;
             r[hBid] = bid;
@@ -1891,6 +1900,7 @@ function generateRows() {
             r[hProduct] = productLabel;
             r[hEntity] = ent.negProdTargeting;
             r[hOp] = op;
+            r[hCampId] = campName;
             r[hAdGroupId] = adGroupName;
             r[hState] = state;
             r[hPtExpr] = 'asin="' + asinVal + '"';
