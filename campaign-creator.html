@@ -385,6 +385,14 @@
                         <input type="date" id="endDate">
                     </div>
                 </div>
+                <div class="field" style="margin-bottom:14px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" id="chk-b2b" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
+                        <span style="font-size:13px;font-weight:700;color:var(--text-primary);">B2B-Modus (Amazon Business)</span>
+                    </label>
+                    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;margin-left:24px;">Kampagnen werden nur auf dem Amazon Business Marktplatz ausgespielt (<code style="font-size:11px;background:var(--bg-primary);padding:1px 5px;border-radius:3px;border:1px solid var(--border);">Site Restrictions: AMAZON_BUSINESS</code>)</div>
+                </div>
+
                 <div class="section-label"><span data-i18n="sec_placement">Placement-Anpassungen</span> <span style="font-weight:400;color:var(--text-secondary);" data-i18n="lbl_optional">(optional)</span> <span class="tooltip-icon" data-tip="Prozentuale Gebotserhöhung für bestimmte Platzierungen. Z.B. 50% bei Top of Search = dein Gebot wird um 50% erhöht, wenn die Anzeige ganz oben erscheint." data-i18n-tip="tip_placement">?</span></div>
                 <div class="field-row">
                     <div class="field">
@@ -1318,7 +1326,7 @@ const T = {
         bidUpDown: 'Dynamic bids - up and down',
         bidFixed: 'Fixed bids',
         placeTos: 'Top of Search on-Amazon', placePp: 'Product Pages on-Amazon',
-        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'],
+        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression', 'Site Restrictions'],
         sheetSP: 'Sponsored Products-Kampagnen', sheetSD: 'Sponsored Display-Kampagnen'
     },
     en: {
@@ -1335,7 +1343,7 @@ const T = {
         bidUpDown: 'Dynamic bids - up and down',
         bidFixed: 'Fixed bids',
         placeTos: 'Top of Search on-Amazon', placePp: 'Product Pages on-Amazon',
-        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'],
+        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression', 'Site Restrictions'],
         sheetSP: 'Sponsored Products Campaigns', sheetSD: 'Sponsored Display Campaigns'
     },
     fr: {
@@ -1352,7 +1360,7 @@ const T = {
         bidUpDown: 'Dynamic bids - up and down',
         bidFixed: 'Fixed bids',
         placeTos: 'Top of Search on-Amazon', placePp: 'Product Pages on-Amazon',
-        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'],
+        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression', 'Site Restrictions'],
         sheetSP: 'Campagnes Sponsored Products', sheetSD: 'Campagnes Sponsored Display'
     },
     it: {
@@ -1369,7 +1377,7 @@ const T = {
         bidUpDown: 'Dynamic bids - up and down',
         bidFixed: 'Fixed bids',
         placeTos: 'Top of Search on-Amazon', placePp: 'Product Pages on-Amazon',
-        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'],
+        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression', 'Site Restrictions'],
         sheetSP: 'Campagne Sponsored Products', sheetSD: 'Campagne Sponsored Display'
     },
     es: {
@@ -1386,7 +1394,7 @@ const T = {
         bidUpDown: 'Dynamic bids - up and down',
         bidFixed: 'Fixed bids',
         placeTos: 'Top of Search on-Amazon', placePp: 'Product Pages on-Amazon',
-        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'],
+        headers: ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression', 'Site Restrictions'],
         sheetSP: 'Campa\u00f1as de Sponsored Products', sheetSD: 'Campa\u00f1as de Sponsored Display'
     }
 };
@@ -1804,7 +1812,9 @@ function generateRows() {
         hAdGroupName = headers[10], hStartDate = headers[11], hEndDate = headers[12], hTargetType = headers[13],
         hState = headers[14], hBudget = headers[15], hSku = headers[16], hAsin = headers[17], hAdGroupBid = headers[18],
         hBid = headers[19], hKwText = headers[20], hMatchType = headers[21], hBiddingStrat = headers[22],
-        hPlacement = headers[23], hPercentage = headers[24], hPtExpr = headers[25];
+        hPlacement = headers[23], hPercentage = headers[24], hPtExpr = headers[25], hSiteRestrictions = headers[26];
+
+    const isB2B = document.getElementById('chk-b2b') && document.getElementById('chk-b2b').checked;
 
     const rows = [];
 
@@ -1826,6 +1836,7 @@ function generateRows() {
             r[hState] = state;
             r[hBudget] = budget;
             r[hBiddingStrat] = bidStrat;
+            if (isB2B) r[hSiteRestrictions] = 'AMAZON_BUSINESS';
             rows.push(r);
 
             // Placement adjustments (per-campaign)
