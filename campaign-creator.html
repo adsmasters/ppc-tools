@@ -268,15 +268,12 @@
                 <!-- Marketplace removed - all values are English for all marketplaces -->
                 <input type="hidden" id="marketplaceSelect" value="en">
 
-                <div class="field">
-                    <label data-i18n="lbl_product_name">Produktname</label>
-                    <div class="field-hint" data-i18n="hint_product_name">(wird für die Kampagnenbenennung verwendet)</div>
-                    <input type="text" id="productName" placeholder="z.B. Langhantel" data-i18n-ph="ph_product_name">
-                </div>
-                <div class="field">
-                    <label class="productListLabel" id="productListLabel" data-i18n="lbl_skus">SKUs (eine pro Zeile)</label>
-                    <textarea id="productList" rows="4" placeholder="B0XXXXXX&#10;B0YYYYYY"></textarea>
-                </div>
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Jedes Produkt erhält ein eigenes Kampagnen-Set mit denselben Keywords &amp; Einstellungen.</p>
+                <div id="productBlocksContainer"></div>
+                <button class="btn-sm" onclick="addProductBlock()" style="margin-top:4px;">+ Weiteres Produkt hinzufügen</button>
+                <!-- Hidden inputs used internally by generateRows() -->
+                <input type="text" id="productName" style="display:none">
+                <textarea id="productList" style="display:none"></textarea>
             </div>
 
             <!-- STEP 2 -->
@@ -963,24 +960,17 @@ function toggleUILang() {
 }
 
 function updateProductListLabel() {
-    const lbl = document.getElementById('productListLabel');
-    const dict = UI[uiLang] || UI['de'];
-    if (lbl) {
-        if (mode === 'vendor') {
-            lbl.textContent = dict.lbl_asins;
-        } else {
-            lbl.textContent = dict.lbl_skus;
-        }
-    }
+    renderProductBlocks();
 }
 
 // Initialize UI language on load
 (function() {
     // Defer to after DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() { applyUILang(uiLang); });
+        document.addEventListener('DOMContentLoaded', function() { applyUILang(uiLang); renderProductBlocks(); });
     } else {
         applyUILang(uiLang);
+        renderProductBlocks();
     }
 })();
 
@@ -1082,6 +1072,66 @@ function appendToTextarea(textarea, values) {
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
+// --- Product Blocks ---
+let productBlocks = [{ name: '', list: '' }];
+
+function renderProductBlocks() {
+    const container = document.getElementById('productBlocksContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    const dict = UI[uiLang] || UI['de'];
+    const listLabel = mode === 'vendor' ? (dict.lbl_asins || 'ASINs (eine pro Zeile)') : (dict.lbl_skus || 'SKUs (eine pro Zeile)');
+    const listPlaceholder = mode === 'vendor' ? 'B0XXXXXX\nB0YYYYYY' : 'SKU-001\nSKU-002';
+
+    productBlocks.forEach((b, i) => {
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'border:1px solid var(--border);border-radius:8px;padding:12px 12px 8px;margin-bottom:10px;position:relative;';
+
+        let html = '';
+        if (productBlocks.length > 1) {
+            html += '<button onclick="removeProductBlock(' + i + ')" style="position:absolute;top:6px;right:8px;background:transparent;border:none;color:var(--text-secondary);font-size:18px;cursor:pointer;line-height:1;" title="Produkt entfernen">&times;</button>';
+        }
+        html += '<div class="field" style="margin-bottom:8px;">';
+        html += '<label>' + (dict.lbl_product_name || 'Kampagnenname') + '</label>';
+        html += '<div class="field-hint">(wird für die Kampagnenbenennung verwendet)</div>';
+        html += '<input type="text" class="pb-name" style="margin-top:4px;" placeholder="z.B. Langhantel" oninput="productBlocks[' + i + '].name=this.value">';
+        html += '</div>';
+        html += '<div class="field">';
+        html += '<label>' + listLabel + '</label>';
+        html += '<textarea class="pb-list" rows="3" placeholder="' + listPlaceholder.replace(/\n/g, '&#10;') + '" oninput="productBlocks[' + i + '].list=this.value"></textarea>';
+        html += '</div>';
+
+        wrap.innerHTML = html;
+        wrap.querySelector('.pb-name').value = b.name;
+        wrap.querySelector('.pb-list').value = b.list;
+        container.appendChild(wrap);
+    });
+}
+
+function addProductBlock() {
+    productBlocks.push({ name: '', list: '' });
+    renderProductBlocks();
+}
+
+function removeProductBlock(i) {
+    if (productBlocks.length <= 1) return;
+    productBlocks.splice(i, 1);
+    renderProductBlocks();
+}
+
+function syncProductBlocksFromDOM() {
+    const container = document.getElementById('productBlocksContainer');
+    if (!container) return;
+    const wraps = container.querySelectorAll(':scope > div');
+    wraps.forEach((wrap, i) => {
+        if (!productBlocks[i]) return;
+        const nameEl = wrap.querySelector('.pb-name');
+        const listEl = wrap.querySelector('.pb-list');
+        if (nameEl) productBlocks[i].name = nameEl.value;
+        if (listEl) productBlocks[i].list = listEl.value;
+    });
+}
+
 // --- Presets (localStorage) ---
 const PRESET_KEY = 'ppc_presets';
 
@@ -1103,12 +1153,8 @@ function refreshPresetDropdown() {
 
 function gatherFormState() {
     const state = { mode, lang };
-    // Product (single product)
-    state.products = [{
-        name: document.getElementById('productName').value,
-        list: document.getElementById('productList').value,
-
-    }];
+    syncProductBlocksFromDOM();
+    state.products = productBlocks.map(b => ({ name: b.name, list: b.list }));
     // Text fields
     const textIds = ['genericKw', 'genericAlloc', 'brandKw', 'compKw', 'compKwAlloc', 'singleKw', 'brandAsins', 'compAsins', 'compAsinAlloc', 'negKwExact', 'negKwPhrase', 'campNegKwExact', 'campNegKwPhrase', 'negProdTargeting'];
     state.texts = {};
@@ -1137,10 +1183,11 @@ function applyFormState(state) {
     // Mode & Lang
     setMode(state.mode || 'vendor');
     setMarketplace(state.lang || 'de');
-    // Product (single - load first product from preset)
-    const p = (state.products || [{}])[0] || {};
-    document.getElementById('productName').value = p.name || '';
-    document.getElementById('productList').value = p.list || '';
+    // Product blocks
+    productBlocks = (state.products && state.products.length > 0)
+        ? state.products.map(p => ({ name: p.name || '', list: p.list || '' }))
+        : [{ name: '', list: '' }];
+    renderProductBlocks();
 
     // Text fields
     if (state.texts) {
@@ -1247,9 +1294,7 @@ function setMode(m) {
     document.querySelectorAll('.toggle-btn').forEach((b, i) => {
         b.classList.toggle('active', (i === 0 && m === 'vendor') || (i === 1 && m === 'seller'));
     });
-    updateProductListLabel();
-    const ta = document.getElementById('productList');
-    if (ta) ta.placeholder = m === 'vendor' ? 'B0XXXXXX\nB0YYYYYY' : 'SKU-001\nSKU-002';
+    renderProductBlocks();
 }
 
 function setMarketplace(m) {
@@ -1399,9 +1444,9 @@ function updateCounter(kwId, allocId, counterId) {
 
 // --- Reset ---
 function resetAll() {
-    // Reset product fields
-    document.getElementById('productName').value = '';
-    document.getElementById('productList').value = '';
+    // Reset product blocks
+    productBlocks = [{ name: '', list: '' }];
+    renderProductBlocks();
 
     document.querySelectorAll('input[type="number"]').forEach(el => {
         if (el.id.startsWith('bid')) el.value = '0.50';
@@ -2121,31 +2166,58 @@ function generateRows() {
 function addToAccumulator() {
     const progressBar = showProgress();
     try {
-        const result = generateRows();
-        if (!result) { finishProgress(progressBar); return; }
+        syncProductBlocksFromDOM();
+        const validBlocks = productBlocks.filter(b => b.name.trim() && b.list.trim());
+        const uiDict = UI[uiLang] || UI['de'];
 
-        // Push rows to accumulator
-        window.accumulatedRows.push(...result.rows);
+        if (validBlocks.length === 0) {
+            document.getElementById('errorContainer').innerHTML = '<div class="error-msg">Bitte mindestens ein Produkt mit Kampagnenname und SKU/ASIN eintragen.</div>';
+            finishProgress(progressBar);
+            return;
+        }
 
-        // Store product info + form state for editing
+        // Warn about incomplete blocks
+        const skipped = productBlocks.filter(b => (b.name.trim() && !b.list.trim()) || (!b.name.trim() && b.list.trim()));
+        const errorContainer = document.getElementById('errorContainer');
+        errorContainer.innerHTML = '';
+        if (skipped.length > 0) {
+            errorContainer.innerHTML = '<div class="warn-msg">' + skipped.length + ' unvollständige(r) Produkt-Block(s) übersprungen (Kampagnenname oder SKU/ASIN fehlt).</div>';
+        }
+
+        let allRows = [];
+        let allNames = [];
+        let totalItems = 0;
+        let totalCampaigns = 0;
+
+        for (const block of validBlocks) {
+            document.getElementById('productName').value = block.name.trim();
+            document.getElementById('productList').value = block.list.trim();
+            const result = generateRows();
+            if (!result) { finishProgress(progressBar); return; }
+            allRows.push(...result.rows);
+            allNames.push(result.productName);
+            totalItems += result.itemCount;
+            totalCampaigns += result.campaignCount;
+        }
+
+        window.accumulatedRows.push(...allRows);
         window.accumulatedProducts.push({
-            name: result.productName,
-            itemCount: result.itemCount,
-            campaignCount: result.campaignCount,
-            rowCount: result.rows.length,
+            name: allNames.join(', '),
+            itemCount: totalItems,
+            campaignCount: totalCampaigns,
+            rowCount: allRows.length,
             formState: gatherFormState()
         });
 
-        // Update accumulator UI
         updateAccumulatorUI();
 
-        // Show success banner
-        showAccumulatorSuccess(result.productName + ' ' + (UI[uiLang] || UI['de']).acc_added);
+        const label = allNames.length === 1 ? allNames[0] : allNames.length + ' Produkte';
+        showAccumulatorSuccess(label + ' ' + uiDict.acc_added);
 
-        // Clear product-specific fields (keep campaign settings)
-        document.getElementById('productName').value = '';
-        document.getElementById('productList').value = '';
-    
+        // Reset product blocks to one empty block
+        productBlocks = [{ name: '', list: '' }];
+        renderProductBlocks();
+
         // Clear keyword textareas
         ['genericKw', 'genericAlloc', 'brandKw', 'compKw', 'compKwAlloc', 'singleKw'].forEach(id => {
             document.getElementById(id).value = '';
@@ -2159,8 +2231,6 @@ function addToAccumulator() {
         updateCounter('compKw', 'compKwAlloc', 'compKwCounter');
         updateCounter('compAsins', 'compAsinAlloc', 'compAsinCounter');
 
-        // Clear errors
-        document.getElementById('errorContainer').innerHTML = '';
     } catch(e) { console.error(e); } finally { finishProgress(progressBar); }
 }
 
