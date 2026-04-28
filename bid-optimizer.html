@@ -533,6 +533,17 @@ function handleUpload(file) {
 }
 
 function finishUpload(file) {
+    // Deduplicate by keywordId or ptId — prevents duplicate ID errors when the
+    // source workbook has multiple sheets that both contain keyword/targeting rows.
+    const seenIds = new Set();
+    rawItems = rawItems.filter(item => {
+        const id = item.keywordId || item.ptId;
+        if (!id) return true;
+        if (seenIds.has(id)) return false;
+        seenIds.add(id);
+        return true;
+    });
+
     const msgEl = document.getElementById('uploadMsg');
     if (rawItems.length === 0) {
         msgEl.innerHTML = '<div class="error-msg">Keine Keywords oder Product Targeting Eintraege mit Geboten gefunden.</div>';
