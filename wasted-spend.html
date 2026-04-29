@@ -753,11 +753,15 @@ function analyzeData() {
         roas: row.spend > 0 ? row.sales / row.spend : 0
     }));
 
-    // Badge nur in der Pro-Kampagne-View: zeigt ob der Begriff in genau DIESER Kampagne negiert ist.
-    // In der Aggregierten View gibt's keinen Badge — der wäre dort logisch immer irreführend.
-    aggregatedData.forEach(a => { a.alreadyNegated = false; });
+    // Badge "Negiert" feuert nur wenn der Begriff in der jeweiligen Kampagne tatsächlich negiert ist.
+    // Pro-Kampagne-View: Negiert nur wenn (Suchbegriff, Kampagnen-ID) als Negative existiert.
     campaignData.forEach(r => {
         r.alreadyNegated = isAlreadyNegated(r.searchterm, r.campaignId);
+    });
+    // Aggregiert-View: Negiert nur wenn in allen Kampagnen negiert wo der Begriff Spend macht.
+    aggregatedData.forEach(a => {
+        const entries = wastedData.filter(r => r.searchterm.toLowerCase() === a.searchterm.toLowerCase());
+        a.alreadyNegated = entries.length > 0 && entries.every(r => isAlreadyNegated(r.searchterm, r.campaignId));
     });
 
     // Select all non-negated by default
