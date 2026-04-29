@@ -753,13 +753,11 @@ function analyzeData() {
         roas: row.spend > 0 ? row.sales / row.spend : 0
     }));
 
-    // Badge "Negiert" zeigt: Begriff existiert als Negative irgendwo im Account
-    // (Search Terms erscheinen nie in der eigenen Kampagne als Negative — sie wären sonst geblockt)
-    aggregatedData.forEach(a => {
-        a.alreadyNegated = existingNegativesMap.has(a.searchterm.toLowerCase());
-    });
+    // Badge nur in der Pro-Kampagne-View: zeigt ob der Begriff in genau DIESER Kampagne negiert ist.
+    // In der Aggregierten View gibt's keinen Badge — der wäre dort logisch immer irreführend.
+    aggregatedData.forEach(a => { a.alreadyNegated = false; });
     campaignData.forEach(r => {
-        r.alreadyNegated = existingNegativesMap.has(r.searchterm.toLowerCase());
+        r.alreadyNegated = isAlreadyNegated(r.searchterm, r.campaignId);
     });
 
     // Select all non-negated by default
