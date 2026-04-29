@@ -355,25 +355,43 @@ function formatCurrency(val) {
 }
 
 // --- Existing Negatives ---
-let existingNegatives = new Set();
+// Map<keyword_lower, Set<campaignId>> — tracks per-campaign negation
+let existingNegativesMap = new Map();
+
+function addNegativeEntry(keyword, campaignId) {
+    const kw = String(keyword).trim().toLowerCase();
+    if (!kw) return;
+    if (!existingNegativesMap.has(kw)) existingNegativesMap.set(kw, new Set());
+    const cid = String(campaignId || '').trim();
+    if (cid) existingNegativesMap.get(kw).add(cid);
+}
+
+function isAlreadyNegated(keyword, campaignId) {
+    const entry = existingNegativesMap.get(String(keyword).trim().toLowerCase());
+    if (!entry || entry.size === 0) return false;
+    return entry.has(String(campaignId || '').trim());
+}
+
 document.getElementById('negFileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     function extractNegatives(rows) {
-        existingNegatives.clear();
+        existingNegativesMap.clear();
         const headers = rows[0].map(c => String(c).toLowerCase().trim());
         const kwIdx = headers.findIndex(h => h.includes('keyword') || h.includes('mot-cl') || h.includes('palabra') || h.includes('parola'));
         const entityIdx = headers.findIndex(h => h.includes('entity') || h.includes('entit'));
+        const campIdIdx = headers.findIndex(h => h === 'campaign id' || h === 'kampagnen-id' || h.includes('campaign id') || h.includes('kampagnen-id'));
         if (kwIdx === -1) return;
         for (let i = 1; i < rows.length; i++) {
             const entity = entityIdx !== -1 ? String(rows[i][entityIdx] || '').toLowerCase() : '';
             if (entity.includes('negat') || entityIdx === -1) {
                 const kw = String(rows[i][kwIdx] || '').trim().toLowerCase();
-                if (kw) existingNegatives.add(kw);
+                const cid = campIdIdx !== -1 ? String(rows[i][campIdIdx] || '').trim() : '';
+                if (kw) addNegativeEntry(kw, cid);
             }
         }
-        document.getElementById('negFileInfo').innerHTML = '<div class="file-info"><span class="name">' + escapeHtml(file.name) + '</span><span class="meta">' + existingNegatives.size + ' bestehende Negatives geladen</span><span class="remove" onclick="clearNegatives()">&times;</span></div>';
+        document.getElementById('negFileInfo').innerHTML = '<div class="file-info"><span class="name">' + escapeHtml(file.name) + '</span><span class="meta">' + existingNegativesMap.size + ' bestehende Negatives geladen</span><span class="remove" onclick="clearNegatives()">&times;</span></div>';
     }
     if (file.name.match(/\.(xlsx|xls)$/i)) {
         reader.onload = function(evt) {
@@ -392,7 +410,7 @@ document.getElementById('negFileInput').addEventListener('change', function(e) {
     }
 });
 function clearNegatives() {
-    existingNegatives.clear();
+    existingNegativesMap.clear();
     document.getElementById('negFileInfo').innerHTML = '';
     document.getElementById('negFileInput').value = '';
 }
@@ -468,7 +486,7 @@ function processFile(file, isMulti) {
             const data = new Uint8Array(evt.target.result);
             const wb = XLSX.read(data, { type: 'array' });
             // Extract existing negatives from campaign sheet(s)
-            existingNegatives.clear();
+            existingNegativesMap.clear();
             for (const sn of wb.SheetNames) {
                 const ws = wb.Sheets[sn];
                 const sRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
@@ -476,17 +494,19 @@ function processFile(file, isMulti) {
                 const sH = sRows[0].map(c => String(c).toLowerCase().trim());
                 const sEntity = sH.findIndex(h => h.includes('entit'));
                 const sKw = sH.findIndex(h => h === 'keyword-text' || h === 'keyword text' || h.includes('keyword-text') || h.includes('keyword text'));
+                const sCampId = sH.findIndex(h => h === 'kampagnen-id' || h === 'campaign id' || h.includes('kampagnen-id') || h.includes('campaign id'));
                 if (sEntity === -1 || sKw === -1) continue;
                 for (let r = 1; r < sRows.length; r++) {
                     const ent = String(sRows[r][sEntity] || '').toLowerCase();
                     if (ent.includes('negat') && (ent.includes('keyword') || ent.includes('mot-cl'))) {
                         const kw = String(sRows[r][sKw] || '').trim().toLowerCase();
-                        if (kw) existingNegatives.add(kw);
+                        const cid = sCampId !== -1 ? String(sRows[r][sCampId] || '').trim() : '';
+                        if (kw) addNegativeEntry(kw, cid);
                     }
                 }
             }
-            if (existingNegatives.size > 0) {
-                console.log('[WastedSpend] ' + existingNegatives.size + ' bestehende Negatives erkannt');
+            if (existingNegativesMap.size > 0) {
+                console.log('[WastedSpend] ' + existingNegativesMap.size + ' bestehende Negatives erkannt');
             }
             // Find the sheet that contains search term data
             let bestRows = null;
@@ -733,12 +753,13 @@ function analyzeData() {
         roas: row.spend > 0 ? row.sales / row.spend : 0
     }));
 
-    // Mark existing negatives
+    // Badge "Negiert" zeigt: Begriff existiert als Negative irgendwo im Account
+    // (Search Terms erscheinen nie in der eigenen Kampagne als Negative — sie wären sonst geblockt)
     aggregatedData.forEach(a => {
-        a.alreadyNegated = existingNegatives.has(a.searchterm.toLowerCase());
+        a.alreadyNegated = existingNegativesMap.has(a.searchterm.toLowerCase());
     });
     campaignData.forEach(r => {
-        r.alreadyNegated = existingNegatives.has(r.searchterm.toLowerCase());
+        r.alreadyNegated = existingNegativesMap.has(r.searchterm.toLowerCase());
     });
 
     // Select all non-negated by default
