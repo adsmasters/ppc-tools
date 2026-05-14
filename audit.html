@@ -624,13 +624,17 @@ function buildSectionB() {
             '</tr>';
     }
 
+    // Manuell-Zeile immer aus Kampagnen-Ebene (konsistent mit Gesamt SP und Sektion B)
+    // Sub-Zeilen zeigen Keyword/PT-Attribution (kann höher sein – Amazon Multi-Touch)
+    const manualSubHasData = manualSub['Keyword Targeting'].keywords > 0 || manualSub['Product Targeting'].keywords > 0;
+
     let html = '';
     html += typeRow('Auto', autoManual['Auto'], false);
-    html += typeRow('Manuell', autoManual['Manuell'], false);
+    html += typeRow('Manuell', autoManual['Manuell'], false); // immer Kampagnen-Ebene
     if (manualSub['Keyword Targeting'].keywords > 0) html += typeRow('↳ Keyword Targeting', manualSub['Keyword Targeting'], true);
     if (manualSub['Product Targeting'].keywords > 0) html += typeRow('↳ Product Targeting', manualSub['Product Targeting'], true);
 
-    // Gesamt
+    // Gesamt SP aus Kampagnen-Zeilen (gleiche Quelle wie Sektion B)
     const totalSpend = autoManual['Auto'].spend + autoManual['Manuell'].spend;
     const totalSales = autoManual['Auto'].sales + autoManual['Manuell'].sales;
     const totalOrders = autoManual['Auto'].orders + autoManual['Manuell'].orders;
@@ -641,6 +645,16 @@ function buildSectionB() {
     html += '<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Gesamt SP</td><td class="num">' + totalCampaigns + '</td><td class="num">' + formatCurrency(totalSpend) + '</td><td class="num">' + formatCurrency(totalSales) + '</td><td class="num">' + totalRoas + '</td><td class="num">' + totalAcos + '</td><td class="num">' + totalOrders.toLocaleString('de-DE') + '</td><td class="num">' + totalClicks.toLocaleString('de-DE') + '</td></tr>';
 
     body.innerHTML = html;
+
+    // Hinweis wenn Keyword-Sub-Summe von Kampagnen-Summe abweicht (Amazon Multi-Touch Attribution)
+    const kwSubTotal = manualSub['Keyword Targeting'].sales + manualSub['Product Targeting'].sales;
+    const campManuellSales = autoManual['Manuell'].sales;
+    if (manualSubHasData && kwSubTotal > campManuellSales * 1.02) {
+        const note = document.createElement('div');
+        note.style.cssText = 'font-size:12px;color:var(--text-secondary);padding:8px 12px;background:var(--bg-hover);border-radius:6px;margin-top:10px;';
+        note.innerHTML = 'ℹ️ Die Keyword/Target-Unterzeilen (' + formatCurrency(kwSubTotal) + ') übersteigen die Kampagnen-Sales (' + formatCurrency(campManuellSales) + '). Amazon kann im 7-Tage-Attributionsfenster denselben Kauf mehreren Keywords gleichzeitig anrechnen – das ist normales Verhalten.';
+        document.getElementById('sectionB').appendChild(note);
+    }
 }
 
 // --- Section C: Top Placements (Keywords/Targets by sales) ---
@@ -744,17 +758,26 @@ function buildSectionC() {
     const totalSales = sorted.reduce((s, r) => s + r.sales, 0);
     const statsLabel = spMode === 'keywords' ? 'Keywords/Targets' : 'Suchbegriffe';
 
-    document.getElementById('spStats').innerHTML = '<div class="stats-row" style="margin-bottom:16px;">' +
+    // Kampagnen-Sales aus Sektion B als Referenz (für Vergleichs-Hinweis)
+    const spFormatData = getFormatData();
+    const spCampSales = (spFormatData['SP'] || {}).sales || 0;
+    const salesDiffPct = spCampSales > 0 ? ((totalSales - spCampSales) / spCampSales * 100) : 0;
+    const showAttributionNote = spCampSales > 0 && spMode === 'keywords' && salesDiffPct > 2;
+
+    const salesLabel = spMode === 'keywords' ? 'Attributierte Sales' : 'Sales';
+    const salesTip = spMode === 'keywords' ? ' <span class="tooltip-icon" data-tip="Sales summiert über alle Keyword/Target-Zeilen. Kann von den Kampagnen-Sales (Sektion B) abweichen, da Amazon im 7-Tage-Fenster denselben Kauf mehreren Keywords gleichzeitig anrechnen kann.">i</span>' : '';
+
+    document.getElementById('spStats').innerHTML = '<div class="stats-row" style="margin-bottom:' + (showAttributionNote ? '8px' : '16px') + ';">' +
         '<div class="stat-card"><div class="stat-label">' + statsLabel + '</div><div class="stat-value">' + sorted.length.toLocaleString('de-DE') + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Spend</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Sales</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">' + salesLabel + salesTip + '</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + (totalSpend > 0 ? (totalSales/totalSpend).toFixed(2) : '–') + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Wasted Spend (Suchbegriffe, ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + (totalSpend > 0 ? ' <span style="font-size:14px;font-weight:400;opacity:0.85;">(' + (wastedSpend / totalSpend * 100).toFixed(1) + '%)</span>' : '') + '</div></div>' +
-        '</div>';
+        '</div>' +
+        (showAttributionNote ? '<div style="font-size:12px;padding:8px 12px;background:var(--bg-hover);border-radius:6px;margin-bottom:12px;color:var(--text-secondary);">ℹ️ <strong>Warum weichen die Zahlen von Sektion B ab?</strong> Kampagnen-Sales (Sektion B): <strong>' + formatCurrency(spCampSales) + '</strong> · Keyword-attributierte Sales: <strong>' + formatCurrency(totalSales) + '</strong>. Amazon vergibt im 7-Tage-Attributionsfenster denselben Kauf ggf. an mehrere Keywords gleichzeitig – die Keyword-Summe kann daher höher sein. Das ist normales Amazon-Verhalten.</div>' : '');
 
-    // Total SP Sales aus Kampagnen-Zeilen
-    const campaignEntities = ['kampagne', 'campaign'];
-    const totalSPsales = allRows.filter(r => r.format === 'SP' && campaignEntities.some(e => r.entity.includes(e))).reduce((s, r) => s + r.sales, 0);
+    // Total SP Sales aus denselben Keyword/Target-Zeilen (Accountebene)
+    const totalSPsales = sorted.reduce((s, r) => s + r.sales, 0);
 
     const head = document.getElementById('topKeywordsHead');
     const body = document.getElementById('topKeywordsBody');
