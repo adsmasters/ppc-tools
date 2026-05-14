@@ -164,7 +164,7 @@
 
         <!-- Section A: Übersicht nach Werbeformat -->
         <div class="card" id="sectionA">
-            <div class="card-title"><span class="section-label">B</span> Übersicht nach Werbeformat <span class="tooltip-icon" data-tip="Aufschlüsselung nach Sponsored Products, Sponsored Brands und Sponsored Display. Prozentangaben zeigen den Anteil am Gesamt-Spend/Sales.">i</span></div>
+            <div class="card-title"><span class="section-label">B</span> Übersicht nach Werbeformat <span class="tooltip-icon" data-tip="SP Sales = Gesamtverkäufe aus Produktanzeige-Zeilen (inkl. Cross-Sells) – entspricht der Amazon Ads UI. SB/SD aus Kampagnen-Zeilen.">i</span></div>
             <div class="format-grid" id="formatGrid"></div>
         </div>
 
@@ -471,14 +471,28 @@ function buildDashboard() {
 function getFormatData() {
     const formatMap = {};
     const campaignEntities = ['kampagne', 'campaign', 'campagne', 'campaña', 'campagna'];
-    const seenCampaigns = new Set(); // Deduplizierung über Kampagne+Format
+    // Produktanzeige-Zeilen (= "Product Ad") enthalten Gesamtverkäufe inkl. Cross-Sells –
+    // das ist exakt was die Amazon Ads UI anzeigt. Kampagnen-Zeilen zählen nur beworbene Produkte.
+    const productAdEntities = ['produktanzeige', 'product ad'];
+
+    // Prüfen ob Produktanzeige-Zeilen für SP vorhanden sind
+    const hasProductAdSP = allRows.some(r => r.format === 'SP' && productAdEntities.some(e => r.entity.includes(e)));
+
+    const seenCampaigns = new Set();
     allRows.forEach(r => {
         if (!r.format) return;
-        if (!campaignEntities.some(e => r.entity.includes(e))) return;
-        // Deduplizieren: gleiche Kampagne kann in mehreren Sheets vorkommen (z.B. SB + SB Anzeigengruppe)
-        const dedupKey = r.format + '|' + r.campaign;
-        if (seenCampaigns.has(dedupKey)) return;
-        seenCampaigns.add(dedupKey);
+
+        if (r.format === 'SP' && hasProductAdSP) {
+            // SP: Produktanzeige-Zeilen verwenden → Gesamtverkäufe (stimmt mit Amazon UI überein)
+            if (!productAdEntities.some(e => r.entity.includes(e))) return;
+        } else {
+            // SB/SD oder Fallback: Kampagnen-Zeilen (dedupliziert)
+            if (!campaignEntities.some(e => r.entity.includes(e))) return;
+            const dedupKey = r.format + '|' + r.campaign;
+            if (seenCampaigns.has(dedupKey)) return;
+            seenCampaigns.add(dedupKey);
+        }
+
         if (!formatMap[r.format]) formatMap[r.format] = { spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 };
         formatMap[r.format].spend += r.spend;
         formatMap[r.format].sales += r.sales;
@@ -634,15 +648,16 @@ function buildSectionB() {
     if (manualSub['Keyword Targeting'].keywords > 0) html += typeRow('↳ Keyword Targeting', manualSub['Keyword Targeting'], true);
     if (manualSub['Product Targeting'].keywords > 0) html += typeRow('↳ Product Targeting', manualSub['Product Targeting'], true);
 
-    // Gesamt SP aus Kampagnen-Zeilen (gleiche Quelle wie Sektion B)
+    // Gesamt SP: Spend/Clicks aus Kampagnen-Zeilen, Sales/Orders aus Produktanzeige-Zeilen (= Amazon UI)
+    const spFormatTotal = getFormatData()['SP'] || { spend: 0, sales: 0, orders: 0, clicks: 0 };
     const totalSpend = autoManual['Auto'].spend + autoManual['Manuell'].spend;
-    const totalSales = autoManual['Auto'].sales + autoManual['Manuell'].sales;
-    const totalOrders = autoManual['Auto'].orders + autoManual['Manuell'].orders;
+    const totalSales = spFormatTotal.sales;  // Produktanzeige-Ebene = Gesamtverkäufe
+    const totalOrders = spFormatTotal.orders;
     const totalClicks = autoManual['Auto'].clicks + autoManual['Manuell'].clicks;
     const totalCampaigns = autoManual['Auto'].campaigns.size + autoManual['Manuell'].campaigns.size;
     const totalRoas = totalSpend > 0 ? (totalSales / totalSpend).toFixed(2) : '–';
     const totalAcos = totalSales > 0 ? (totalSpend / totalSales * 100).toFixed(1) + '%' : '–';
-    html += '<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Gesamt SP</td><td class="num">' + totalCampaigns + '</td><td class="num">' + formatCurrency(totalSpend) + '</td><td class="num">' + formatCurrency(totalSales) + '</td><td class="num">' + totalRoas + '</td><td class="num">' + totalAcos + '</td><td class="num">' + totalOrders.toLocaleString('de-DE') + '</td><td class="num">' + totalClicks.toLocaleString('de-DE') + '</td></tr>';
+    html += '<tr style="font-weight:700;border-top:2px solid var(--border);"><td>Gesamt SP <span style="font-size:10px;font-weight:400;color:var(--text-secondary)">(Gesamtverkäufe)</span></td><td class="num">' + totalCampaigns + '</td><td class="num">' + formatCurrency(totalSpend) + '</td><td class="num">' + formatCurrency(totalSales) + '</td><td class="num">' + totalRoas + '</td><td class="num">' + totalAcos + '</td><td class="num">' + totalOrders.toLocaleString('de-DE') + '</td><td class="num">' + totalClicks.toLocaleString('de-DE') + '</td></tr>';
 
     body.innerHTML = html;
 
