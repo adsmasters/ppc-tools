@@ -628,8 +628,10 @@ function buildSectionB() {
     const kwEntities = ['keyword', 'mot-cl', 'palabra', 'parola'];
     const ptEntities = ['targeting', 'ciblage', 'segmentación'];
 
-    // Step 1: Auto vs. Manuell (aus Kampagnen-Zeilen mit Targeting-Typ, dedupliziert)
-    const autoManual = { 'Auto': { campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 }, 'Manuell': { campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0, impressions: 0 } };
+    // Step 1: Kampagnen-Zeilen → Auto/Manuell-Kampagnennamen ermitteln + Spend/Clicks
+    const autoCampaigns = new Set();
+    const manualCampaignNames = new Set();
+    const autoManual = { 'Auto': { campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0 }, 'Manuell': { campaigns: new Set(), spend: 0, sales: 0, orders: 0, clicks: 0 } };
     const seenSPcamps = new Set();
     spRows.forEach(r => {
         if (!campaignEntities.some(e => r.entity.includes(e))) return;
@@ -640,18 +642,24 @@ function buildSectionB() {
         const key = isAuto ? 'Auto' : 'Manuell';
         autoManual[key].campaigns.add(r.campaign);
         autoManual[key].spend += r.spend;
-        autoManual[key].sales += r.sales;
-        autoManual[key].orders += r.orders;
         autoManual[key].clicks += r.clicks;
-        autoManual[key].impressions += r.impressions;
+        if (isAuto) autoCampaigns.add(r.campaign); else manualCampaignNames.add(r.campaign);
     });
 
-    // Step 2: Innerhalb Manuell – Keyword Targeting vs. Product Targeting (aus Keyword/PT-Zeilen)
-    // Sammle manuelle Kampagnennamen
-    const manualCampaigns = autoManual['Manuell'].campaigns;
+    // Step 2: Sales/Orders aus Produktanzeige-Zeilen (= Gesamtverkäufe, stimmt mit Amazon UI überein)
+    const productAdEntities2 = ['produktanzeige', 'product ad'];
+    spRows.forEach(r => {
+        if (!productAdEntities2.some(e => r.entity.includes(e))) return;
+        const key = autoCampaigns.has(r.campaign) ? 'Auto' : (manualCampaignNames.has(r.campaign) ? 'Manuell' : null);
+        if (!key) return;
+        autoManual[key].sales += r.sales;
+        autoManual[key].orders += r.orders;
+    });
+
+    // Step 3: Innerhalb Manuell – Keyword Targeting vs. Product Targeting (aus KW/PT-Zeilen)
     const manualSub = { 'Keyword Targeting': { keywords: 0, spend: 0, sales: 0, orders: 0, clicks: 0 }, 'Product Targeting': { keywords: 0, spend: 0, sales: 0, orders: 0, clicks: 0 } };
     spRows.forEach(r => {
-        if (!manualCampaigns.has(r.campaign)) return;
+        if (!manualCampaignNames.has(r.campaign)) return;
         const isKw = kwEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat');
         const isPT = ptEntities.some(e => r.entity.includes(e)) && !r.entity.includes('negat');
         if (!isKw && !isPT) return;
@@ -662,6 +670,10 @@ function buildSectionB() {
         manualSub[key].orders += r.orders;
         manualSub[key].clicks += r.clicks;
     });
+
+    // Manuell Sales/Orders = Summe der KW+PT-Unterzeilen (konsistent, keine Diskrepanz)
+    autoManual['Manuell'].sales = manualSub['Keyword Targeting'].sales + manualSub['Product Targeting'].sales;
+    autoManual['Manuell'].orders = manualSub['Keyword Targeting'].orders + manualSub['Product Targeting'].orders;
 
     // Render table
     const head = document.getElementById('campTypeHead');
@@ -708,15 +720,6 @@ function buildSectionB() {
 
     body.innerHTML = html;
 
-    // Hinweis wenn Keyword-Sub-Summe von Kampagnen-Summe abweicht (Amazon Multi-Touch Attribution)
-    const kwSubTotal = manualSub['Keyword Targeting'].sales + manualSub['Product Targeting'].sales;
-    const campManuellSales = autoManual['Manuell'].sales;
-    if (manualSubHasData && kwSubTotal > campManuellSales * 1.02) {
-        const note = document.createElement('div');
-        note.style.cssText = 'font-size:12px;color:var(--text-secondary);padding:8px 12px;background:var(--bg-hover);border-radius:6px;margin-top:10px;';
-        note.innerHTML = 'ℹ️ Die Keyword/Target-Unterzeilen (' + formatCurrency(kwSubTotal) + ') übersteigen die Kampagnen-Sales (' + formatCurrency(campManuellSales) + '). Amazon kann im 7-Tage-Attributionsfenster denselben Kauf mehreren Keywords gleichzeitig anrechnen – das ist normales Verhalten.';
-        document.getElementById('sectionB').appendChild(note);
-    }
 }
 
 // --- Section C: Top Placements (Keywords/Targets by sales) ---
