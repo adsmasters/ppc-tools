@@ -977,9 +977,11 @@ function buildSectionD() {
     const spTotal = (getFormatData()['SP'] || {}).sales || 0;
     const noteEl = document.getElementById('placementNote');
     if (noteEl) {
-        noteEl.innerHTML = '⚠️ Die Sales-Zahlen in dieser Tabelle stammen aus den <strong>Gebotsanpassung-Zeilen</strong> des Bulk Sheets (' + formatCurrency(placementTotal) + ' gesamt). ' +
-            'Amazon liefert Platzierungsdaten nur auf Kampagnen-Ebene – diese enthalten nicht die Cross-Sell- und Halo-Verkäufe. ' +
-            'Der korrekte SP-Gesamtumsatz (inkl. aller Attributionen) beträgt <strong>' + formatCurrency(spTotal) + '</strong> (Sektion B/C).';
+        noteEl.innerHTML = '⚠️ <strong>Abweichung zu anderen Sektionen ist bewusst und technisch unvermeidbar:</strong> ' +
+            'Amazon liefert Platzierungsdaten im Bulk Sheet ausschließlich über Gebotsanpassung-Zeilen auf Kampagnen-Ebene (' + formatCurrency(placementTotal) + ' gesamt). ' +
+            'Diese enthalten weder Cross-Sell- noch Halo-Verkäufe und weichen daher vom korrekten SP-Gesamtumsatz (' + formatCurrency(spTotal) + ', Sektion B/C) ab. ' +
+            'Es gibt keine andere Möglichkeit, Platzierungsdaten aus dem Bulk Sheet zu beziehen. ' +
+            '<strong>Die absoluten Zahlen stimmen nicht 1:1 mit der Amazon Ads UI überein – die Gewichtung zwischen den Platzierungen ist jedoch korrekt und aussagekräftig.</strong>';
     }
 
     const head = document.getElementById('placementHead');
