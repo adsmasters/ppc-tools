@@ -283,6 +283,9 @@ const COL = {
     spend: ['spend', 'ausgaben', 'cost', 'dépenses'],
     sales: ['7 day total sales', '7-day total sales', 'total sales', 'sales', 'umsatz', 'verkäufe'],
     orders: ['7 day total orders', '7-day total orders', 'total orders', 'orders', 'bestellungen'],
+    // SD-spezifisch: View+Click-Attribution (= was Amazon UI für SD anzeigt)
+    salesVC: ['verkäufe (aufrufe und klicks)', 'sales (views + clicks)', 'views and clicks sales', 'views+clicks sales'],
+    ordersVC: ['bestellungen (aufrufe und klicks)', 'orders (views + clicks)', 'views and clicks orders'],
     targeting: ['targeting type', 'targeting-typ', 'type de ciblage'],
     ptExpr: ['product targeting expression', 'ausdruck für produkt-targeting'],
     state: ['state', 'zustand', 'état'],
@@ -378,11 +381,13 @@ function handleUpload(file) {
             const impressions = parseNum(r[cm.impressions]);
             const clicks = parseNum(r[cm.clicks]);
             const spend = parseNum(r[cm.spend]);
-            const sales = cm.sales !== -1 ? parseNum(r[cm.sales]) : 0;
-            const orders = cm.orders !== -1 ? parseNum(r[cm.orders]) : 0;
+            const format = detectFormat(product);
+            // SD: Amazon UI zeigt View+Click-Attribution – diese Spalte bevorzugen wenn vorhanden
+            const useVC = format === 'SD' && cm.salesVC !== -1;
+            const sales  = useVC ? parseNum(r[cm.salesVC])  : (cm.sales  !== -1 ? parseNum(r[cm.sales])  : 0);
+            const orders = useVC ? parseNum(r[cm.ordersVC]) : (cm.orders !== -1 ? parseNum(r[cm.orders]) : 0);
             const targetingType = cm.targeting !== -1 ? String(r[cm.targeting] || '').trim() : '';
             const placement = cm.placement !== -1 ? String(r[cm.placement] || '').trim() : '';
-            const format = detectFormat(product);
 
             // Skip rows without campaign or with no meaningful data
             if (!campaign && !keyword && !ptExpr) continue;
