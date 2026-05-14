@@ -529,6 +529,21 @@ function buildSectionTotal() {
         '<div class="stat-card"><div class="stat-label">Orders</div><div class="stat-value">' + total.orders.toLocaleString('de-DE') + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Klicks</div><div class="stat-value">' + total.clicks.toLocaleString('de-DE') + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">Ø CPC</div><div class="stat-value">' + formatCurrency(cpc) + '</div></div>';
+
+    // VCPM-Hinweis wenn SD oder SB vorhanden
+    const hasSB = !!formatMap['SB'];
+    const hasSD = !!formatMap['SD'];
+    if (hasSB || hasSD) {
+        const formats = [hasSB ? 'Sponsored Brands' : null, hasSD ? 'Sponsored Display' : null].filter(Boolean).join(' und ');
+        const existing = document.getElementById('vcpmNoteTotal');
+        if (!existing) {
+            const note = document.createElement('div');
+            note.id = 'vcpmNoteTotal';
+            note.style.cssText = 'background:var(--warning-bg,#fffbeb);border:1px solid var(--warning-border,#fcd34d);border-radius:6px;padding:10px 14px;font-size:12px;color:#92400e;margin-top:12px;line-height:1.5';
+            note.innerHTML = '⚠️ <strong>Mögliche Abweichung zur Amazon Ads UI:</strong> Bei <strong>' + formats + '</strong> können Kampagnen mit VCPM-Abrechnung (Viewable CPM) genutzt werden. Diese zählen Verkäufe nach Sichtkontakt, nicht nach Klick – was in der Amazon UI abweichend dargestellt wird. Sponsored Products ist davon nicht betroffen.';
+            document.getElementById('sectionTotal').appendChild(note);
+        }
+    }
 }
 
 // --- Section B: Übersicht nach Werbeformat ---
@@ -569,6 +584,17 @@ function buildSectionA() {
 
     if (Object.keys(formatMap).length === 0) {
         grid.innerHTML = '<p style="color:var(--text-secondary);font-size:13px;">Keine Werbeformat-Informationen in der "Product"-Spalte gefunden.</p>';
+    }
+
+    // VCPM-Hinweis wenn SD oder SB vorhanden
+    const hasSB = !!formatMap['SB'];
+    const hasSD = !!formatMap['SD'];
+    if (hasSB || hasSD) {
+        const formats = [hasSB ? 'Sponsored Brands' : null, hasSD ? 'Sponsored Display' : null].filter(Boolean).join(' und ');
+        const note = document.createElement('div');
+        note.style.cssText = 'background:var(--warning-bg,#fffbeb);border:1px solid var(--warning-border,#fcd34d);border-radius:6px;padding:10px 14px;font-size:12px;color:#92400e;margin-top:12px;line-height:1.5';
+        note.innerHTML = '⚠️ <strong>Mögliche Abweichung zur Amazon Ads UI:</strong> Bei <strong>' + formats + '</strong> können VCPM-Kampagnen (Viewable CPM) genutzt werden, die nach Sichtkontakt statt nach Klick abrechnen. Dies kann zu abweichenden Sales-Zahlen im Vergleich zur Amazon Ads UI führen. <strong>Sponsored Products ist davon nicht betroffen.</strong>';
+        document.getElementById('sectionA').appendChild(note);
     }
 }
 
