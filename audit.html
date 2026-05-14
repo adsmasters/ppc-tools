@@ -183,6 +183,7 @@
         <!-- Section C: Platzierungsanalyse -->
         <div class="card hidden" id="sectionD">
             <div class="card-title"><span class="section-label">D</span> Platzierungsanalyse <span class="tooltip-icon" data-tip="Zeigt die Performance nach Anzeigenplatzierung. Nur Sponsored Products Daten (Gebotsanpassung-Zeilen).">i</span></div>
+            <div id="placementNote" style="background:var(--warning-bg,#fffbeb);border:1px solid var(--warning-border,#fcd34d);border-radius:6px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:12px;line-height:1.5"></div>
             <div class="results-container">
                 <table class="results-table" id="placementTable">
                     <colgroup><col style="width:25%"><col style="width:14%"><col style="width:14%"><col style="width:10%"><col style="width:10%"><col style="width:13%"><col style="width:14%"></colgroup>
@@ -939,6 +940,16 @@ function buildSectionD() {
         if (ib !== -1) return 1;
         return b[1].spend - a[1].spend;
     });
+
+    // Hinweis: Gebotsanpassung-Zeilen enthalten Kampagnen-Attribution, nicht Gesamtverkäufe
+    const placementTotal = Object.values(placementMap).reduce((s, d) => s + d.sales, 0);
+    const spTotal = (getFormatData()['SP'] || {}).sales || 0;
+    const noteEl = document.getElementById('placementNote');
+    if (noteEl) {
+        noteEl.innerHTML = '⚠️ Die Sales-Zahlen in dieser Tabelle stammen aus den <strong>Gebotsanpassung-Zeilen</strong> des Bulk Sheets (' + formatCurrency(placementTotal) + ' gesamt). ' +
+            'Amazon liefert Platzierungsdaten nur auf Kampagnen-Ebene – diese enthalten nicht die Cross-Sell- und Halo-Verkäufe. ' +
+            'Der korrekte SP-Gesamtumsatz (inkl. aller Attributionen) beträgt <strong>' + formatCurrency(spTotal) + '</strong> (Sektion B/C).';
+    }
 
     const head = document.getElementById('placementHead');
     const body = document.getElementById('placementBody');
