@@ -184,6 +184,8 @@
         .preview-footer { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border); }
         .preview-footer .info { font-size: 12px; color: var(--text-secondary); }
 
+        .naming-badge { display:inline-block;background:rgba(255,165,0,0.12);color:#d4a017;border:1px solid rgba(255,165,0,0.25);font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px;margin-left:8px;letter-spacing:0.5px;vertical-align:middle; }
+
         @media (max-width: 900px) {
             .layout { grid-template-columns: 1fr; }
             .topbar { padding: 0 16px; }
@@ -251,6 +253,55 @@
     <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 14px;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.3);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--text-secondary);line-height:1.5;">
         <span style="font-size:13px;flex-shrink:0;">&#128274;</span>
         <span><strong>Vorlagen werden lokal in deinem Browser gespeichert</strong> – nicht in der Datenbank. Sie sind nur auf diesem Gerät verfügbar und gehen beim Löschen von Browser-Cache oder Cookies verloren.</span>
+    </div>
+
+    <!-- Naming Convention (Intern) -->
+    <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">Naming Convention <span class="naming-badge">INTERN</span></div>
+        <div class="toggle-group" style="max-width:340px;margin-bottom:12px;">
+            <button class="toggle-btn active" id="namingStd" onclick="setNaming('standard')">Standard</button>
+            <button class="toggle-btn" id="namingAmz" onclick="setNaming('amz')">AMZ Custom Format</button>
+        </div>
+        <div id="customNamingFields" style="display:none;">
+            <div class="field-row">
+                <div class="field">
+                    <label>Land / Marketplace</label>
+                    <select id="customCountry" onchange="updateNamingPreview()">
+                        <option value="DE">DE – Deutschland</option>
+                        <option value="UK">UK – Großbritannien</option>
+                        <option value="FR">FR – Frankreich</option>
+                        <option value="IT">IT – Italien</option>
+                        <option value="ES">ES – Spanien</option>
+                        <option value="NL">NL – Niederlande</option>
+                        <option value="PL">PL – Polen</option>
+                        <option value="SE">SE – Schweden</option>
+                        <option value="BE">BE – Belgien</option>
+                        <option value="US">US – USA</option>
+                        <option value="CA">CA – Kanada</option>
+                        <option value="JP">JP – Japan</option>
+                        <option value="AU">AU – Australien</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Portfolio</label>
+                    <input type="text" id="customPortfolio" placeholder="z.B. halbmasken" oninput="updateNamingPreview()">
+                    <div class="field-hint">Produktkategorie (wird automatisch slugified)</div>
+                </div>
+            </div>
+            <div class="field-row" style="margin-top:4px;">
+                <div class="field">
+                    <label>Bid Modifier</label>
+                    <select id="customBidModifier" onchange="updateNamingPreview()">
+                        <option value="all">all – Alle Placements</option>
+                        <option value="rest">rest – Rest of Search</option>
+                        <option value="tos">tos – Top of Search</option>
+                        <option value="pp">pp – Product Page</option>
+                        <option value="ntb">ntb – New to Brand</option>
+                    </select>
+                </div>
+            </div>
+            <div id="namingPreview" style="margin-top:8px;padding:8px 12px;background:var(--bg-primary);border-radius:6px;font-size:11px;color:var(--text-secondary);font-family:monospace;word-break:break-all;"></div>
+        </div>
     </div>
 
     <div class="layout">
@@ -384,13 +435,6 @@
                         <label><span data-i18n="lbl_end_date">Enddatum</span> <span style="font-weight:400;color:#8b949e;" data-i18n="lbl_optional">(optional)</span></label>
                         <input type="date" id="endDate">
                     </div>
-                </div>
-                <div class="field" style="margin-bottom:14px;">
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                        <input type="checkbox" id="chk-b2b" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;">
-                        <span style="font-size:13px;font-weight:700;color:var(--text-primary);">B2B-Modus (Amazon Business)</span>
-                    </label>
-                    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;margin-left:24px;">Kampagnen werden nur auf dem Amazon Business Marktplatz ausgespielt (<code style="font-size:11px;background:var(--bg-primary);padding:1px 5px;border-radius:3px;border:1px solid var(--border);">Site Restrictions: AMAZON_BUSINESS</code>)</div>
                 </div>
 
                 <div class="section-label"><span data-i18n="sec_placement">Placement-Anpassungen</span> <span style="font-weight:400;color:var(--text-secondary);" data-i18n="lbl_optional">(optional)</span> <span class="tooltip-icon" data-tip="Prozentuale Gebotserhöhung für bestimmte Platzierungen. Z.B. 50% bei Top of Search = dein Gebot wird um 50% erhöht, wenn die Anzeige ganz oben erscheint." data-i18n-tip="tip_placement">?</span></div>
@@ -1296,6 +1340,29 @@ document.addEventListener('DOMContentLoaded', function() {
 // --- State ---
 let mode = 'seller'; // vendor or seller
 let lang = 'de';
+let customNaming = false;
+
+function slugify(s) {
+    return (s || '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+}
+
+function setNaming(type) {
+    customNaming = (type === 'amz');
+    document.getElementById('namingStd').classList.toggle('active', !customNaming);
+    document.getElementById('namingAmz').classList.toggle('active', customNaming);
+    document.getElementById('customNamingFields').style.display = customNaming ? 'block' : 'none';
+    updateNamingPreview();
+}
+
+function updateNamingPreview() {
+    if (!customNaming) return;
+    const country = document.getElementById('customCountry').value;
+    const portfolio = slugify(document.getElementById('customPortfolio').value) || 'portfolio';
+    const pName = document.getElementById('productName').value;
+    const product = slugify(pName) || 'produkt';
+    const bidMod = document.getElementById('customBidModifier').value;
+    document.getElementById('namingPreview').textContent = 'Vorschau: AMZ_AMZ_' + country + '_SP_' + portfolio + '_' + product + '_SP_kwexact_generic_' + bidMod;
+}
 
 function setMode(m) {
     mode = m;
@@ -1739,6 +1806,35 @@ function generateRows() {
         ptComp: 'SP: Product Targeting (Competitor)'
     };
 
+    // Custom naming helpers
+    const customCountry  = customNaming ? document.getElementById('customCountry').value : '';
+    const portfolioSlug  = customNaming ? slugify(document.getElementById('customPortfolio').value) : '';
+    const productSlug    = customNaming ? slugify(productName) : '';
+    const customBidMod   = customNaming ? document.getElementById('customBidModifier').value : 'all';
+
+    function buildCampName(cnKey, splitIdx, totalChunks) {
+        if (customNaming) {
+            const base = 'AMZ_AMZ_' + customCountry + '_SP_' + portfolioSlug + '_' + productSlug;
+            const bm = customBidMod;
+            const splitSuffix = (totalChunks > 1 && splitIdx !== null) ? '_' + (splitIdx + 1) : '';
+            const names = {
+                auto:         base + '_auto_mixed_' + bm,
+                genericExact: base + '_SP_kwexact_generic_' + bm,
+                genericBroad: base + '_SP_kwbroad_generic_' + bm,
+                brandExact:   base + '_SP_kwexact_defensive_' + bm,
+                brandBroad:   base + '_SP_kwbroad_defensive_' + bm,
+                brandPhrase:  base + '_SP_kwphrase_defensive_' + bm,
+                compExact:    base + '_SP_kwexact_attack_' + bm,
+                compBroad:    base + '_SP_kwbroad_attack_' + bm,
+                ptBrand:      base + '_SP_pt_defensive_' + bm,
+                ptComp:       base + '_SP_pt_attack_' + bm,
+            };
+            return (names[cnKey] || base + '_' + cnKey) + splitSuffix;
+        }
+        const splitLabel = (totalChunks > 1 && splitIdx !== null) ? ' ' + (splitIdx + 1) + '/' + totalChunks : '';
+        return (cn[cnKey] || cnKey) + splitLabel + ' - ' + productName;
+    }
+
     const autoTargetExpr = {
         close: 'close-match', loose: 'loose-match',
         substitutes: 'substitutes', complements: 'complements'
@@ -1980,7 +2076,7 @@ function generateRows() {
         if (document.getElementById('chk-auto').checked) {
             const bid = parseFloat(document.getElementById('bid-auto').value) || 0.50;
             const budget = parseFloat(document.getElementById('budget-auto').value) || 10.00;
-            const campName = cn.auto + ' - ' + productName;
+            const campName = buildCampName('auto', null, 1);
             const adGroupName = 'ALL';
 
             const tosAuto = document.getElementById('tos-auto').value;
@@ -2022,7 +2118,7 @@ function generateRows() {
         }
 
         // ========== KEYWORD CAMPAIGNS ==========
-        function buildKeywordCampaigns(kwList, allocNum, campNameBase, matchType, matchTypeLabel, chkId, bidId, budgetId, negId, tosId, ppId) {
+        function buildKeywordCampaigns(kwList, allocNum, campNameBase, cnKey, matchType, matchTypeLabel, chkId, bidId, budgetId, negId, tosId, ppId) {
             if (!document.getElementById(chkId).checked || kwList.length === 0) return;
             const bid = parseFloat(document.getElementById(bidId).value) || 0.50;
             const budget = parseFloat(document.getElementById(budgetId).value) || 10.00;
@@ -2034,8 +2130,7 @@ function generateRows() {
             const totalChunks = chunks.length;
 
             chunks.forEach((chunk, idx) => {
-                const splitLabel = totalChunks > 1 ? ' ' + (idx + 1) + '/' + totalChunks : '';
-                const campName = campNameBase + splitLabel + ' - ' + productName;
+                const campName = buildCampName(cnKey, idx, totalChunks);
                 const adGroupName = matchTypeLabel;
 
                 addCampaignRow(campName, targetManual, budget, biddingStrategy, campTos, campPp);
@@ -2053,32 +2148,32 @@ function generateRows() {
         }
 
         // Generic Exact
-        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericExact, mt.exact, 'EXACT', 'chk-generic-exact', 'bid-generic-exact', 'budget-generic-exact', 'neg-generic-exact', 'tos-generic-exact', 'pp-generic-exact');
+        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericExact, 'genericExact', mt.exact, 'EXACT', 'chk-generic-exact', 'bid-generic-exact', 'budget-generic-exact', 'neg-generic-exact', 'tos-generic-exact', 'pp-generic-exact');
 
         // Generic Broad
-        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericBroad, mt.broad, 'BROAD', 'chk-generic-broad', 'bid-generic-broad', 'budget-generic-broad', 'neg-generic-broad', 'tos-generic-broad', 'pp-generic-broad');
+        buildKeywordCampaigns(genericKws, genericAllocNum, cn.genericBroad, 'genericBroad', mt.broad, 'BROAD', 'chk-generic-broad', 'bid-generic-broad', 'budget-generic-broad', 'neg-generic-broad', 'tos-generic-broad', 'pp-generic-broad');
 
         // Brand Exact
-        buildKeywordCampaigns(brandKws, 0, cn.brandExact, mt.exact, 'EXACT', 'chk-brand-exact', 'bid-brand-exact', 'budget-brand-exact', 'neg-brand-exact', 'tos-brand-exact', 'pp-brand-exact');
+        buildKeywordCampaigns(brandKws, 0, cn.brandExact, 'brandExact', mt.exact, 'EXACT', 'chk-brand-exact', 'bid-brand-exact', 'budget-brand-exact', 'neg-brand-exact', 'tos-brand-exact', 'pp-brand-exact');
 
         // Brand Broad
-        buildKeywordCampaigns(brandKws, 0, cn.brandBroad, mt.broad, 'BROAD', 'chk-brand-broad', 'bid-brand-broad', 'budget-brand-broad', 'neg-brand-broad', 'tos-brand-broad', 'pp-brand-broad');
+        buildKeywordCampaigns(brandKws, 0, cn.brandBroad, 'brandBroad', mt.broad, 'BROAD', 'chk-brand-broad', 'bid-brand-broad', 'budget-brand-broad', 'neg-brand-broad', 'tos-brand-broad', 'pp-brand-broad');
 
         // Brand Phrase
-        buildKeywordCampaigns(brandKws, 0, cn.brandPhrase, mt.phrase, 'PHRASE', 'chk-brand-phrase', 'bid-brand-phrase', 'budget-brand-phrase', 'neg-brand-phrase', 'tos-brand-phrase', 'pp-brand-phrase');
+        buildKeywordCampaigns(brandKws, 0, cn.brandPhrase, 'brandPhrase', mt.phrase, 'PHRASE', 'chk-brand-phrase', 'bid-brand-phrase', 'budget-brand-phrase', 'neg-brand-phrase', 'tos-brand-phrase', 'pp-brand-phrase');
 
         // Competitor Exact
-        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compExact, mt.exact, 'EXACT', 'chk-comp-exact', 'bid-comp-exact', 'budget-comp-exact', 'neg-comp-exact', 'tos-comp-exact', 'pp-comp-exact');
+        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compExact, 'compExact', mt.exact, 'EXACT', 'chk-comp-exact', 'bid-comp-exact', 'budget-comp-exact', 'neg-comp-exact', 'tos-comp-exact', 'pp-comp-exact');
 
         // Competitor Broad
-        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compBroad, mt.broad, 'BROAD', 'chk-comp-broad', 'bid-comp-broad', 'budget-comp-broad', 'neg-comp-broad', 'tos-comp-broad', 'pp-comp-broad');
+        buildKeywordCampaigns(compKws, compKwAllocNum, cn.compBroad, 'compBroad', mt.broad, 'BROAD', 'chk-comp-broad', 'bid-comp-broad', 'budget-comp-broad', 'neg-comp-broad', 'tos-comp-broad', 'pp-comp-broad');
 
         // ========== PRODUCT TARGETING - BRAND ==========
         if (document.getElementById('chk-pt-brand').checked && brandAsinsList.length > 0) {
             const bid = parseFloat(document.getElementById('bid-pt-brand').value) || 0.50;
             const budget = parseFloat(document.getElementById('budget-pt-brand').value) || 10.00;
             const useNeg = document.getElementById('neg-pt-brand').checked;
-            const campName = cn.ptBrand + ' - ' + productName;
+            const campName = buildCampName('ptBrand', null, 1);
             const adGroupName = 'ASIN';
             const tosPtBrand = document.getElementById('tos-pt-brand').value;
             const ppPtBrand = document.getElementById('pp-pt-brand').value;
@@ -2109,7 +2204,7 @@ function generateRows() {
 
             chunks.forEach((chunk, idx) => {
                 const splitLabel = totalChunks > 1 ? ' - ' + (idx + 1) + '/' + totalChunks : '';
-                const campName = cn.ptComp + splitLabel + ' - ' + productName;
+                const campName = buildCampName('ptComp', idx, totalChunks);
                 const adGroupName = 'ASIN';
 
                 addCampaignRow(campName, targetManual, budget, biddingStrategy, tosPtComp, ppPtComp);
@@ -2135,7 +2230,9 @@ function generateRows() {
             const ppSingle = document.getElementById('pp-single').value;
 
             singleKws.forEach(kw => {
-                const campName = 'SP: KW "' + kw + '" - ' + productName;
+                const campName = customNaming
+                    ? ('AMZ_AMZ_' + customCountry + '_SP_' + portfolioSlug + '_' + productSlug + '_SP_kwexact_single_' + slugify(kw) + '_' + customBidMod)
+                    : ('SP: KW "' + kw + '" - ' + productName);
                 const adGroupName = 'EXACT';
 
                 addCampaignRow(campName, targetManual, budget, biddingStrategy, tosSingle, ppSingle);
