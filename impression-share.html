@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-962309237"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'AW-962309237');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impression Share Analyse - AdsMasters PPC Tools</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="auth-guard.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-hover: #1c2129;
+            --border: #30363d; --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #f85149; --error-bg: #f8514911;
+            --warn: #d29922; --warn-bg: #d2992211;
+            --success: #3fb950; --success-bg: #3fb95011;
+            --scale: #3fb950; --scale-bg: #3fb95011;
+            --optim: #f85149; --optim-bg: #f8514911;
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff; --bg-secondary: #f6f8fa; --bg-hover: #eef1f5;
+            --border: #d0d7de; --text-primary: #1f2328; --text-secondary: #656d76;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #cf222e; --error-bg: #cf222e11;
+            --warn: #9a6700; --warn-bg: #9a670011;
+            --success: #1a7f37; --success-bg: #1a7f3711;
+            --scale: #1a7f37; --scale-bg: #1a7f3711;
+            --optim: #cf222e; --optim-bg: #cf222e11;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .theme-toggle:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
+        .page-header { margin-bottom: 24px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title .step { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+        input[type="number"] { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; }
+        input:focus { outline: none; border-color: var(--accent); }
+        .field { margin-bottom: 14px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .field-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
+        .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 400; white-space: normal; max-width: 280px; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 32px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 12px; }
+        .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary)); }
+        .upload-zone .icon { font-size: 28px; margin-bottom: 6px; }
+        .upload-zone .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone .hint { font-size: 12px; color: var(--text-secondary); }
+        .upload-zone input { display: none; }
+        .file-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+        .file-info .name { flex: 1; font-weight: 600; }
+        .file-info .meta { color: var(--text-secondary); }
+        .file-info .remove { color: var(--error); cursor: pointer; font-weight: 700; }
+        .btn { padding: 10px 28px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-secondary:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-sm { padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .btn-sm:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; flex-wrap: wrap; }
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .stat-value { font-size: 22px; font-weight: 700; }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warn { color: var(--warn); }
+        .stat-value.error { color: var(--error); }
+        .stat-value.scale { color: var(--scale); }
+        .stat-value.optim { color: var(--optim); }
+        .results-container { overflow-x: auto; }
+        .results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .results-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 10px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+        .results-table th:hover { color: var(--text-primary); }
+        .results-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .results-table tr:hover td { background: var(--bg-hover); }
+        .results-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
+        .table-controls .left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .table-controls .right { display: flex; gap: 8px; align-items: center; }
+        .search-input { width: 220px; padding: 6px 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 12px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+        .filter-btn { padding: 4px 12px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary)); }
+        .filter-btn.active-scale { border-color: var(--scale); color: var(--scale); background: var(--scale-bg); }
+        .filter-btn.active-optim { border-color: var(--optim); color: var(--optim); background: var(--optim-bg); }
+        .error-msg { color: var(--error); font-size: 13px; padding: 8px 12px; border: 1px solid var(--error); border-radius: 6px; margin-bottom: 6px; background: var(--error-bg); }
+        .warn-msg { color: var(--warn); font-size: 13px; padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; margin-bottom: 6px; background: var(--warn-bg); }
+        .msg-container { margin-bottom: 16px; }
+        .hidden { display: none; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 12px; }
+        .pagination button { padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .pagination button:hover { color: var(--text-primary); }
+        .pagination button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+        .pagination .page-info { font-size: 12px; color: var(--text-secondary); }
+        .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px; margin-left: 4px; }
+        .badge-scale { background: var(--scale-bg); color: var(--scale); border: 1px solid var(--scale); }
+        .badge-optim { background: var(--optim-bg); color: var(--optim); border: 1px solid var(--optim); }
+        .badge-neutral { background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); }
+        .insight-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .insight-card { border-radius: 8px; padding: 16px; border: 1px solid; }
+        .insight-card.scale { border-color: var(--scale); background: var(--scale-bg); }
+        .insight-card.optim { border-color: var(--optim); background: var(--optim-bg); }
+        .insight-card-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+        .insight-card.scale .insight-card-title { color: var(--scale); }
+        .insight-card.optim .insight-card-title { color: var(--optim); }
+        .insight-card-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+        .insight-card-count { font-size: 28px; font-weight: 700; }
+        .insight-card.scale .insight-card-count { color: var(--scale); }
+        .insight-card.optim .insight-card-count { color: var(--optim); }
+        .insight-card-terms { margin-top: 8px; max-height: 120px; overflow-y: auto; }
+        .insight-term { font-size: 11px; padding: 3px 0; border-bottom: 1px solid var(--border); color: var(--text-primary); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .insight-term:last-child { border-bottom: none; }
+        .insight-term .term-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .insight-term .term-meta { color: var(--text-secondary); flex-shrink: 0; font-size: 10px; }
+        @media (max-width: 900px) { .field-row { grid-template-columns: 1fr 1fr; } .insight-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } .field-row { grid-template-columns: 1fr; } .btn-row { flex-direction: column; } }
+    </style>
+</head>
+<body>
+<script>
+    const saved = localStorage.getItem('ppc_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+</script>
+
+<div class="topbar">
+    <div style="display:flex;align-items:center;gap:32px;">
+        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <a href="dashboard.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Tool-Übersicht</a>
+        <a href="tutorials.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Tutorials</a>
+        <a href="invoices.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Rechnungen</a>
+        <a href="contact.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Kontakt</a>
+        <a href="help.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Hilfe</a>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9788;</button>
+        <button class="btn-logout" onclick="ppcLogout()">Logout</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="page-header">
+        <h1 class="page-title">Impression Share Analyse</h1>
+        <p class="page-sub">Identifiziere Skalierungspotenziale (niedriger IS, guter ROAS) und Optimierungsbedarf (hoher IS, schlechter ROAS)</p>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div class="card" id="stepUpload">
+        <div class="card-title"><span class="step">1</span> Impression Share Bericht hochladen</div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="icon">&#128202;</div>
+            <div class="label">Sponsored Products — Impression Share des Suchbegriffs Bericht</div>
+            <div class="hint">CSV-Datei aus Amazon Advertising Berichte hochladen</div>
+            <input type="file" id="fileInput" accept=".csv">
+        </div>
+        <div id="fileInfoContainer"></div>
+        <div class="msg-container" id="uploadMsg"></div>
+    </div>
+
+    <!-- STEP 2: Settings -->
+    <div class="card hidden" id="stepSettings">
+        <div class="card-title"><span class="step">2</span> Schwellenwerte definieren</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere ab wann ein Suchbegriff als Skalierungspotenzial oder Optimierungsbedarf gilt.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+            <div style="background:var(--scale-bg);border:1px solid var(--scale);border-radius:8px;padding:16px;">
+                <div style="font-size:13px;font-weight:700;color:var(--scale);margin-bottom:12px;">Skalierungspotenzial</div>
+                <div class="field-row-2">
+                    <div class="field">
+                        <label>Max. Impression Share (%) <span class="tooltip-icon" data-tip="Suchbegriffe mit Impression Share unterhalb dieses Werts gelten als unterrepräsentiert.">?</span></label>
+                        <input type="number" id="maxIsScale" value="15" min="1" max="100" step="1">
+                    </div>
+                    <div class="field">
+                        <label>Min. ROAS <span class="tooltip-icon" data-tip="Suchbegriffe müssen mindestens diesen ROAS haben um als skalierbar zu gelten.">?</span></label>
+                        <input type="number" id="minRoasScale" value="3" min="0" step="0.1">
+                    </div>
+                </div>
+            </div>
+            <div style="background:var(--optim-bg);border:1px solid var(--optim);border-radius:8px;padding:16px;">
+                <div style="font-size:13px;font-weight:700;color:var(--optim);margin-bottom:12px;">Optimierungsbedarf</div>
+                <div class="field-row-2">
+                    <div class="field">
+                        <label>Min. Impression Share (%) <span class="tooltip-icon" data-tip="Suchbegriffe mit Impression Share oberhalb dieses Werts gelten als dominierend.">?</span></label>
+                        <input type="number" id="minIsOptim" value="20" min="1" max="100" step="1">
+                    </div>
+                    <div class="field">
+                        <label>Max. ROAS <span class="tooltip-icon" data-tip="Suchbegriffe mit ROAS unterhalb dieses Werts werden als ineffizient markiert.">?</span></label>
+                        <input type="number" id="maxRoasOptim" value="2" min="0" step="0.1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top:16px;">
+            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">Mindestanforderungen (für statistische Relevanz)</p>
+            <div class="field-row">
+                <div class="field">
+                    <label>Min. Spend (€) <span class="tooltip-icon" data-tip="Suchbegriffe mit weniger Ausgaben werden ignoriert.">?</span></label>
+                    <input type="number" id="minSpend" value="5" min="0" step="1">
+                </div>
+                <div class="field">
+                    <label>Min. Klicks <span class="tooltip-icon" data-tip="Mindestanzahl Klicks für statistische Aussagekraft.">?</span></label>
+                    <input type="number" id="minClicks" value="5" min="0" step="1">
+                </div>
+                <div class="field">
+                    <label>Min. Impressionen <span class="tooltip-icon" data-tip="Suchbegriffe mit weniger Impressionen werden ignoriert.">?</span></label>
+                    <input type="number" id="minImpressions" value="100" min="0" step="100">
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-row" style="justify-content:flex-start;">
+            <button class="btn btn-primary" onclick="runAnalysis()">Analyse starten</button>
+        </div>
+    </div>
+
+    <!-- STEP 3: Results -->
+    <div class="card hidden" id="stepResults">
+        <div class="card-title"><span class="step">3</span> Analyse-Ergebnis</div>
+        <div class="stats-row" id="statsRow"></div>
+
+        <div class="insight-grid" id="insightGrid"></div>
+
+        <div class="table-controls">
+            <div class="left">
+                <input type="text" class="search-input" id="searchInput" placeholder="Suchbegriff filtern..." oninput="currentPage=1;renderTable()">
+                <button class="filter-btn active" id="filterAll" onclick="setFilter('all')">Alle</button>
+                <button class="filter-btn" id="filterScale" onclick="setFilter('scale')">Skalierungspotenzial</button>
+                <button class="filter-btn" id="filterOptim" onclick="setFilter('optim')">Optimierungsbedarf</button>
+                <span style="font-size:12px;color:var(--text-secondary);" id="tableCount"></span>
+            </div>
+            <div class="right">
+                <button class="btn-sm" onclick="exportAnalysis()">Excel exportieren</button>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <table class="results-table" id="resultsTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script>
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('ppc_theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+    document.getElementById('themeToggle').innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';
+}
+document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'light') === 'dark' ? '&#9788;' : '&#9790;';
+
+let rawData = [];
+let analysisData = [];
+let activeFilter = 'all';
+let sortCol = 'spend';
+let sortDir = 'desc';
+let currentPage = 1;
+const PAGE_SIZE = 100;
+
+const COL_ALIASES = {
+    searchterm:      ['suchbegriff des kunden', 'customer search term'],
+    rank:            ['impression-rang des suchbegriffs', 'impression rank of the search term', 'impression rank'],
+    impressionShare: ['impression share für den suchbegriff', 'impression share for the search term', 'impression share'],
+    campaign:        ['kampagnen-name', 'campaign name'],
+    adgroup:         ['anzeigengruppenname', 'ad group name'],
+    clicks:          ['klicks', 'clicks'],
+    impressions:     ['impressionen', 'impressions'],
+    spend:           ['ausgaben', 'spend'],
+    orders:          ['gesamtaufträge in 7 tagen (anzahl)', 'gesamtauftr', 'total orders', '7 day total orders'],
+    sales:           ['gesamtverkäufe in 7 tagen', 'gesamtverkäufe', 'total sales', '7 day total sales'],
+    acos:            ['zugeschriebene umsatzkosten (acos) gesamt', 'acos gesamt', 'total acos', 'acos'],
+    roas:            ['gesamte rentabilität der anzeigenkosten (roas)', 'roas']
+};
+
+function findColIdx(headers, key) {
+    const aliases = COL_ALIASES[key] || [];
+    const lower = headers.map(h => h.toLowerCase().trim());
+    for (const alias of aliases) {
+        const i = lower.findIndex(h => h.includes(alias));
+        if (i !== -1) return i;
+    }
+    return -1;
+}
+
+function parseNum(val) {
+    if (val === undefined || val === null || val === '') return 0;
+    const s = String(val).replace(/[^0-9.,\-]/g, '').replace(',', '.');
+    return parseFloat(s) || 0;
+}
+
+function parsePercent(val) {
+    if (val === undefined || val === null || val === '') return 0;
+    const s = String(val).replace('%', '').replace(',', '.').trim();
+    return parseFloat(s) || 0;
+}
+
+function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+function fmt(val, decimals = 2) {
+    return val.toLocaleString('de-DE', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function fmtCurrency(val) {
+    return '€ ' + fmt(val);
+}
+
+// Upload
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+    const msgEl = document.getElementById('uploadMsg');
+    msgEl.innerHTML = '';
+
+    const reader = new FileReader();
+    reader.onload = evt => {
+        const text = evt.target.result;
+        const sep = text.includes('\t') ? '\t' : ',';
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+
+        function parseLine(line) {
+            const result = [];
+            let cur = '', inQ = false;
+            for (let i = 0; i < line.length; i++) {
+                if (line[i] === '"') { inQ = !inQ; continue; }
+                if (line[i] === sep && !inQ) { result.push(cur.trim()); cur = ''; continue; }
+                cur += line[i];
+            }
+            result.push(cur.trim());
+            return result;
+        }
+
+        // Find header row
+        let headerIdx = 0;
+        for (let i = 0; i < Math.min(lines.length, 5); i++) {
+            const row = parseLine(lines[i]).map(c => c.toLowerCase());
+            if (row.some(c => c.includes('suchbegriff') || c.includes('search term') || c.includes('impression share'))) {
+                headerIdx = i;
+                break;
+            }
+        }
+
+        const headers = parseLine(lines[headerIdx]);
+        const cm = {};
+        for (const key of Object.keys(COL_ALIASES)) cm[key] = findColIdx(headers, key);
+
+        if (cm.searchterm === -1) {
+            msgEl.innerHTML = '<div class="error-msg">Spalte "Suchbegriff des Kunden" nicht gefunden. Bitte den Sponsored Products — Impression Share des Suchbegriffs Bericht hochladen.</div>';
+            return;
+        }
+        if (cm.impressionShare === -1) {
+            msgEl.innerHTML = '<div class="error-msg">Spalte "Impression Share" nicht gefunden. Bitte den richtigen Bericht hochladen.</div>';
+            return;
+        }
+
+        rawData = [];
+        for (let i = headerIdx + 1; i < lines.length; i++) {
+            const r = parseLine(lines[i]);
+            if (!r || r.length < 3) continue;
+            const st = cm.searchterm !== -1 ? r[cm.searchterm].trim() : '';
+            if (!st) continue;
+
+            rawData.push({
+                searchterm:      st,
+                rank:            cm.rank !== -1 ? parseNum(r[cm.rank]) : 0,
+                impressionShare: cm.impressionShare !== -1 ? parsePercent(r[cm.impressionShare]) : 0,
+                campaign:        cm.campaign !== -1 ? r[cm.campaign].trim() : '',
+                adgroup:         cm.adgroup !== -1 ? r[cm.adgroup].trim() : '',
+                clicks:          cm.clicks !== -1 ? parseNum(r[cm.clicks]) : 0,
+                impressions:     cm.impressions !== -1 ? parseNum(r[cm.impressions]) : 0,
+                spend:           cm.spend !== -1 ? parseNum(r[cm.spend]) : 0,
+                orders:          cm.orders !== -1 ? parseNum(r[cm.orders]) : 0,
+                sales:           cm.sales !== -1 ? parseNum(r[cm.sales]) : 0,
+            });
+        }
+
+        if (rawData.length === 0) {
+            msgEl.innerHTML = '<div class="error-msg">Keine Daten gefunden.</div>';
+            return;
+        }
+
+        document.getElementById('fileInfoContainer').innerHTML =
+            `<div class="file-info"><span class="name">${escapeHtml(file.name)}</span><span class="meta">${rawData.length} Zeilen gelesen</span><span class="remove" onclick="clearUpload()">&times;</span></div>`;
+        document.getElementById('stepSettings').classList.remove('hidden');
+        document.getElementById('stepResults').classList.add('hidden');
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+function clearUpload() {
+    rawData = [];
+    document.getElementById('fileInfoContainer').innerHTML = '';
+    document.getElementById('uploadMsg').innerHTML = '';
+    document.getElementById('stepSettings').classList.add('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+    document.getElementById('fileInput').value = '';
+}
+
+// Analysis
+function runAnalysis() {
+    const maxIsScale    = parseFloat(document.getElementById('maxIsScale').value) || 15;
+    const minRoasScale  = parseFloat(document.getElementById('minRoasScale').value) || 3;
+    const minIsOptim    = parseFloat(document.getElementById('minIsOptim').value) || 20;
+    const maxRoasOptim  = parseFloat(document.getElementById('maxRoasOptim').value) || 2;
+    const minSpend      = parseFloat(document.getElementById('minSpend').value) || 0;
+    const minClicks     = parseFloat(document.getElementById('minClicks').value) || 0;
+    const minImpressions = parseFloat(document.getElementById('minImpressions').value) || 0;
+
+    // Aggregate by search term
+    const aggMap = {};
+    rawData.forEach(row => {
+        const key = row.searchterm.toLowerCase();
+        if (!aggMap[key]) {
+            aggMap[key] = {
+                searchterm: row.searchterm,
+                impressionShare: row.impressionShare,
+                rank: row.rank,
+                clicks: 0, impressions: 0, spend: 0, orders: 0, sales: 0,
+                campaigns: new Set()
+            };
+        }
+        aggMap[key].clicks      += row.clicks;
+        aggMap[key].impressions += row.impressions;
+        aggMap[key].spend       += row.spend;
+        aggMap[key].orders      += row.orders;
+        aggMap[key].sales       += row.sales;
+        aggMap[key].campaigns.add(row.campaign);
+        // IS is the same per term — keep max (all should be equal for same term/period)
+        if (row.impressionShare > aggMap[key].impressionShare) aggMap[key].impressionShare = row.impressionShare;
+        if (row.rank > 0 && (aggMap[key].rank === 0 || row.rank < aggMap[key].rank)) aggMap[key].rank = row.rank;
+    });
+
+    analysisData = Object.values(aggMap).map(r => {
+        const roas = r.spend > 0 ? r.sales / r.spend : 0;
+        const acos = r.sales > 0 ? (r.spend / r.sales * 100) : (r.spend > 0 ? Infinity : 0);
+        const ctr  = r.impressions > 0 ? (r.clicks / r.impressions * 100) : 0;
+        const cpc  = r.clicks > 0 ? r.spend / r.clicks : 0;
+
+        let category = 'neutral';
+        if (r.spend >= minSpend && r.clicks >= minClicks && r.impressions >= minImpressions) {
+            if (r.impressionShare <= maxIsScale && roas >= minRoasScale) {
+                category = 'scale';
+            } else if (r.impressionShare >= minIsOptim && roas <= maxRoasOptim && roas > 0) {
+                category = 'optim';
+            } else if (r.impressionShare >= minIsOptim && r.spend > 0 && r.orders === 0) {
+                category = 'optim';
+            }
+        }
+
+        return {
+            ...r,
+            roas, acos, ctr, cpc,
+            category,
+            campaignCount: r.campaigns.size,
+            campaigns: [...r.campaigns]
+        };
+    });
+
+    activeFilter = 'all';
+    currentPage = 1;
+    sortCol = 'spend';
+    sortDir = 'desc';
+
+    renderStats();
+    renderInsightCards();
+    renderTable();
+    updateFilterButtons();
+    document.getElementById('stepResults').classList.remove('hidden');
+    document.getElementById('stepResults').scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderStats() {
+    const scaleCount  = analysisData.filter(r => r.category === 'scale').length;
+    const optimCount  = analysisData.filter(r => r.category === 'optim').length;
+    const totalSpend  = analysisData.reduce((s, r) => s + r.spend, 0);
+    const totalSales  = analysisData.reduce((s, r) => s + r.sales, 0);
+    const avgIs       = analysisData.length > 0 ? (analysisData.reduce((s, r) => s + r.impressionShare, 0) / analysisData.length) : 0;
+    const avgRoas     = totalSpend > 0 ? (totalSales / totalSpend) : 0;
+
+    document.getElementById('statsRow').innerHTML = `
+        <div class="stat-card"><div class="stat-label">Suchbegriffe gesamt</div><div class="stat-value">${analysisData.length.toLocaleString('de-DE')}</div></div>
+        <div class="stat-card"><div class="stat-label">Skalierungspotenzial</div><div class="stat-value scale">${scaleCount}</div></div>
+        <div class="stat-card"><div class="stat-label">Optimierungsbedarf</div><div class="stat-value optim">${optimCount}</div></div>
+        <div class="stat-card"><div class="stat-label">Gesamter Spend</div><div class="stat-value">${fmtCurrency(totalSpend)}</div></div>
+        <div class="stat-card"><div class="stat-label">Gesamter Umsatz</div><div class="stat-value success">${fmtCurrency(totalSales)}</div></div>
+        <div class="stat-card"><div class="stat-label">Ø Impression Share</div><div class="stat-value warn">${fmt(avgIs, 1)}%</div></div>
+        <div class="stat-card"><div class="stat-label">Gesamt ROAS</div><div class="stat-value">${fmt(avgRoas, 2)}x</div></div>
+    `;
+}
+
+function renderInsightCards() {
+    const scaleTerms = analysisData.filter(r => r.category === 'scale').sort((a, b) => b.roas - a.roas).slice(0, 8);
+    const optimTerms = analysisData.filter(r => r.category === 'optim').sort((a, b) => b.spend - a.spend).slice(0, 8);
+
+    const scaleHtml = scaleTerms.map(r =>
+        `<div class="insight-term">
+            <span class="term-name" title="${escapeHtml(r.searchterm)}">${escapeHtml(r.searchterm)}</span>
+            <span class="term-meta">IS ${fmt(r.impressionShare, 1)}% · ROAS ${fmt(r.roas, 2)}x</span>
+        </div>`
+    ).join('');
+
+    const optimHtml = optimTerms.map(r =>
+        `<div class="insight-term">
+            <span class="term-name" title="${escapeHtml(r.searchterm)}">${escapeHtml(r.searchterm)}</span>
+            <span class="term-meta">IS ${fmt(r.impressionShare, 1)}% · ROAS ${r.orders > 0 ? fmt(r.roas, 2) + 'x' : 'keine Bestellungen'}</span>
+        </div>`
+    ).join('');
+
+    document.getElementById('insightGrid').innerHTML = `
+        <div class="insight-card scale">
+            <div class="insight-card-title">&#128640; Skalierungspotenzial</div>
+            <div class="insight-card-desc">Niedriger Impression Share, guter ROAS — hier kann mehr Budget eingesetzt werden</div>
+            <div class="insight-card-count">${analysisData.filter(r => r.category === 'scale').length} Suchbegriffe</div>
+            <div class="insight-card-terms">${scaleHtml || '<span style="color:var(--text-secondary);font-size:12px;">Keine Treffer mit aktuellen Schwellenwerten</span>'}</div>
+        </div>
+        <div class="insight-card optim">
+            <div class="insight-card-title">&#9888;&#65039; Optimierungsbedarf</div>
+            <div class="insight-card-desc">Hoher Impression Share, schlechter ROAS — Gebote reduzieren oder als Negativ hinzufügen</div>
+            <div class="insight-card-count">${analysisData.filter(r => r.category === 'optim').length} Suchbegriffe</div>
+            <div class="insight-card-terms">${optimHtml || '<span style="color:var(--text-secondary);font-size:12px;">Keine Treffer mit aktuellen Schwellenwerten</span>'}</div>
+        </div>
+    `;
+}
+
+function setFilter(filter) {
+    activeFilter = filter;
+    currentPage = 1;
+    updateFilterButtons();
+    renderTable();
+}
+
+function updateFilterButtons() {
+    document.getElementById('filterAll').className   = 'filter-btn' + (activeFilter === 'all' ? ' active' : '');
+    document.getElementById('filterScale').className = 'filter-btn' + (activeFilter === 'scale' ? ' active-scale' : '');
+    document.getElementById('filterOptim').className = 'filter-btn' + (activeFilter === 'optim' ? ' active-optim' : '');
+}
+
+function renderTable() {
+    const search = document.getElementById('searchInput').value.toLowerCase().trim();
+    const thead  = document.getElementById('tableHead');
+    const tbody  = document.getElementById('tableBody');
+
+    let data = analysisData.filter(r => {
+        if (activeFilter === 'scale' && r.category !== 'scale') return false;
+        if (activeFilter === 'optim' && r.category !== 'optim') return false;
+        if (search && !r.searchterm.toLowerCase().includes(search)) return false;
+        return true;
+    });
+
+    data.sort((a, b) => {
+        let va = a[sortCol], vb = b[sortCol];
+        if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb || '').toLowerCase(); }
+        return sortDir === 'asc' ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
+    });
+
+    const totalFiltered = data.length;
+    const totalPages = Math.ceil(data.length / PAGE_SIZE);
+    if (currentPage > totalPages) currentPage = totalPages || 1;
+    const pageData = data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+    const cols = [
+        { id: 'searchterm',      label: 'Suchbegriff',        sort: true },
+        { id: 'category',        label: 'Kategorie',          sort: true },
+        { id: 'impressionShare', label: 'Imp. Share %',       sort: true, num: true },
+        { id: 'rank',            label: 'Imp. Rang',          sort: true, num: true },
+        { id: 'roas',            label: 'ROAS',               sort: true, num: true },
+        { id: 'acos',            label: 'ACoS %',             sort: true, num: true },
+        { id: 'spend',           label: 'Spend',              sort: true, num: true },
+        { id: 'sales',           label: 'Umsatz',             sort: true, num: true },
+        { id: 'orders',          label: 'Bestellungen',       sort: true, num: true },
+        { id: 'clicks',          label: 'Klicks',             sort: true, num: true },
+        { id: 'impressions',     label: 'Impressionen',       sort: true, num: true },
+        { id: 'cpc',             label: 'CPC',                sort: true, num: true },
+        { id: 'ctr',             label: 'CTR %',              sort: true, num: true },
+        { id: 'campaignCount',   label: 'Kampagnen',          sort: true, num: true },
+    ];
+
+    thead.innerHTML = '<tr>' + cols.map(c => {
+        const arrow = c.id === sortCol ? (sortDir === 'asc' ? ' &#9650;' : ' &#9660;') : '';
+        const click = c.sort ? ` onclick="sortTable('${c.id}')"` : '';
+        return `<th${click}>${c.label}${arrow}</th>`;
+    }).join('') + '</tr>';
+
+    tbody.innerHTML = pageData.map(row => {
+        const catBadge = row.category === 'scale'
+            ? '<span class="badge badge-scale">Skalierung</span>'
+            : row.category === 'optim'
+            ? '<span class="badge badge-optim">Optimierung</span>'
+            : '<span class="badge badge-neutral">Neutral</span>';
+
+        const isColor   = row.impressionShare >= parseFloat(document.getElementById('minIsOptim').value || 20)
+            ? 'var(--error)' : row.impressionShare <= parseFloat(document.getElementById('maxIsScale').value || 15)
+            ? 'var(--success)' : 'var(--warn)';
+
+        const roasColor = row.roas >= parseFloat(document.getElementById('minRoasScale').value || 3)
+            ? 'var(--success)' : row.roas <= parseFloat(document.getElementById('maxRoasOptim').value || 2) && row.orders > 0
+            ? 'var(--error)' : 'var(--warn)';
+
+        const acosColor = row.acos === Infinity || row.acos === 0 && row.orders === 0
+            ? 'var(--text-secondary)'
+            : row.acos < 25 ? 'var(--success)'
+            : row.acos > 40 ? 'var(--error)'
+            : 'var(--warn)';
+
+        const acosVal = row.orders > 0 ? fmt(row.acos, 1) + '%' : row.spend > 0 ? '∞' : '—';
+        const roasVal = row.orders > 0 ? fmt(row.roas, 2) + 'x' : row.spend > 0 ? '0.00x' : '—';
+
+        return `<tr>
+            <td style="max-width:220px;white-space:normal;word-break:break-word;">${escapeHtml(row.searchterm)}</td>
+            <td>${catBadge}</td>
+            <td class="num" style="color:${isColor};font-weight:600">${fmt(row.impressionShare, 1)}%</td>
+            <td class="num">${row.rank > 0 ? row.rank : '—'}</td>
+            <td class="num" style="color:${roasColor};font-weight:600">${roasVal}</td>
+            <td class="num" style="color:${acosColor}">${acosVal}</td>
+            <td class="num">${fmtCurrency(row.spend)}</td>
+            <td class="num">${fmtCurrency(row.sales)}</td>
+            <td class="num">${row.orders.toLocaleString('de-DE')}</td>
+            <td class="num">${row.clicks.toLocaleString('de-DE')}</td>
+            <td class="num">${row.impressions.toLocaleString('de-DE')}</td>
+            <td class="num">${fmtCurrency(row.cpc)}</td>
+            <td class="num">${fmt(row.ctr, 2)}%</td>
+            <td class="num">${row.campaignCount}</td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('tableCount').textContent = totalFiltered + ' von ' + analysisData.length + ' Suchbegriffen';
+    renderPagination(totalPages);
+}
+
+function sortTable(col) {
+    if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortCol = col; sortDir = col === 'searchterm' ? 'asc' : 'desc'; }
+    renderTable();
+}
+
+function renderPagination(totalPages) {
+    const c = document.getElementById('pagination');
+    if (totalPages <= 1) { c.innerHTML = ''; return; }
+    let h = '<button ' + (currentPage <= 1 ? 'disabled' : '') + ' onclick="currentPage--;renderTable();">&laquo;</button>';
+    const s = Math.max(1, currentPage - 3), e = Math.min(totalPages, currentPage + 3);
+    if (s > 1) h += '<button onclick="currentPage=1;renderTable();">1</button><span class="page-info">...</span>';
+    for (let i = s; i <= e; i++) h += '<button class="' + (i === currentPage ? 'active' : '') + '" onclick="currentPage=' + i + ';renderTable();">' + i + '</button>';
+    if (e < totalPages) h += '<span class="page-info">...</span><button onclick="currentPage=' + totalPages + ';renderTable();">' + totalPages + '</button>';
+    h += '<button ' + (currentPage >= totalPages ? 'disabled' : '') + ' onclick="currentPage++;renderTable();">&raquo;</button>';
+    h += '<span class="page-info">Seite ' + currentPage + ' von ' + totalPages + '</span>';
+    c.innerHTML = h;
+}
+
+function exportAnalysis() {
+    if (analysisData.length === 0) return;
+    const headers = ['Suchbegriff', 'Kategorie', 'Impression Share %', 'Impression Rang', 'ROAS', 'ACoS %', 'Spend', 'Umsatz', 'Bestellungen', 'Klicks', 'Impressionen', 'CPC', 'CTR %', 'Anzahl Kampagnen', 'Kampagnen'];
+    const catLabel = { scale: 'Skalierungspotenzial', optim: 'Optimierungsbedarf', neutral: 'Neutral' };
+    const rows = analysisData.map(r => [
+        r.searchterm,
+        catLabel[r.category] || 'Neutral',
+        r.impressionShare,
+        r.rank || '',
+        r.orders > 0 ? parseFloat(r.roas.toFixed(2)) : '',
+        r.orders > 0 ? parseFloat(r.acos.toFixed(1)) : '',
+        parseFloat(r.spend.toFixed(2)),
+        parseFloat(r.sales.toFixed(2)),
+        r.orders,
+        r.clicks,
+        r.impressions,
+        parseFloat(r.cpc.toFixed(2)),
+        parseFloat(r.ctr.toFixed(2)),
+        r.campaignCount,
+        r.campaigns.join(', ')
+    ]);
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws['!cols'] = headers.map((h, i) => ({ wch: i === 0 ? 30 : i === headers.length - 1 ? 50 : 16 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Impression Share Analyse');
+    const d = new Date();
+    const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    XLSX.writeFile(wb, 'Impression-Share-Analyse ' + dateStr + '.xlsx');
+}
+</script>
+</body>
+</html>
