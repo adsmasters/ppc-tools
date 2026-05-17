@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-962309237"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'AW-962309237');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TACoS Analyse - AdsMasters PPC Tools</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="auth-guard.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-hover: #1c2129;
+            --border: #30363d; --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #f85149; --error-bg: #f8514911;
+            --warn: #d29922; --warn-bg: #d2992211;
+            --success: #3fb950; --success-bg: #3fb95011;
+        }
+        [data-theme="light"] {
+            --bg-primary: #ffffff; --bg-secondary: #f6f8fa; --bg-hover: #eef1f5;
+            --border: #d0d7de; --text-primary: #1f2328; --text-secondary: #656d76;
+            --accent: #3551FF; --accent-hover: #2a41cc;
+            --error: #cf222e; --error-bg: #cf222e11;
+            --warn: #9a6700; --warn-bg: #9a670011;
+            --success: #1a7f37; --success-bg: #1a7f3711;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; }
+        .topbar { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+        .topbar-logo span { color: var(--accent); }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .theme-toggle { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .theme-toggle:hover { color: var(--text-primary); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .main { max-width: 1400px; margin: 0 auto; padding: 24px 32px 60px; }
+        .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .page-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 24px; }
+        .card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+        .card-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .card-title .step { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary)); }
+        .upload-zone .icon { font-size: 24px; margin-bottom: 6px; }
+        .upload-zone .label { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .upload-zone .hint { font-size: 11px; color: var(--text-secondary); }
+        .upload-zone input { display: none; }
+        .file-info { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; margin-top: 8px; font-size: 12px; }
+        .file-info .name { flex: 1; font-weight: 600; }
+        .file-info .meta { color: var(--text-secondary); }
+        .file-info .remove { color: var(--error); cursor: pointer; font-weight: 700; }
+        label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; }
+        input[type="number"] { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; }
+        input:focus { outline: none; border-color: var(--accent); }
+        .field { margin-bottom: 12px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-secondary); font-size: 10px; font-weight: 700; cursor: help; position: relative; flex-shrink: 0; }
+        .tooltip-icon:hover::after { content: attr(data-tip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: var(--bg-primary); padding: 6px 10px; border-radius: 6px; font-size: 11px; white-space: normal; max-width: 260px; z-index: 50; margin-bottom: 6px; line-height: 1.4; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .btn { padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-sm { padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); }
+        .btn-sm:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+        .error-msg { color: var(--error); font-size: 13px; padding: 8px 12px; border: 1px solid var(--error); border-radius: 6px; background: var(--error-bg); margin-top: 8px; }
+        .warn-msg { color: var(--warn); font-size: 13px; padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; background: var(--warn-bg); margin-top: 8px; }
+        .hidden { display: none; }
+
+        /* Stats */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+        .stat-label { font-size: 11px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .stat-value { font-size: 20px; font-weight: 700; }
+        .stat-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        .green { color: var(--success); }
+        .warn-col { color: var(--warn); }
+        .red { color: var(--error); }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+        .tab { padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-secondary); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .tab:hover { color: var(--text-primary); }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        /* Table */
+        .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .search-input { padding: 6px 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 12px; width: 220px; }
+        .search-input:focus { outline: none; border-color: var(--accent); }
+        .results-container { overflow-x: auto; }
+        table.main-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table.main-table th { background: var(--bg-primary); position: sticky; top: 0; padding: 9px 10px; text-align: left; font-weight: 600; color: var(--text-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+        table.main-table th:hover { color: var(--text-primary); }
+        table.main-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        table.main-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        table.main-table tr.parent-row { background: color-mix(in srgb, var(--accent) 4%, var(--bg-secondary)); }
+        table.main-table tr.parent-row td { font-weight: 600; }
+        table.main-table tr.parent-row:hover td { background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary)); }
+        table.main-table tr.child-row td { background: var(--bg-primary); }
+        table.main-table tr.child-row:hover td { background: var(--bg-hover); }
+        table.main-table tr.child-row td:first-child { padding-left: 28px; }
+        .toggle-btn { background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 11px; padding: 0 4px; }
+        .toggle-btn:hover { color: var(--text-primary); }
+        .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+        .badge-high { background: var(--error-bg); color: var(--error); border: 1px solid var(--error); }
+        .badge-low { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn); }
+        .badge-ok { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+        .badge-none { background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); }
+        .tacos-bar { display: inline-block; height: 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; min-width: 2px; }
+        .asin-mono { font-family: monospace; font-size: 11px; }
+
+        @media (max-width: 800px) { .upload-grid { grid-template-columns: 1fr; } .field-row { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } }
+    </style>
+</head>
+<body>
+<script>
+    const saved = localStorage.getItem('ppc_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', saved);
+</script>
+
+<div class="topbar">
+    <div style="display:flex;align-items:center;gap:32px;">
+        <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
+        <a href="dashboard.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Tool-Übersicht</a>
+        <a href="tutorials.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Tutorials</a>
+        <a href="invoices.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Rechnungen</a>
+        <a href="contact.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Kontakt</a>
+        <a href="help.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Hilfe</a>
+    </div>
+    <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#9788;</button>
+        <button class="btn-logout" onclick="ppcLogout()">Logout</button>
+    </div>
+</div>
+
+<div class="main">
+    <h1 class="page-title">TACoS Analyse</h1>
+    <p class="page-sub">Total Advertising Cost of Sales auf Child- und Parent-Ebene — Ad Spend / Gesamt-Umsatz (inkl. organisch)</p>
+
+    <!-- Step 1: Upload -->
+    <div class="card" id="stepUpload">
+        <div class="card-title"><span class="step">1</span> Berichte hochladen</div>
+        <div class="upload-grid">
+            <div>
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;font-weight:600;">SP Beworbenes Produkt Bericht (Excel)</p>
+                <div class="upload-zone" id="zoneSpReport" onclick="document.getElementById('inputSpReport').click()">
+                    <div class="icon">&#128202;</div>
+                    <div class="label">SP Beworbenes Produkt Bericht</div>
+                    <div class="hint">.xlsx aus Amazon Advertising → Berichte</div>
+                    <input type="file" id="inputSpReport" accept=".xlsx,.xls,.csv">
+                </div>
+                <div id="infoSpReport"></div>
+            </div>
+            <div>
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;font-weight:600;">Business Report untergeordneter ASINs (CSV)</p>
+                <div class="upload-zone" id="zoneBizReport" onclick="document.getElementById('inputBizReport').click()">
+                    <div class="icon">&#128717;</div>
+                    <div class="label">Business Report untergeordneter ASINs</div>
+                    <div class="hint">.csv aus Seller Central → Berichte → Untergeordnete ASINs</div>
+                    <input type="file" id="inputBizReport" accept=".csv,.xlsx,.xls">
+                </div>
+                <div id="infoBizReport"></div>
+            </div>
+        </div>
+        <div id="uploadMsg"></div>
+    </div>
+
+    <!-- Step 2: Settings -->
+    <div class="card hidden" id="stepSettings">
+        <div class="card-title"><span class="step">2</span> Ziel-TACoS definieren</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere den Zielbereich. Produkte außerhalb werden farblich markiert.</p>
+        <div class="field-row">
+            <div class="field">
+                <label>Ziel-TACoS Min. (%) <span class="tooltip-icon" data-tip="TACoS unter diesem Wert = zu niedrig (Potenzial für mehr Spend oder organisch sehr stark)">?</span></label>
+                <input type="number" id="tacosMin" value="5" min="0" step="0.5">
+            </div>
+            <div class="field">
+                <label>Ziel-TACoS Max. (%) <span class="tooltip-icon" data-tip="TACoS über diesem Wert = zu hoch (Werbung ist ineffizient relativ zum Gesamtumsatz)">?</span></label>
+                <input type="number" id="tacosMax" value="15" min="0" step="0.5">
+            </div>
+            <div class="field">
+                <label>Min. Spend für Bewertung (€) <span class="tooltip-icon" data-tip="Produkte mit weniger Spend werden als 'Kein/kaum Spend' markiert und nicht bewertet">?</span></label>
+                <input type="number" id="minSpend" value="10" min="0" step="5">
+            </div>
+        </div>
+        <div style="margin-top:12px;">
+            <button class="btn btn-primary" onclick="runAnalysis()">Analyse starten</button>
+        </div>
+    </div>
+
+    <!-- Step 3: Results -->
+    <div class="hidden" id="stepResults">
+        <div class="stats-row" id="statsRow"></div>
+
+        <div class="tabs">
+            <div class="tab active" id="tabParent" onclick="switchTab('parent')">Parent-Ebene</div>
+            <div class="tab" id="tabChild" onclick="switchTab('child')">Child-Ebene</div>
+        </div>
+
+        <!-- Parent Tab -->
+        <div id="panelParent">
+            <div class="table-controls">
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="text" class="search-input" id="searchParent" placeholder="ASIN oder Titel suchen..." oninput="renderParentTable()">
+                    <span id="countParent" style="font-size:12px;color:var(--text-secondary);"></span>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-sm" onclick="expandAll()">Alle aufklappen</button>
+                    <button class="btn-sm" onclick="collapseAll()">Alle zuklappen</button>
+                    <button class="btn-sm" onclick="exportExcel()">Excel exportieren</button>
+                </div>
+            </div>
+            <div class="results-container">
+                <table class="main-table" id="parentTable">
+                    <thead id="parentThead"></thead>
+                    <tbody id="parentTbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Child Tab -->
+        <div class="hidden" id="panelChild">
+            <div class="table-controls">
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="text" class="search-input" id="searchChild" placeholder="ASIN oder Titel suchen..." oninput="renderChildTable()">
+                    <span id="countChild" style="font-size:12px;color:var(--text-secondary);"></span>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-sm" onclick="exportExcel()">Excel exportieren</button>
+                </div>
+            </div>
+            <div class="results-container">
+                <table class="main-table" id="childTable">
+                    <thead id="childThead"></thead>
+                    <tbody id="childTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = cur === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('ppc_theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+    document.getElementById('themeToggle').innerHTML = next === 'dark' ? '&#9788;' : '&#9790;';
+}
+document.getElementById('themeToggle').innerHTML = (localStorage.getItem('ppc_theme') || 'light') === 'dark' ? '&#9788;' : '&#9790;';
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let spData    = null;   // Map<asin, {spend, adSales, adOrders, sku}>
+let bizData   = null;   // Map<childAsin, {parentAsin, title, revenue, units}>
+let parents   = [];     // array of parent objects with children[]
+let children  = [];     // flat array of child objects
+let expandedParents = new Set();
+let activeTab = 'parent';
+let sortParent = { col: 'tacos', dir: 'desc' };
+let sortChild  = { col: 'tacos', dir: 'desc' };
+
+// ─── Upload SP Report ─────────────────────────────────────────────────────────
+function setupZone(zoneId, inputId, onFile) {
+    const zone  = document.getElementById(zoneId);
+    const input = document.getElementById(inputId);
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]); });
+    input.addEventListener('change', e => { if (e.target.files[0]) onFile(e.target.files[0]); });
+}
+
+setupZone('zoneSpReport',  'inputSpReport',  loadSpReport);
+setupZone('zoneBizReport', 'inputBizReport', loadBizReport);
+
+function parseNum(v) {
+    if (v === undefined || v === null || v === '') return 0;
+    // Handle German number format: "1.234,56 €" or "1234.56"
+    let s = String(v).replace(/\s/g, '');
+    // If contains both . and , → German format: . = thousands, , = decimal
+    if (s.includes('.') && s.includes(',')) {
+        s = s.replace(/\./g, '').replace(',', '.');
+    } else if (s.includes(',') && !s.includes('.')) {
+        s = s.replace(',', '.');
+    }
+    s = s.replace(/[^0-9.\-]/g, '');
+    return parseFloat(s) || 0;
+}
+
+function escapeHtml(s) {
+    const d = document.createElement('div'); d.textContent = String(s || ''); return d.innerHTML;
+}
+function fmt(v, d=2) { return Number(v).toLocaleString('de-DE', {minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtC(v) { return '€ ' + fmt(v); }
+
+function loadSpReport(file) {
+    const reader = new FileReader();
+    reader.onload = evt => {
+        const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array', cellDates: true });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        if (rows.length < 2) { showMsg('SP Report: Keine Daten gefunden.', 'error'); return; }
+
+        // Find header row
+        let hIdx = 0;
+        for (let i = 0; i < Math.min(rows.length, 5); i++) {
+            const r = rows[i].map(c => String(c).toLowerCase());
+            if (r.some(c => c.includes('beworbene asin') || c.includes('advertised asin'))) { hIdx = i; break; }
+        }
+        const headers = rows[hIdx].map(c => String(c).toLowerCase().trim());
+
+        function col(...aliases) {
+            for (const a of aliases) {
+                const i = headers.findIndex(h => h.includes(a));
+                if (i !== -1) return i;
+            }
+            return -1;
+        }
+
+        const CI = {
+            asin:     col('beworbene asin', 'advertised asin'),
+            sku:      col('beworbene sku', 'advertised sku'),
+            spend:    col('ausgaben', 'spend'),
+            adSales:  col('umsatz gesamt', 'total sales', '7 tage, umsatz'),
+            adOrders: col('aufträge gesamt', 'total orders', '7 tage, auftr'),
+        };
+
+        if (CI.asin === -1 || CI.spend === -1) {
+            showMsg('SP Report: Spalten nicht erkannt. Bitte den "Beworbenes Produkt" Bericht hochladen.', 'error');
+            return;
+        }
+
+        // Aggregate by ASIN
+        spData = new Map();
+        for (let i = hIdx + 1; i < rows.length; i++) {
+            const r = rows[i];
+            const asin = String(r[CI.asin] || '').trim().toUpperCase();
+            if (!asin || asin === 'UNDEFINED') continue;
+            const spend    = parseNum(r[CI.spend]);
+            const adSales  = parseNum(r[CI.adSales]);
+            const adOrders = parseNum(r[CI.adOrders]);
+            const sku      = CI.sku !== -1 ? String(r[CI.sku] || '').trim() : '';
+
+            if (!spData.has(asin)) spData.set(asin, { spend: 0, adSales: 0, adOrders: 0, skus: new Set() });
+            const d = spData.get(asin);
+            d.spend    += spend;
+            d.adSales  += adSales;
+            d.adOrders += adOrders;
+            if (sku) d.skus.add(sku);
+        }
+
+        document.getElementById('infoSpReport').innerHTML =
+            `<div class="file-info"><span class="name">${escapeHtml(file.name)}</span><span class="meta">${spData.size} ASINs · ${fmtC(Array.from(spData.values()).reduce((s,r)=>s+r.spend,0))} Spend</span><span class="remove" onclick="clearSp()">&times;</span></div>`;
+        checkBothLoaded();
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function clearSp() {
+    spData = null;
+    document.getElementById('infoSpReport').innerHTML = '';
+    document.getElementById('inputSpReport').value = '';
+    document.getElementById('stepSettings').classList.add('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+}
+
+function loadBizReport(file) {
+    const reader = new FileReader();
+    reader.onload = evt => {
+        let text = evt.target.result;
+        if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+        const sep = text.includes('\t') ? '\t' : ',';
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+
+        function parseLine(line) {
+            const res = []; let cur = '', inQ = false;
+            for (let i = 0; i < line.length; i++) {
+                if (line[i] === '"') { inQ = !inQ; continue; }
+                if (line[i] === sep && !inQ) { res.push(cur.trim()); cur = ''; continue; }
+                cur += line[i];
+            }
+            res.push(cur.trim());
+            return res;
+        }
+
+        const headers = parseLine(lines[0]).map(c => c.toLowerCase().trim().replace(/\s+/g,' '));
+
+        function col(...aliases) {
+            for (const a of aliases) {
+                const i = headers.findIndex(h => h.includes(a));
+                if (i !== -1) return i;
+            }
+            return -1;
+        }
+
+        const CI = {
+            parent:   col('übergeordnete', 'parent asin'),
+            child:    col('untergeordnete', 'child asin'),
+            title:    col('titel', 'title'),
+            revenue:  col('durch bestellte produkte', 'ordered product sales', 'umsatz'),
+            units:    col('bestellte einheiten', 'units ordered'),
+            orders:   col('zahl der bestellposten', 'number of order items'),
+        };
+
+        // Find non-B2B revenue column (first match)
+        // revenue col should be "Durch bestellte Produkte erzielter Umsatz" not B2B
+        // The B2B column is "Bestellsumme – B2B" — make sure we pick the right one
+        let revenueColName = headers[CI.revenue] || '';
+        // If it accidentally picked B2B, look for non-B2B
+        if (revenueColName.includes('b2b')) {
+            CI.revenue = headers.findIndex((h, i) => h.includes('durch bestellte') && !h.includes('b2b'));
+        }
+
+        if (CI.parent === -1 || CI.child === -1) {
+            showMsg('Business Report: Spalten "Übergeordnete ASIN" / "Untergeordnete ASIN" nicht gefunden.', 'error');
+            return;
+        }
+
+        bizData = new Map();
+        for (let i = 1; i < lines.length; i++) {
+            const r = parseLine(lines[i]);
+            if (!r || r.length < 3) continue;
+            const parent  = String(r[CI.parent] || '').trim().toUpperCase();
+            const child   = String(r[CI.child]  || '').trim().toUpperCase();
+            if (!child) continue;
+            const title   = CI.title   !== -1 ? r[CI.title].trim()        : '';
+            const revenue = CI.revenue !== -1 ? parseNum(r[CI.revenue])    : 0;
+            const units   = CI.units   !== -1 ? parseNum(r[CI.units])      : 0;
+            const orders  = CI.orders  !== -1 ? parseNum(r[CI.orders])     : 0;
+
+            bizData.set(child, { parent, title, revenue, units, orders });
+        }
+
+        const totalRevenue = Array.from(bizData.values()).reduce((s,r)=>s+r.revenue, 0);
+        document.getElementById('infoBizReport').innerHTML =
+            `<div class="file-info"><span class="name">${escapeHtml(file.name)}</span><span class="meta">${bizData.size} Child-ASINs · ${fmtC(totalRevenue)} Umsatz</span><span class="remove" onclick="clearBiz()">&times;</span></div>`;
+        checkBothLoaded();
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+function clearBiz() {
+    bizData = null;
+    document.getElementById('infoBizReport').innerHTML = '';
+    document.getElementById('inputBizReport').value = '';
+    document.getElementById('stepSettings').classList.add('hidden');
+    document.getElementById('stepResults').classList.add('hidden');
+}
+
+function checkBothLoaded() {
+    document.getElementById('uploadMsg').innerHTML = '';
+    if (spData && bizData) {
+        document.getElementById('stepSettings').classList.remove('hidden');
+        document.getElementById('stepResults').classList.add('hidden');
+    }
+}
+
+function showMsg(msg, type='error') {
+    document.getElementById('uploadMsg').innerHTML = `<div class="${type}-msg">${escapeHtml(msg)}</div>`;
+}
+
+// ─── Analysis ─────────────────────────────────────────────────────────────────
+function runAnalysis() {
+    const tacosMin = parseFloat(document.getElementById('tacosMin').value) || 5;
+    const tacosMax = parseFloat(document.getElementById('tacosMax').value) || 15;
+    const minSpend = parseFloat(document.getElementById('minSpend').value) || 0;
+
+    // Build child objects: union of SP + Business Report ASINs
+    const allChildAsins = new Set([
+        ...spData.keys(),
+        ...bizData.keys()
+    ]);
+
+    children = [];
+    const parentMap = new Map();
+
+    allChildAsins.forEach(asin => {
+        const sp  = spData.get(asin)  || { spend: 0, adSales: 0, adOrders: 0, skus: new Set() };
+        const biz = bizData.get(asin) || { parent: null, title: '', revenue: 0, units: 0, orders: 0 };
+
+        const spend    = sp.spend;
+        const adSales  = sp.adSales;
+        const adOrders = sp.adOrders;
+        const revenue  = biz.revenue;
+        const tacos    = revenue > 0 ? (spend / revenue * 100) : null;
+        const acos     = adSales > 0 ? (spend / adSales * 100) : null;
+        const roas     = spend > 0   ? (adSales / spend)        : null;
+
+        let status = 'none';
+        if (spend >= minSpend && tacos !== null) {
+            if (tacos > tacosMax)      status = 'high';
+            else if (tacos < tacosMin) status = 'low';
+            else                        status = 'ok';
+        } else if (spend < minSpend) {
+            status = 'nospend';
+        } else if (tacos === null && spend > 0) {
+            status = 'nobiz'; // has spend but no business report entry
+        }
+
+        const parentAsin = biz.parent || 'KEIN PARENT';
+        const child = {
+            asin, parentAsin,
+            title: biz.title,
+            spend, adSales, adOrders, revenue,
+            units: biz.units,
+            tacos, acos, roas, status,
+            skus: [...(sp.skus || [])].join(', ')
+        };
+        children.push(child);
+
+        // Aggregate to parent
+        if (!parentMap.has(parentAsin)) {
+            parentMap.set(parentAsin, {
+                parentAsin,
+                spend: 0, adSales: 0, adOrders: 0, revenue: 0, units: 0,
+                children: [],
+                statuses: { high: 0, low: 0, ok: 0, nospend: 0, nobiz: 0, none: 0 }
+            });
+        }
+        const p = parentMap.get(parentAsin);
+        p.spend    += spend;
+        p.adSales  += adSales;
+        p.adOrders += adOrders;
+        p.revenue  += revenue;
+        p.units    += biz.units;
+        p.children.push(child);
+        p.statuses[status] = (p.statuses[status] || 0) + 1;
+    });
+
+    parents = Array.from(parentMap.values()).map(p => {
+        const tacos = p.revenue > 0 ? (p.spend / p.revenue * 100) : null;
+        const acos  = p.adSales > 0 ? (p.spend / p.adSales * 100) : null;
+        const roas  = p.spend > 0   ? (p.adSales / p.spend)       : null;
+        let status = 'none';
+        if (p.spend >= minSpend && tacos !== null) {
+            if (tacos > tacosMax)      status = 'high';
+            else if (tacos < tacosMin) status = 'low';
+            else                        status = 'ok';
+        } else if (p.spend < minSpend) {
+            status = 'nospend';
+        }
+        return { ...p, tacos, acos, roas, status };
+    });
+
+    // Stats
+    const totalSpend   = children.reduce((s,c)=>s+c.spend,   0);
+    const totalRevenue = children.reduce((s,c)=>s+c.revenue,  0);
+    const totalAdSales = children.reduce((s,c)=>s+c.adSales,  0);
+    const overallTacos = totalRevenue > 0 ? totalSpend / totalRevenue * 100 : 0;
+    const countHigh    = children.filter(c=>c.status==='high').length;
+    const countLow     = children.filter(c=>c.status==='low').length;
+    const countOk      = children.filter(c=>c.status==='ok').length;
+
+    document.getElementById('statsRow').innerHTML = `
+        <div class="stat-card"><div class="stat-label">Gesamt TACoS</div><div class="stat-value ${overallTacos > tacosMax ? 'red' : overallTacos < tacosMin ? 'warn-col' : 'green'}">${fmt(overallTacos,1)}%</div><div class="stat-sub">Ziel: ${tacosMin}–${tacosMax}%</div></div>
+        <div class="stat-card"><div class="stat-label">Gesamt Ad Spend</div><div class="stat-value">${fmtC(totalSpend)}</div></div>
+        <div class="stat-card"><div class="stat-label">Gesamt-Umsatz</div><div class="stat-value green">${fmtC(totalRevenue)}</div></div>
+        <div class="stat-card"><div class="stat-label">Ad-Umsatz</div><div class="stat-value">${fmtC(totalAdSales)}</div><div class="stat-sub">${totalRevenue>0?fmt(totalAdSales/totalRevenue*100,1)+'% des Umsatzes':''}</div></div>
+        <div class="stat-card"><div class="stat-label">TACoS zu hoch</div><div class="stat-value red">${countHigh}</div><div class="stat-sub">Child-ASINs &gt; ${tacosMax}%</div></div>
+        <div class="stat-card"><div class="stat-label">TACoS zu niedrig</div><div class="stat-value warn-col">${countLow}</div><div class="stat-sub">Child-ASINs &lt; ${tacosMin}%</div></div>
+        <div class="stat-card"><div class="stat-label">TACoS im Ziel</div><div class="stat-value green">${countOk}</div><div class="stat-sub">Child-ASINs ✓</div></div>
+        <div class="stat-card"><div class="stat-label">Parent-Produkte</div><div class="stat-value">${parents.length}</div><div class="stat-sub">${children.length} Child-ASINs</div></div>
+    `;
+
+    expandedParents.clear();
+    activeTab = 'parent';
+    document.getElementById('tabParent').className  = 'tab active';
+    document.getElementById('tabChild').className   = 'tab';
+    document.getElementById('panelParent').classList.remove('hidden');
+    document.getElementById('panelChild').classList.add('hidden');
+
+    renderParentTable();
+    renderChildTable();
+    document.getElementById('stepResults').classList.remove('hidden');
+    document.getElementById('stepResults').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ─── TACoS badge + bar ────────────────────────────────────────────────────────
+function tacosBadge(status) {
+    if (status === 'high')    return '<span class="badge badge-high">Zu hoch</span>';
+    if (status === 'low')     return '<span class="badge badge-low">Zu niedrig</span>';
+    if (status === 'ok')      return '<span class="badge badge-ok">Im Ziel</span>';
+    if (status === 'nospend') return '<span class="badge badge-none">Kein Spend</span>';
+    if (status === 'nobiz')   return '<span class="badge badge-none">Kein BR</span>';
+    return '<span class="badge badge-none">—</span>';
+}
+
+function tacosCell(tacos, status) {
+    if (tacos === null) return '<span style="color:var(--text-secondary)">—</span>';
+    const tacosMax = parseFloat(document.getElementById('tacosMax').value) || 15;
+    const color = status === 'high' ? 'var(--error)' : status === 'low' ? 'var(--warn)' : status === 'ok' ? 'var(--success)' : 'var(--text-secondary)';
+    const barWidth = Math.min(tacos / (tacosMax * 2) * 80, 80);
+    return `<span style="color:${color};font-weight:700">${fmt(tacos,1)}%</span><span class="tacos-bar" style="width:${barWidth}px;background:${color};opacity:0.4;"></span>`;
+}
+
+function roasCell(roas) {
+    if (roas === null) return '<span style="color:var(--text-secondary)">—</span>';
+    const color = roas >= 3 ? 'var(--success)' : roas >= 2 ? 'var(--warn)' : 'var(--error)';
+    return `<span style="color:${color}">${fmt(roas,2)}x</span>`;
+}
+
+function acosCell(acos) {
+    if (acos === null) return '<span style="color:var(--text-secondary)">—</span>';
+    const color = acos < 25 ? 'var(--success)' : acos < 40 ? 'var(--warn)' : 'var(--error)';
+    return `<span style="color:${color}">${fmt(acos,1)}%</span>`;
+}
+
+// ─── Parent Table ─────────────────────────────────────────────────────────────
+const PARENT_COLS = [
+    { id: 'toggle',    label: '',              sort: false },
+    { id: 'parentAsin',label: 'Parent ASIN',   sort: true  },
+    { id: 'childCount',label: 'Children',      sort: true, num: true },
+    { id: 'tacos',     label: 'TACoS',         sort: true  },
+    { id: 'status',    label: 'Bewertung',     sort: true  },
+    { id: 'spend',     label: 'Ad Spend',      sort: true, num: true },
+    { id: 'revenue',   label: 'Gesamt-Umsatz', sort: true, num: true },
+    { id: 'adSales',   label: 'Ad-Umsatz',     sort: true, num: true },
+    { id: 'acos',      label: 'ACoS',          sort: true  },
+    { id: 'roas',      label: 'ROAS',          sort: true  },
+    { id: 'adOrders',  label: 'Ad-Bestellungen',sort: true,num: true },
+    { id: 'units',     label: 'Einheiten ges.', sort: true, num: true },
+];
+
+function renderParentTable() {
+    const search = (document.getElementById('searchParent').value || '').toLowerCase().trim();
+    let data = parents.filter(p => !search || p.parentAsin.toLowerCase().includes(search) ||
+        p.children.some(c => c.asin.toLowerCase().includes(search) || c.title.toLowerCase().includes(search)));
+
+    // Sort
+    data.sort((a, b) => {
+        const col = sortParent.col;
+        let va = col === 'childCount' ? a.children.length : a[col];
+        let vb = col === 'childCount' ? b.children.length : b[col];
+        if (va === null) va = -Infinity;
+        if (vb === null) vb = -Infinity;
+        return sortParent.dir === 'asc' ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
+    });
+
+    document.getElementById('countParent').textContent = data.length + ' Parent-Produkte';
+
+    const arrow = col => col === sortParent.col ? (sortParent.dir === 'asc' ? ' ▲' : ' ▼') : '';
+    document.getElementById('parentThead').innerHTML = '<tr>' + PARENT_COLS.map(c =>
+        `<th ${c.sort ? `onclick="sortParentBy('${c.id}')"` : ''}>${c.label}${arrow(c.id)}</th>`
+    ).join('') + '</tr>';
+
+    const rows = [];
+    data.forEach(p => {
+        const isExp = expandedParents.has(p.parentAsin);
+        rows.push(`<tr class="parent-row">
+            <td><button class="toggle-btn" onclick="toggleParent('${escapeHtml(p.parentAsin)}')">${isExp ? '▼' : '▶'}</button></td>
+            <td class="asin-mono">${escapeHtml(p.parentAsin)}</td>
+            <td class="num">${p.children.length}</td>
+            <td>${tacosCell(p.tacos, p.status)}</td>
+            <td>${tacosBadge(p.status)}</td>
+            <td class="num">${fmtC(p.spend)}</td>
+            <td class="num">${p.revenue > 0 ? fmtC(p.revenue) : '<span style="color:var(--text-secondary)">—</span>'}</td>
+            <td class="num">${fmtC(p.adSales)}</td>
+            <td>${acosCell(p.acos)}</td>
+            <td>${roasCell(p.roas)}</td>
+            <td class="num">${p.adOrders}</td>
+            <td class="num">${p.units > 0 ? p.units.toLocaleString('de-DE') : '—'}</td>
+        </tr>`);
+
+        if (isExp) {
+            const sortedChildren = [...p.children].sort((a,b) => (b.tacos||0) - (a.tacos||0));
+            sortedChildren.forEach(c => {
+                rows.push(`<tr class="child-row">
+                    <td></td>
+                    <td><span class="asin-mono">${escapeHtml(c.asin)}</span><br><span style="font-size:10px;color:var(--text-secondary);white-space:normal;max-width:200px;display:inline-block;" title="${escapeHtml(c.title)}">${escapeHtml(c.title.substring(0,60))}${c.title.length>60?'…':''}</span></td>
+                    <td class="num" style="color:var(--text-secondary);font-size:11px;">Child</td>
+                    <td>${tacosCell(c.tacos, c.status)}</td>
+                    <td>${tacosBadge(c.status)}</td>
+                    <td class="num">${fmtC(c.spend)}</td>
+                    <td class="num">${c.revenue > 0 ? fmtC(c.revenue) : '<span style="color:var(--text-secondary)">—</span>'}</td>
+                    <td class="num">${fmtC(c.adSales)}</td>
+                    <td>${acosCell(c.acos)}</td>
+                    <td>${roasCell(c.roas)}</td>
+                    <td class="num">${c.adOrders}</td>
+                    <td class="num">${c.units > 0 ? c.units.toLocaleString('de-DE') : '—'}</td>
+                </tr>`);
+            });
+        }
+    });
+    document.getElementById('parentTbody').innerHTML = rows.join('');
+}
+
+function toggleParent(asin) {
+    if (expandedParents.has(asin)) expandedParents.delete(asin);
+    else expandedParents.add(asin);
+    renderParentTable();
+}
+
+function expandAll()   { parents.forEach(p => expandedParents.add(p.parentAsin)); renderParentTable(); }
+function collapseAll() { expandedParents.clear(); renderParentTable(); }
+
+function sortParentBy(col) {
+    if (sortParent.col === col) sortParent.dir = sortParent.dir === 'asc' ? 'desc' : 'asc';
+    else { sortParent.col = col; sortParent.dir = 'desc'; }
+    renderParentTable();
+}
+
+// ─── Child Table ──────────────────────────────────────────────────────────────
+const CHILD_COLS = [
+    { id: 'asin',       label: 'Child ASIN',     sort: true },
+    { id: 'parentAsin', label: 'Parent ASIN',     sort: true },
+    { id: 'title',      label: 'Titel',           sort: true },
+    { id: 'tacos',      label: 'TACoS',           sort: true },
+    { id: 'status',     label: 'Bewertung',       sort: true },
+    { id: 'spend',      label: 'Ad Spend',        sort: true, num: true },
+    { id: 'revenue',    label: 'Gesamt-Umsatz',   sort: true, num: true },
+    { id: 'adSales',    label: 'Ad-Umsatz',       sort: true, num: true },
+    { id: 'acos',       label: 'ACoS',            sort: true },
+    { id: 'roas',       label: 'ROAS',            sort: true },
+    { id: 'adOrders',   label: 'Ad-Bestellungen', sort: true, num: true },
+    { id: 'units',      label: 'Einheiten ges.',  sort: true, num: true },
+    { id: 'skus',       label: 'SKUs',            sort: false },
+];
+
+function renderChildTable() {
+    const search = (document.getElementById('searchChild').value || '').toLowerCase().trim();
+    let data = children.filter(c => !search ||
+        c.asin.toLowerCase().includes(search) ||
+        c.parentAsin.toLowerCase().includes(search) ||
+        c.title.toLowerCase().includes(search));
+
+    data.sort((a, b) => {
+        const col = sortChild.col;
+        let va = a[col], vb = b[col];
+        if (va === null) va = -Infinity;
+        if (vb === null) vb = -Infinity;
+        if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb||'').toLowerCase(); }
+        return sortChild.dir === 'asc' ? (va < vb ? -1 : va > vb ? 1 : 0) : (va > vb ? -1 : va < vb ? 1 : 0);
+    });
+
+    document.getElementById('countChild').textContent = data.length + ' Child-ASINs';
+
+    const arrow = col => col === sortChild.col ? (sortChild.dir === 'asc' ? ' ▲' : ' ▼') : '';
+    document.getElementById('childThead').innerHTML = '<tr>' + CHILD_COLS.map(c =>
+        `<th ${c.sort ? `onclick="sortChildBy('${c.id}')"` : ''}>${c.label}${arrow(c.id)}</th>`
+    ).join('') + '</tr>';
+
+    document.getElementById('childTbody').innerHTML = data.map(c => `<tr>
+        <td class="asin-mono">${escapeHtml(c.asin)}</td>
+        <td class="asin-mono" style="color:var(--text-secondary)">${escapeHtml(c.parentAsin)}</td>
+        <td style="max-width:200px;white-space:normal;" title="${escapeHtml(c.title)}">${escapeHtml(c.title.substring(0,55))}${c.title.length>55?'…':''}</td>
+        <td>${tacosCell(c.tacos, c.status)}</td>
+        <td>${tacosBadge(c.status)}</td>
+        <td class="num">${fmtC(c.spend)}</td>
+        <td class="num">${c.revenue > 0 ? fmtC(c.revenue) : '<span style="color:var(--text-secondary)">—</span>'}</td>
+        <td class="num">${fmtC(c.adSales)}</td>
+        <td>${acosCell(c.acos)}</td>
+        <td>${roasCell(c.roas)}</td>
+        <td class="num">${c.adOrders}</td>
+        <td class="num">${c.units > 0 ? c.units.toLocaleString('de-DE') : '—'}</td>
+        <td style="font-size:10px;color:var(--text-secondary)">${escapeHtml(c.skus)}</td>
+    </tr>`).join('');
+}
+
+function sortChildBy(col) {
+    if (sortChild.col === col) sortChild.dir = sortChild.dir === 'asc' ? 'desc' : 'asc';
+    else { sortChild.col = col; sortChild.dir = 'desc'; }
+    renderChildTable();
+}
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tabParent').className  = 'tab' + (tab==='parent'  ? ' active' : '');
+    document.getElementById('tabChild').className   = 'tab' + (tab==='child'   ? ' active' : '');
+    document.getElementById('panelParent').classList.toggle('hidden', tab!=='parent');
+    document.getElementById('panelChild').classList.toggle('hidden',  tab!=='child');
+}
+
+// ─── Excel Export ─────────────────────────────────────────────────────────────
+function exportExcel() {
+    const wb = XLSX.utils.book_new();
+    const statusLabel = { high: 'Zu hoch', low: 'Zu niedrig', ok: 'Im Ziel', nospend: 'Kein Spend', nobiz: 'Kein Business Report', none: '—' };
+
+    // Sheet 1: Parent
+    const h1 = ['Parent ASIN','Anzahl Children','TACoS %','Bewertung','Ad Spend','Gesamt-Umsatz','Ad-Umsatz','ACoS %','ROAS','Ad-Bestellungen','Einheiten gesamt'];
+    const r1 = parents.map(p => [
+        p.parentAsin, p.children.length,
+        p.tacos !== null ? parseFloat(fmt(p.tacos,2).replace(',','.')) : '',
+        statusLabel[p.status] || '—',
+        parseFloat(p.spend.toFixed(2)),
+        parseFloat(p.revenue.toFixed(2)),
+        parseFloat(p.adSales.toFixed(2)),
+        p.acos !== null ? parseFloat(p.acos.toFixed(1)) : '',
+        p.roas !== null ? parseFloat(p.roas.toFixed(2)) : '',
+        p.adOrders,
+        p.units
+    ]);
+    const ws1 = XLSX.utils.aoa_to_sheet([h1,...r1]);
+    ws1['!cols'] = [{wch:14},{wch:14},{wch:10},{wch:14},{wch:12},{wch:14},{wch:12},{wch:10},{wch:8},{wch:16},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Parent TACoS');
+
+    // Sheet 2: Child
+    const h2 = ['Child ASIN','Parent ASIN','Titel','TACoS %','Bewertung','Ad Spend','Gesamt-Umsatz','Ad-Umsatz','ACoS %','ROAS','Ad-Bestellungen','Einheiten','SKUs'];
+    const r2 = children.map(c => [
+        c.asin, c.parentAsin, c.title,
+        c.tacos !== null ? parseFloat(c.tacos.toFixed(2)) : '',
+        statusLabel[c.status] || '—',
+        parseFloat(c.spend.toFixed(2)),
+        parseFloat(c.revenue.toFixed(2)),
+        parseFloat(c.adSales.toFixed(2)),
+        c.acos !== null ? parseFloat(c.acos.toFixed(1)) : '',
+        c.roas !== null ? parseFloat(c.roas.toFixed(2)) : '',
+        c.adOrders, c.units, c.skus
+    ]);
+    const ws2 = XLSX.utils.aoa_to_sheet([h2,...r2]);
+    ws2['!cols'] = [{wch:14},{wch:14},{wch:50},{wch:10},{wch:14},{wch:12},{wch:14},{wch:12},{wch:10},{wch:8},{wch:16},{wch:10},{wch:20}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Child TACoS');
+
+    const d = new Date();
+    const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    XLSX.writeFile(wb, 'TACoS-Analyse '+ds+'.xlsx');
+}
+</script>
+</body>
+</html>
