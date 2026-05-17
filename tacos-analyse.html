@@ -112,6 +112,7 @@
         .badge-low { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn); }
         .badge-ok { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
         .badge-none { background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); }
+        .badge-dataerror { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn); }
         .tacos-bar { display: inline-block; height: 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; min-width: 2px; }
         .asin-mono { font-family: monospace; font-size: 11px; }
 
@@ -197,6 +198,7 @@
 
     <!-- Step 3: Results -->
     <div class="hidden" id="stepResults">
+        <div id="dataWarnBanner"></div>
         <div class="stats-row" id="statsRow"></div>
 
         <div class="tabs">
@@ -263,8 +265,8 @@ let parents   = [];     // array of parent objects with children[]
 let children  = [];     // flat array of child objects
 let expandedParents = new Set();
 let activeTab = 'parent';
-let sortParent = { col: 'tacos', dir: 'desc' };
-let sortChild  = { col: 'tacos', dir: 'desc' };
+let sortParent = { col: 'spend', dir: 'desc' };
+let sortChild  = { col: 'spend', dir: 'desc' };
 
 // ─── Upload SP Report ─────────────────────────────────────────────────────────
 function setupZone(zoneId, inputId, onFile) {
@@ -489,19 +491,26 @@ function runAnalysis() {
         const adSales  = sp.adSales;
         const adOrders = sp.adOrders;
         const revenue  = biz.revenue;
-        const tacos    = revenue > 0 ? (spend / revenue * 100) : null;
         const acos     = adSales > 0 ? (spend / adSales * 100) : null;
         const roas     = spend > 0   ? (adSales / spend)        : null;
 
+        // Data quality: ad-attributed sales cannot exceed total revenue.
+        // If they do, the two reports cover different time periods → TACoS is meaningless.
+        const hasNoBiz      = revenue === 0 && spend > 0;
+        const hasDataError  = revenue > 0 && adSales > revenue * 1.05;
+        const tacos         = (revenue > 0 && !hasDataError) ? (spend / revenue * 100) : null;
+
         let status = 'none';
-        if (spend >= minSpend && tacos !== null) {
+        if (hasDataError) {
+            status = 'dataerror';
+        } else if (hasNoBiz) {
+            status = 'nobiz';
+        } else if (spend < minSpend) {
+            status = 'nospend';
+        } else if (tacos !== null) {
             if (tacos > tacosMax)      status = 'high';
             else if (tacos < tacosMin) status = 'low';
             else                        status = 'ok';
-        } else if (spend < minSpend) {
-            status = 'nospend';
-        } else if (tacos === null && spend > 0) {
-            status = 'nobiz'; // has spend but no business report entry
         }
 
         const parentAsin = biz.parent || 'KEIN PARENT';
@@ -521,7 +530,7 @@ function runAnalysis() {
                 parentAsin,
                 spend: 0, adSales: 0, adOrders: 0, revenue: 0, units: 0,
                 children: [],
-                statuses: { high: 0, low: 0, ok: 0, nospend: 0, nobiz: 0, none: 0 }
+                statuses: { high: 0, low: 0, ok: 0, nospend: 0, nobiz: 0, dataerror: 0, none: 0 }
             });
         }
         const p = parentMap.get(parentAsin);
@@ -535,37 +544,61 @@ function runAnalysis() {
     });
 
     parents = Array.from(parentMap.values()).map(p => {
-        const tacos = p.revenue > 0 ? (p.spend / p.revenue * 100) : null;
-        const acos  = p.adSales > 0 ? (p.spend / p.adSales * 100) : null;
-        const roas  = p.spend > 0   ? (p.adSales / p.spend)       : null;
+        // For parent: aggregate only valid children (no dataerror) for TACoS
+        const validChildren = p.children.filter(c => c.status !== 'dataerror');
+        const validSpend   = validChildren.reduce((s,c) => s+c.spend,   0);
+        const validRevenue = validChildren.reduce((s,c) => s+c.revenue, 0);
+        const validAdSales = validChildren.reduce((s,c) => s+c.adSales, 0);
+        const tacos = validRevenue > 0 ? (validSpend / validRevenue * 100) : null;
+        const acos  = p.adSales > 0   ? (p.spend / p.adSales * 100) : null;
+        const roas  = p.spend > 0     ? (p.adSales / p.spend)       : null;
+        const dataErrorCount = p.children.filter(c => c.status === 'dataerror').length;
         let status = 'none';
-        if (p.spend >= minSpend && tacos !== null) {
+        if (dataErrorCount === p.children.length) {
+            status = 'dataerror';
+        } else if (p.spend < minSpend) {
+            status = 'nospend';
+        } else if (tacos !== null) {
             if (tacos > tacosMax)      status = 'high';
             else if (tacos < tacosMin) status = 'low';
             else                        status = 'ok';
-        } else if (p.spend < minSpend) {
-            status = 'nospend';
         }
-        return { ...p, tacos, acos, roas, status };
+        return { ...p, tacos, acos, roas, status, dataErrorCount, validSpend, validRevenue };
     });
 
-    // Stats
-    const totalSpend   = children.reduce((s,c)=>s+c.spend,   0);
-    const totalRevenue = children.reduce((s,c)=>s+c.revenue,  0);
-    const totalAdSales = children.reduce((s,c)=>s+c.adSales,  0);
-    const overallTacos = totalRevenue > 0 ? totalSpend / totalRevenue * 100 : 0;
-    const countHigh    = children.filter(c=>c.status==='high').length;
-    const countLow     = children.filter(c=>c.status==='low').length;
-    const countOk      = children.filter(c=>c.status==='ok').length;
+    // Stats — nur valide Einträge (kein dataerror, kein nobiz)
+    const validKids    = children.filter(c => c.status !== 'dataerror' && c.status !== 'nobiz' && c.status !== 'none' && c.status !== 'nospend');
+    const totalSpend   = children.reduce((s,c)=>s+c.spend,  0);
+    const totalRevenue = validKids.reduce((s,c)=>s+c.revenue, 0);
+    const totalAdSales = children.reduce((s,c)=>s+c.adSales, 0);
+    const validSpend   = validKids.reduce((s,c)=>s+c.spend,  0);
+    const overallTacos = totalRevenue > 0 ? validSpend / totalRevenue * 100 : 0;
+    const countHigh      = children.filter(c=>c.status==='high').length;
+    const countLow       = children.filter(c=>c.status==='low').length;
+    const countOk        = children.filter(c=>c.status==='ok').length;
+    const countDataError = children.filter(c=>c.status==='dataerror').length;
+
+    // Warning banner wenn Datenfehler vorhanden
+    const warnEl = document.getElementById('dataWarnBanner');
+    if (countDataError > 0) {
+        warnEl.innerHTML = `<div class="warn-msg" style="margin-bottom:16px;">
+            ⚠️ <strong>${countDataError} ASINs haben inkonsistente Daten</strong> (Ad-Umsatz &gt; Gesamt-Umsatz — unmöglich bei gleichem Zeitraum).
+            Häufige Ursache: SP Bericht und Business Report decken <strong>unterschiedliche Zeiträume</strong> ab.
+            Für diese ASINs wird kein TACoS berechnet.
+        </div>`;
+    } else {
+        warnEl.innerHTML = '';
+    }
 
     document.getElementById('statsRow').innerHTML = `
-        <div class="stat-card"><div class="stat-label">Gesamt TACoS</div><div class="stat-value ${overallTacos > tacosMax ? 'red' : overallTacos < tacosMin ? 'warn-col' : 'green'}">${fmt(overallTacos,1)}%</div><div class="stat-sub">Ziel: ${tacosMin}–${tacosMax}%</div></div>
+        <div class="stat-card"><div class="stat-label">Gesamt TACoS</div><div class="stat-value ${overallTacos > tacosMax ? 'red' : overallTacos < tacosMin ? 'warn-col' : 'green'}">${fmt(overallTacos,1)}%</div><div class="stat-sub">Ziel: ${tacosMin}–${tacosMax}% · nur valide ASINs</div></div>
         <div class="stat-card"><div class="stat-label">Gesamt Ad Spend</div><div class="stat-value">${fmtC(totalSpend)}</div></div>
-        <div class="stat-card"><div class="stat-label">Gesamt-Umsatz</div><div class="stat-value green">${fmtC(totalRevenue)}</div></div>
-        <div class="stat-card"><div class="stat-label">Ad-Umsatz</div><div class="stat-value">${fmtC(totalAdSales)}</div><div class="stat-sub">${totalRevenue>0?fmt(totalAdSales/totalRevenue*100,1)+'% des Umsatzes':''}</div></div>
+        <div class="stat-card"><div class="stat-label">Gesamt-Umsatz (BR)</div><div class="stat-value green">${fmtC(totalRevenue)}</div><div class="stat-sub">nur valide ASINs</div></div>
+        <div class="stat-card"><div class="stat-label">Ad-Umsatz</div><div class="stat-value">${fmtC(totalAdSales)}</div></div>
         <div class="stat-card"><div class="stat-label">TACoS zu hoch</div><div class="stat-value red">${countHigh}</div><div class="stat-sub">Child-ASINs &gt; ${tacosMax}%</div></div>
         <div class="stat-card"><div class="stat-label">TACoS zu niedrig</div><div class="stat-value warn-col">${countLow}</div><div class="stat-sub">Child-ASINs &lt; ${tacosMin}%</div></div>
         <div class="stat-card"><div class="stat-label">TACoS im Ziel</div><div class="stat-value green">${countOk}</div><div class="stat-sub">Child-ASINs ✓</div></div>
+        <div class="stat-card"><div class="stat-label">Datenfehler</div><div class="stat-value ${countDataError>0?'warn-col':''}">${countDataError}</div><div class="stat-sub">Zeitraum-Abweichung</div></div>
         <div class="stat-card"><div class="stat-label">Parent-Produkte</div><div class="stat-value">${parents.length}</div><div class="stat-sub">${children.length} Child-ASINs</div></div>
     `;
 
@@ -583,16 +616,19 @@ function runAnalysis() {
 }
 
 // ─── TACoS badge + bar ────────────────────────────────────────────────────────
-function tacosBadge(status) {
+function tacosBadge(status, dataErrorCount) {
+    if (status === 'dataerror') return '<span class="badge badge-dataerror">Zeitraum-Fehler</span>';
     if (status === 'high')    return '<span class="badge badge-high">Zu hoch</span>';
     if (status === 'low')     return '<span class="badge badge-low">Zu niedrig</span>';
     if (status === 'ok')      return '<span class="badge badge-ok">Im Ziel</span>';
     if (status === 'nospend') return '<span class="badge badge-none">Kein Spend</span>';
-    if (status === 'nobiz')   return '<span class="badge badge-none">Kein BR</span>';
-    return '<span class="badge badge-none">—</span>';
+    if (status === 'nobiz')   return '<span class="badge badge-none">Kein BR-Eintrag</span>';
+    const extra = dataErrorCount > 0 ? ` <span class="badge badge-dataerror">${dataErrorCount} Fehler</span>` : '';
+    return '<span class="badge badge-none">—</span>' + extra;
 }
 
 function tacosCell(tacos, status) {
+    if (status === 'dataerror') return '<span style="color:var(--warn);font-size:11px;" title="Ad-Umsatz &gt; Gesamt-Umsatz: Zeiträume der Berichte stimmen nicht überein">⚠ Datenfehler</span>';
     if (tacos === null) return '<span style="color:var(--text-secondary)">—</span>';
     const tacosMax = parseFloat(document.getElementById('tacosMax').value) || 15;
     const color = status === 'high' ? 'var(--error)' : status === 'low' ? 'var(--warn)' : status === 'ok' ? 'var(--success)' : 'var(--text-secondary)';
@@ -658,7 +694,7 @@ function renderParentTable() {
             <td class="asin-mono">${escapeHtml(p.parentAsin)}</td>
             <td class="num">${p.children.length}</td>
             <td>${tacosCell(p.tacos, p.status)}</td>
-            <td>${tacosBadge(p.status)}</td>
+            <td>${tacosBadge(p.status, p.dataErrorCount)}</td>
             <td class="num">${fmtC(p.spend)}</td>
             <td class="num">${p.revenue > 0 ? fmtC(p.revenue) : '<span style="color:var(--text-secondary)">—</span>'}</td>
             <td class="num">${fmtC(p.adSales)}</td>
@@ -676,7 +712,7 @@ function renderParentTable() {
                     <td><span class="asin-mono">${escapeHtml(c.asin)}</span><br><span style="font-size:10px;color:var(--text-secondary);white-space:normal;max-width:200px;display:inline-block;" title="${escapeHtml(c.title)}">${escapeHtml(c.title.substring(0,60))}${c.title.length>60?'…':''}</span></td>
                     <td class="num" style="color:var(--text-secondary);font-size:11px;">Child</td>
                     <td>${tacosCell(c.tacos, c.status)}</td>
-                    <td>${tacosBadge(c.status)}</td>
+                    <td>${tacosBadge(c.status, 0)}</td>
                     <td class="num">${fmtC(c.spend)}</td>
                     <td class="num">${c.revenue > 0 ? fmtC(c.revenue) : '<span style="color:var(--text-secondary)">—</span>'}</td>
                     <td class="num">${fmtC(c.adSales)}</td>
@@ -751,7 +787,7 @@ function renderChildTable() {
         <td class="asin-mono" style="color:var(--text-secondary)">${escapeHtml(c.parentAsin)}</td>
         <td style="max-width:200px;white-space:normal;" title="${escapeHtml(c.title)}">${escapeHtml(c.title.substring(0,55))}${c.title.length>55?'…':''}</td>
         <td>${tacosCell(c.tacos, c.status)}</td>
-        <td>${tacosBadge(c.status)}</td>
+        <td>${tacosBadge(c.status, 0)}</td>
         <td class="num">${fmtC(c.spend)}</td>
         <td class="num">${c.revenue > 0 ? fmtC(c.revenue) : '<span style="color:var(--text-secondary)">—</span>'}</td>
         <td class="num">${fmtC(c.adSales)}</td>
