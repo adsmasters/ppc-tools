@@ -319,6 +319,7 @@ let optimizedItems = [];
 let selectedItems = new Set();
 let campaignTypes = {};
 let campaignBudgets = {};
+let detectedSheetName = 'Sponsored Products Campaigns';
 let sortCol = 'changePct';
 let sortDir = 'desc';
 let currentPage = 1;
@@ -517,6 +518,9 @@ function handleUpload(file) {
 
             const product = cm.product !== -1 ? String(r[cm.product] || '').trim() : 'Sponsored Products';
             if (product && product !== 'Sponsored Products') continue; // SP only
+            // Skip non-enabled keywords/targets to avoid accidentally re-enabling on bid update
+            const stateRaw = cm.state !== -1 ? String(r[cm.state] || '').toLowerCase().trim() : '';
+            if (stateRaw && !(stateRaw.includes('enabled') || stateRaw.includes('aktiviert') || stateRaw.includes('activé') || stateRaw.includes('activado') || stateRaw.includes('attivo'))) continue;
             const campaignId = cm.campaignId !== -1 ? String(r[cm.campaignId] || '').trim() : '';
             const adgroupId = cm.adgroupId !== -1 ? String(r[cm.adgroupId] || '').trim() : '';
             const keywordId = cm.keywordId !== -1 ? String(r[cm.keywordId] || '').trim() : '';
@@ -557,6 +561,9 @@ function handleUpload(file) {
         const reader = new FileReader();
         reader.onload = evt => {
             const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+            const spSheetNames = ['Sponsored Products-Kampagnen','Sponsored Products Campaigns','Campagnes Sponsored Products','Campagne Sponsored Products','Campañas de Sponsored Products'];
+            const detected = wb.SheetNames.find(sn => spSheetNames.includes(sn));
+            if (detected) detectedSheetName = detected;
             wb.SheetNames.forEach(sn => {
                 const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
                 processSheet(rows);
@@ -939,7 +946,9 @@ function exportBulkSheet() {
         if (item.ptId) r[h[8]] = item.ptId;             // Product Targeting ID
         r[h[9]] = item.campaign;                   // Campaign Name
         r[h[10]] = item.adgroup;                   // Ad Group Name
-        r[h[14]] = item.paused ? 'Paused' : 'Enabled'; // State
+        // State nur schreiben wenn aktiv pausiert wird — sonst behält Amazon den aktuellen State bei.
+        // Verhindert versehentliches Reaktivieren manuell pausierter Keywords.
+        if (item.paused) r[h[14]] = 'Paused';
         if (!item.paused) r[h[19]] = item.newBid;  // Bid (nur wenn nicht pausiert)
         if (item.type === 'Keyword') {
             r[h[20]] = item.label;                 // Keyword Text
@@ -960,7 +969,7 @@ function exportBulkSheet() {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = h.map(() => ({ wch: 20 }));
-    XLSX.utils.book_append_sheet(wb, ws, 'Sponsored Products Campaigns');
+    XLSX.utils.book_append_sheet(wb, ws, detectedSheetName);
     XLSX.writeFile(wb, fileName);
 
     document.getElementById('resultMsg').innerHTML = '<div class="success-msg">"' + fileName + '" erstellt (' + selected.length + ' Gebote angepasst).</div>';

@@ -56,6 +56,13 @@ Deno.serve(async (req: Request) => {
     });
     const session = await res.json();
 
+    if (!res.ok || session.error) {
+      return new Response(JSON.stringify({ error: session.error?.message || JSON.stringify(session) }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

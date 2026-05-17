@@ -54,13 +54,19 @@ async function sendWelcomeEmail(customerEmail: string, customerName: string, per
   await sendEmail(customerEmail, "Dein Zugang zu den AdsMasters PPC Tools ist aktiv", body);
 }
 
-async function createLexOfficeInvoice(customerName: string, customerEmail: string, periodLabel: string, periodStartDate?: Date, periodEndDate?: Date): Promise<string | null> {
+interface BillingAddress { street?: string; zip?: string; city?: string; country?: string; }
+
+async function createLexOfficeInvoice(customerName: string, customerEmail: string, periodLabel: string, periodStartDate?: Date, periodEndDate?: Date, billingAddress?: BillingAddress): Promise<string | null> {
   if (!LEXOFFICE_API_KEY) return null;
   const start = periodStartDate || new Date();
   const end = periodEndDate || new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const address: Record<string, string> = { name: customerName || customerEmail, countryCode: billingAddress?.country || "DE" };
+  if (billingAddress?.street) address.street = billingAddress.street;
+  if (billingAddress?.zip) address.zip = billingAddress.zip;
+  if (billingAddress?.city) address.city = billingAddress.city;
   const body = {
     voucherDate: start.toISOString(),
-    address: { name: customerName || customerEmail, countryCode: "DE" },
+    address,
     lineItems: [{
       type: "custom",
       name: "AdsMasters PPC Tools – Professional",
@@ -167,6 +173,13 @@ Deno.serve(async (req: Request) => {
         ? new Date(sub.current_period_start * 1000)
         : new Date();
 
+      // Check if this is a returning customer (had subscription before)
+      const { data: existingSub } = await sb.from("ppc_subscriptions")
+        .select("status")
+        .eq("user_id", userId)
+        .single();
+      const isReturningCustomer = !!existingSub;
+
       // Upsert subscription
       await sb.from("ppc_subscriptions").upsert({
         user_id: userId,
@@ -182,16 +195,38 @@ Deno.serve(async (req: Request) => {
         await sb.from("ppc_profiles").update({ stripe_customer_id: session.customer }).eq("user_id", userId);
       }
 
-      console.log(`[PPC Webhook] Subscription activated: ${userId} -> ${plan}`);
+      console.log(`[PPC Webhook] Subscription activated: ${userId} -> ${plan} (returning: ${isReturningCustomer})`);
 
-      // Notify AdsMasters about new customer
       const notifyEmail = session.customer_details?.email || session.customer_email || "";
       const notifyName = session.custom_fields?.find((f: { key: string }) => f.key === "company_name")?.text?.value || session.customer_details?.name || "";
-      await sendNewCustomerNotification(notifyName, notifyEmail, plan);
-
-      // Welcome email to customer
       const periodEndStr = new Date(periodEnd).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
-      await sendWelcomeEmail(notifyEmail, notifyName, periodEndStr);
+
+      if (isReturningCustomer) {
+        // Returning customer: send reactivation notice only
+        await sendEmail("hallo@adsmasters.de", `🔄 Reaktivierung: ${notifyName || notifyEmail}`, [
+          `Bestehendes Abo reaktiviert`,
+          ``,
+          `Kunde: ${notifyName || "–"}`,
+          `E-Mail: ${notifyEmail}`,
+          `Plan: ${plan}`,
+          `Neuer Abrechnungszeitraum bis: ${periodEndStr}`,
+        ].join("\n"));
+        await sendEmail(notifyEmail, "Dein AdsMasters PPC Tools Abo ist wieder aktiv", [
+          `Hallo${notifyName ? " " + notifyName : ""},`,
+          ``,
+          `dein Abo ist wieder aktiv! Du hast ab sofort wieder vollen Zugriff auf alle PPC Tools.`,
+          ``,
+          `Abrechnungszeitraum bis: ${periodEndStr}`,
+          ``,
+          `https://adsmasters.github.io/ppc-tools-app/dashboard.html`,
+          ``,
+          `Dein AdsMasters Team`,
+        ].join("\n"));
+      } else {
+        // New customer: send welcome email + admin notification
+        await sendNewCustomerNotification(notifyName, notifyEmail, plan);
+        await sendWelcomeEmail(notifyEmail, notifyName, periodEndStr);
+      }
 
       // Create LexOffice invoice for first payment
       // Prefer company name from custom_fields, fall back to customer name
@@ -200,14 +235,27 @@ Deno.serve(async (req: Request) => {
       const customerName = companyName;
       const customerEmail = session.customer_details?.email || session.customer_email || "";
 
-      // Save company name to ppc_profiles for future use
-      if (companyName) {
-        await sb.from("ppc_profiles").update({ company_name: companyName }).eq("user_id", userId);
-      }
+      // Extract billing address from checkout session
+      const addr = session.customer_details?.address;
+      const billingAddress: BillingAddress = {
+        street: addr?.line1 || "",
+        zip: addr?.postal_code || "",
+        city: addr?.city || "",
+        country: addr?.country || "DE",
+      };
+
+      // Save company name and billing address to ppc_profiles for future use
+      await sb.from("ppc_profiles").update({
+        ...(companyName ? { company_name: companyName } : {}),
+        billing_street: billingAddress.street,
+        billing_zip: billingAddress.zip,
+        billing_city: billingAddress.city,
+        billing_country: billingAddress.country,
+      }).eq("user_id", userId);
+
       const periodStartStr = periodStart.toLocaleDateString("de-DE");
-      const periodEndStr = new Date(periodEnd).toLocaleDateString("de-DE");
       const periodLabel = `Abonnement ${periodStartStr} – ${periodEndStr}`;
-      const lexInvoiceId = await createLexOfficeInvoice(customerName, customerEmail, periodLabel, periodStart, new Date(periodEnd));
+      const lexInvoiceId = await createLexOfficeInvoice(customerName, customerEmail, periodLabel, periodStart, new Date(periodEnd), billingAddress);
       if (lexInvoiceId) {
         await sb.from("ppc_invoices").insert({
           user_id: userId,
@@ -221,10 +269,19 @@ Deno.serve(async (req: Request) => {
 
     if (event.type === "customer.subscription.updated") {
       const sub = event.data.object;
-      const userId = sub.metadata?.user_id;
+      let userId = sub.metadata?.user_id;
+
+      // Fallback: look up user by stripe_subscription_id if metadata missing
+      if (!userId) {
+        const { data: subRow } = await sb.from("ppc_subscriptions")
+          .select("user_id")
+          .eq("stripe_subscription_id", sub.id)
+          .single();
+        userId = subRow?.user_id;
+      }
       if (!userId) return new Response("ok", { status: 200 });
 
-      const status = sub.status === "active" ? "active" : sub.status === "past_due" ? "past_due" : "inactive";
+      const status = sub.status === "active" ? "active" : sub.status === "past_due" ? "past_due" : "cancelled";
       const periodEnd = new Date(sub.current_period_end * 1000);
 
       await sb.from("ppc_subscriptions").update({
@@ -270,15 +327,58 @@ Deno.serve(async (req: Request) => {
 
     if (event.type === "customer.subscription.deleted") {
       const sub = event.data.object;
-      const userId = sub.metadata?.user_id;
+      let userId = sub.metadata?.user_id;
+
+      // Fallback: look up user by stripe_subscription_id if metadata missing
+      if (!userId) {
+        const { data: subRow } = await sb.from("ppc_subscriptions")
+          .select("user_id")
+          .eq("stripe_subscription_id", sub.id)
+          .single();
+        userId = subRow?.user_id;
+      }
       if (!userId) return new Response("ok", { status: 200 });
 
       await sb.from("ppc_subscriptions").update({
-        status: "canceled",
+        status: "cancelled",
         updated_at: new Date().toISOString(),
       }).eq("user_id", userId);
 
       console.log(`[PPC Webhook] Subscription canceled: ${userId}`);
+
+      // Send cancellation confirmation email
+      const { data: profile } = await sb.from("ppc_profiles").select("company_name").eq("user_id", userId).single();
+      const { data: userRow } = await sb.auth.admin.getUserById(userId);
+      const customerEmail = userRow?.user?.email || "";
+      const customerName = profile?.company_name || "";
+      const periodEnd = sub.current_period_end
+        ? new Date(sub.current_period_end * 1000).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : null;
+
+      if (customerEmail) {
+        await sendEmail(customerEmail, "Deine Kündigung der AdsMasters PPC Tools", [
+          `Hallo${customerName ? " " + customerName : ""},`,
+          ``,
+          `deine Kündigung wurde bestätigt.`,
+          ``,
+          periodEnd
+            ? `Du hast noch bis zum ${periodEnd} vollen Zugriff auf alle PPC Tools.`
+            : `Dein Zugang wurde deaktiviert.`,
+          ``,
+          `Möchtest du dein Abo doch fortführen? Kein Problem – melde dich einfach bei uns:`,
+          `hallo@adsmasters.de`,
+          ``,
+          `Dein AdsMasters Team`,
+        ].join("\n"));
+
+        await sendEmail("hallo@adsmasters.de", `⚠️ Kündigung: ${customerName || customerEmail}`, [
+          `Kündigung eingegangen (sofortige Stornierung)`,
+          ``,
+          `Kunde: ${customerName || "–"}`,
+          `E-Mail: ${customerEmail}`,
+          `Zugriff bis: ${periodEnd || "sofort beendet"}`,
+        ].join("\n"));
+      }
     }
 
     if (event.type === "invoice.payment_succeeded") {
@@ -296,19 +396,26 @@ Deno.serve(async (req: Request) => {
         .eq("stripe_subscription_id", invoice.subscription)
         .single();
       let customerName = invoice.customer_name || "";
+      let recurringBillingAddress: BillingAddress = {};
       if (subRowForInvoice?.user_id) {
         const { data: profileForInvoice } = await sb.from("ppc_profiles")
-          .select("company_name")
+          .select("company_name, billing_street, billing_zip, billing_city, billing_country")
           .eq("user_id", subRowForInvoice.user_id)
           .single();
         if (profileForInvoice?.company_name) customerName = profileForInvoice.company_name;
+        recurringBillingAddress = {
+          street: profileForInvoice?.billing_street || "",
+          zip: profileForInvoice?.billing_zip || "",
+          city: profileForInvoice?.billing_city || "",
+          country: profileForInvoice?.billing_country || "DE",
+        };
       }
       const periodStart = new Date(invoice.lines?.data?.[0]?.period?.start * 1000).toLocaleDateString("de-DE");
       const periodEnd = new Date(invoice.lines?.data?.[0]?.period?.end * 1000).toLocaleDateString("de-DE");
       const recurringLabel = `Abonnement ${periodStart} – ${periodEnd}`;
       const recurringStart = new Date(invoice.lines?.data?.[0]?.period?.start * 1000);
       const recurringEnd = new Date(invoice.lines?.data?.[0]?.period?.end * 1000);
-      const recurringLexId = await createLexOfficeInvoice(customerName, customerEmail, recurringLabel, recurringStart, recurringEnd);
+      const recurringLexId = await createLexOfficeInvoice(customerName, customerEmail, recurringLabel, recurringStart, recurringEnd, recurringBillingAddress);
       if (recurringLexId && subRowForInvoice?.user_id) {
         await sb.from("ppc_invoices").insert({
           user_id: subRowForInvoice.user_id,

@@ -1,18 +1,9 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-962309237"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'AW-962309237');
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AdsMasters PPC Tools</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="auth-guard.js"></script>
     <style>
         :root {
@@ -45,18 +36,12 @@
         .tool-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-top: 12px; }
         .badge-live { background: #3fb95020; color: #3fb950; border: 1px solid #3fb95040; }
         .badge-soon { background: #d2992020; color: #d29920; border: 1px solid #d2992040; }
-        .manage-bar { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center; }
-        .btn-manage { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); padding: 9px 20px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
-        .btn-manage:hover { color: var(--text-primary); border-color: var(--text-secondary); }
     </style>
 </head>
 <body>
     <div class="topbar">
         <div style="display:flex;align-items:center;gap:32px;">
             <a href="dashboard.html" class="topbar-logo">Ads<span>Masters</span> PPC Tools</a>
-            <a href="invoices.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Rechnungen</a>
-            <a href="tutorials.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Tutorials</a>
-            <a href="contact.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Kontakt</a>
             <a href="help.html" style="color:var(--text-secondary);text-decoration:none;font-size:14px;">Hilfe</a>
         </div>
         <div class="topbar-right">
@@ -66,7 +51,7 @@
     </div>
     <div class="main">
         <h1 class="page-title">PPC Tools</h1>
-        <p class="page-sub" id="subStatus">Amazon Advertising Werkzeuge</p>
+        <p class="page-sub">Amazon Advertising Werkzeuge für das AdsMasters Team</p>
         <div class="tools-grid">
             <a href="campaign-creator.html" class="tool-card">
                 <div class="tool-icon">🚀</div>
@@ -110,79 +95,9 @@
                 <div class="tool-desc">Identifiziere unterperformende beworbene Produkte (ASINs/SKUs) in Kampagnen und pausiere sie per Bulk Sheet.</div>
                 <span class="tool-badge badge-live">Live</span>
             </a>
-            <a href="tacos-analyse.html" class="tool-card">
-                <div class="tool-icon">&#127919;</div>
-                <div class="tool-name">TACoS Analyse</div>
-                <div class="tool-desc">Total Advertising Cost of Sales auf Child- und Parent-Ebene. SP Bericht + Business Report → TACoS pro ASIN mit Zielbereich-Bewertung.</div>
-                <span class="tool-badge badge-live">Live</span>
-            </a>
-            <a href="time-of-day.html" class="tool-card">
-                <div class="tool-icon">&#9201;</div>
-                <div class="tool-name">Time-of-Day Analyse</div>
-                <div class="tool-desc">Erkenne die besten Uhrzeiten und Wochentage für deine Kampagnen. Bid Boost Empfehlungen auf Gesamt- und Kampagnenebene.</div>
-                <span class="tool-badge badge-live">Live</span>
-            </a>
-            <a href="impression-share.html" class="tool-card">
-                <div class="tool-icon">&#128202;</div>
-                <div class="tool-name">Impression Share Analyse</div>
-                <div class="tool-desc">Identifiziere Skalierungspotenziale (niedriger IS, guter ROAS) und Optimierungsbedarf (hoher IS, schlechter ROAS) auf Suchbegriff-Ebene.</div>
-                <span class="tool-badge badge-live">Live</span>
-            </a>
-        </div>
-        <div class="manage-bar">
-            <button class="btn-manage" onclick="openPortal()">Abo verwalten · Kündigen · Zahlungsmethode ändern</button>
         </div>
     </div>
     <script>
-        // Show subscription status
-        (async () => {
-            await new Promise(r => { const t = setInterval(() => { if (window.ppcUser) { clearInterval(t); r(); } }, 50); });
-            const { data: sub } = await sb.from('ppc_subscriptions')
-                .select('plan, status, current_period_end')
-                .eq('user_id', window.ppcUser.id)
-                .single();
-            if (sub) {
-                const end = sub.current_period_end ? new Date(sub.current_period_end) : null;
-                const endStr = end ? end.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
-                const el = document.getElementById('subStatus');
-                if (endStr) {
-                    el.textContent = `Professional · Zugriff bis ${endStr}`;
-                } else {
-                    el.textContent = 'Professional · Aktiv';
-                }
-            }
-        })();
-
-        async function openPortal() {
-            const btn = document.querySelector('.btn-manage');
-            btn.textContent = 'Wird geladen...';
-            btn.disabled = true;
-            try {
-                const { data: { session } } = await sb.auth.getSession();
-                const res = await fetch(SUPABASE_URL + '/functions/v1/create-portal-session', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + session.access_token,
-                        'apikey': SUPABASE_ANON_KEY,
-                    },
-                    body: '{}',
-                });
-                const data = await res.json();
-                if (data.url) {
-                    location.href = data.url;
-                } else {
-                    alert('Fehler: ' + (data.error || 'Portal konnte nicht geöffnet werden'));
-                    btn.textContent = 'Abo verwalten · Kündigen · Zahlungsmethode ändern';
-                    btn.disabled = false;
-                }
-            } catch(e) {
-                alert('Fehler: ' + e.message);
-                btn.textContent = 'Abo verwalten · Kündigen · Zahlungsmethode ändern';
-                btn.disabled = false;
-            }
-        }
-
         // Theme toggle
         const savedTheme = localStorage.getItem('ppc_theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
@@ -194,22 +109,6 @@
             localStorage.setItem('ppc_theme', next);
             document.getElementById('themeToggle').innerHTML = next === 'light' ? '&#9790;' : '&#9788;';
         }
-    </script>
-    <!-- Google Ads Conversion Tracking: fires once after successful Stripe checkout -->
-    <script>
-      (function() {
-        var params = new URLSearchParams(window.location.search);
-        if (params.get('checkout') === 'success') {
-          gtag('event', 'conversion', {
-            'send_to': 'AW-962309237/xamHCIOGp6EcEPXY7soD',
-            'transaction_id': ''
-          });
-          // Remove checkout param so a page refresh doesn't re-fire
-          params.delete('checkout');
-          var newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-          history.replaceState(null, '', newUrl);
-        }
-      })();
     </script>
 </body>
 </html>
