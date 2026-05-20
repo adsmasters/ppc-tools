@@ -1942,7 +1942,9 @@ function generateRows() {
                 const pr = emptyRow();
                 pr[hProduct] = productLabel;
                 pr[hEntity] = t.biddingAdj;
+                pr[hOp] = op;
                 pr[hCampId] = campName;
+                pr[hCampName] = campName;
                 pr[hPlacement] = t.placeTos;
                 pr[hPercentage] = tosVal;
                 rows.push(pr);
@@ -1951,7 +1953,9 @@ function generateRows() {
                 const pr = emptyRow();
                 pr[hProduct] = productLabel;
                 pr[hEntity] = t.biddingAdj;
+                pr[hOp] = op;
                 pr[hCampId] = campName;
+                pr[hCampName] = campName;
                 pr[hPlacement] = t.placePp;
                 pr[hPercentage] = ppVal;
                 rows.push(pr);
