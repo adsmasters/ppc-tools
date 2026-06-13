@@ -298,7 +298,9 @@ const COL_ALIASES = {
     orders:          ['gesamtaufträge in 7 tagen (anzahl)', 'gesamtauftr', 'total orders', '7 day total orders'],
     sales:           ['gesamtverkäufe in 7 tagen', 'gesamtverkäufe', 'total sales', '7 day total sales'],
     acos:            ['zugeschriebene umsatzkosten (acos) gesamt', 'acos gesamt', 'total acos', 'acos'],
-    roas:            ['gesamte rentabilität der anzeigenkosten (roas)', 'roas']
+    roas:            ['gesamte rentabilität der anzeigenkosten (roas)', 'roas'],
+    matchtype:       ['übereinstimmungstyp', 'match type'],
+    targeting:       ['ausrichtung', 'targeting']
 };
 
 function findColIdx(headers, key) {
@@ -408,6 +410,8 @@ function handleFile(file) {
                 spend:           cm.spend !== -1 ? parseNum(r[cm.spend]) : 0,
                 orders:          cm.orders !== -1 ? parseNum(r[cm.orders]) : 0,
                 sales:           cm.sales !== -1 ? parseNum(r[cm.sales]) : 0,
+                matchtype:       cm.matchtype !== -1 ? r[cm.matchtype].trim() : '',
+                targeting:       cm.targeting !== -1 ? r[cm.targeting].trim() : '',
             });
         }
 
@@ -453,7 +457,8 @@ function runAnalysis() {
                 impressionShare: row.impressionShare,
                 rank: row.rank,
                 clicks: 0, impressions: 0, spend: 0, orders: 0, sales: 0,
-                campaigns: new Set()
+                campaigns: new Set(),
+                subRows: []
             };
         }
         aggMap[key].clicks      += row.clicks;
@@ -462,6 +467,13 @@ function runAnalysis() {
         aggMap[key].orders      += row.orders;
         aggMap[key].sales       += row.sales;
         aggMap[key].campaigns.add(row.campaign);
+        aggMap[key].subRows.push({
+            campaign: row.campaign, adgroup: row.adgroup,
+            matchtype: row.matchtype || row.targeting || '',
+            spend: row.spend, sales: row.sales, clicks: row.clicks,
+            impressions: row.impressions, orders: row.orders,
+            roas: row.spend > 0 ? row.sales / row.spend : 0
+        });
         // IS is the same per term — keep max (all should be equal for same term/period)
         if (row.impressionShare > aggMap[key].impressionShare) aggMap[key].impressionShare = row.impressionShare;
         if (row.rank > 0 && (aggMap[key].rank === 0 || row.rank < aggMap[key].rank)) aggMap[key].rank = row.rank;
@@ -642,8 +654,8 @@ function renderTable() {
         const acosVal = row.orders > 0 ? fmt(row.acos, 1) + '%' : row.spend > 0 ? '∞' : '—';
         const roasVal = row.orders > 0 ? fmt(row.roas, 2) + 'x' : row.spend > 0 ? '0.00x' : '—';
 
-        return `<tr>
-            <td style="max-width:220px;white-space:normal;word-break:break-word;">${escapeHtml(row.searchterm)}</td>
+        return `<tr data-stkey="${escapeHtml(row.searchterm.toLowerCase())}">
+            <td style="max-width:240px;white-space:normal;word-break:break-word;cursor:pointer" onclick="toggleISDetail(this)" title="Klick: in welchen Kampagnen/Anzeigengruppen läuft dieser Begriff?"><span class="is-caret" style="display:inline-block;width:12px;color:var(--text-secondary)">&#9656;</span>${escapeHtml(row.searchterm)}</td>
             <td>${catBadge}</td>
             <td class="num" style="color:${isColor};font-weight:600">${fmt(row.impressionShare, 1)}%</td>
             <td class="num">${row.rank > 0 ? row.rank : '—'}</td>
@@ -668,6 +680,45 @@ function sortTable(col) {
     if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
     else { sortCol = col; sortDir = col === 'searchterm' ? 'asc' : 'desc'; }
     renderTable();
+}
+
+// Aufklappen: in welchen Kampagnen/Anzeigengruppen läuft dieser Suchbegriff?
+function toggleISDetail(td) {
+    const tr = td.closest('tr');
+    const key = tr.getAttribute('data-stkey');
+    const caret = td.querySelector('.is-caret');
+    const nxt = tr.nextElementSibling;
+    if (nxt && nxt.classList.contains('is-detail')) { nxt.remove(); if (caret) caret.innerHTML = '&#9656;'; return; }
+    const row = analysisData.find(r => r.searchterm.toLowerCase() === key);
+    if (!row || !row.subRows) return;
+    // Sub-Zeilen nach Spend sortiert
+    const subs = row.subRows.slice().sort((a, b) => b.spend - a.spend);
+    const inner = subs.map(s => {
+        const roasTxt = s.spend > 0 ? (s.orders > 0 ? s.roas.toFixed(2) + 'x' : '0.00x') : '—';
+        return `<tr>
+            <td style="padding:4px 8px">${escapeHtml(s.campaign || '—')}</td>
+            <td style="padding:4px 8px">${escapeHtml(s.adgroup || '—')}</td>
+            <td style="padding:4px 8px">${escapeHtml(s.matchtype || '—')}</td>
+            <td class="num" style="padding:4px 8px">${fmtCurrency(s.spend)}</td>
+            <td class="num" style="padding:4px 8px">${fmtCurrency(s.sales)}</td>
+            <td class="num" style="padding:4px 8px;font-weight:600">${roasTxt}</td>
+            <td class="num" style="padding:4px 8px">${s.clicks.toLocaleString('de-DE')}</td>
+            <td class="num" style="padding:4px 8px">${s.impressions.toLocaleString('de-DE')}</td>
+        </tr>`;
+    }).join('');
+    const detail = document.createElement('tr');
+    detail.className = 'is-detail';
+    detail.innerHTML = `<td colspan="14" style="background:var(--bg-primary);padding:10px 14px 14px 30px">
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:6px">In welchen Kampagnen / Anzeigengruppen läuft „${escapeHtml(row.searchterm)}" (nach Spend):</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="text-align:left;color:var(--text-secondary)">
+                <th style="padding:4px 8px">Kampagne</th><th style="padding:4px 8px">Anzeigengruppe</th><th style="padding:4px 8px">Match/Ausrichtung</th>
+                <th class="num" style="padding:4px 8px">Spend</th><th class="num" style="padding:4px 8px">Umsatz</th><th class="num" style="padding:4px 8px">ROAS</th>
+                <th class="num" style="padding:4px 8px">Klicks</th><th class="num" style="padding:4px 8px">Impr.</th>
+            </tr></thead><tbody>${inner}</tbody>
+        </table></td>`;
+    tr.parentNode.insertBefore(detail, tr.nextSibling);
+    if (caret) caret.innerHTML = '&#9662;';
 }
 
 function renderPagination(totalPages) {
