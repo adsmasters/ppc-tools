@@ -199,7 +199,8 @@
             <div class="card-title"><span class="section-label">D+</span> Gebotsanpassungs-Check (Platzierungen) <span class="tooltip-icon" data-tip="Bewertet jede Platzierungs-Gebotsanpassung RELATIV zur Kampagnen- und Account-Performance – nicht nach festen ROAS-Zahlen. Chance = Platzierung schlägt den Kampagnenschnitt und hat keine Anpassung. Problem = Anpassung >0% obwohl die Platzierung unter dem Kampagnenschnitt liegt.">i</span></div>
             <div id="baAccountInfo" style="font-size:12px;color:var(--text-secondary);margin-bottom:8px"></div>
             <div style="display:flex;gap:14px;margin-bottom:12px;align-items:center;flex-wrap:wrap;font-size:12px;">
-                <label>Mind. Abweichung vom Kampagnenschnitt: ±<input type="number" id="baMargin" value="20" step="5" min="0" style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"> %</label>
+                <label title="Platzierung gilt als Problem, wenn ihr ROAS um mehr als X% UNTER dem Kampagnenschnitt liegt (bei vorhandener Anpassung).">Problem ab −<input type="number" id="baMarginProblem" value="20" step="5" min="0" style="width:52px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"> % unter Schnitt</label>
+                <label title="Platzierung gilt als Chance, wenn ihr ROAS um mehr als Y% ÜBER dem Kampagnenschnitt liegt (ohne Anpassung).">Chance ab +<input type="number" id="baMarginChance" value="30" step="5" min="0" style="width:52px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"> % über Schnitt</label>
                 <label>Min. Spend <input type="number" id="baMinSpend" value="10" step="1" min="0" style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"></label>
             </div>
             <div id="baProblemWrap" style="margin-bottom:18px">
@@ -1059,7 +1060,8 @@ function buildSectionBidAdj() {
     if (baRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
-    const margin   = (parseFloat(document.getElementById('baMargin').value)   || 0) / 100; // z.B. 0.20
+    const marginProblem = (parseFloat(document.getElementById('baMarginProblem').value) || 0) / 100; // z.B. 0.20
+    const marginChance  = (parseFloat(document.getElementById('baMarginChance').value)  || 0) / 100; // z.B. 0.30
     const minSpend = parseFloat(document.getElementById('baMinSpend').value) || 0;
 
     // Benchmarks – alle auf gleicher Basis (Gebotsanpassung-Zeilen), damit
@@ -1086,13 +1088,15 @@ function buildSectionBidAdj() {
         const cr = campRoas(c);
         if (cr <= 0) return;
         const rel = roas / cr - 1; // +0.30 = 30% über Kampagnenschnitt
+        const campSpend = (campAgg[c] && campAgg[c].spend) || 0;
+        const spendShare = campSpend > 0 ? r.spend / campSpend : 0; // Anteil am Kampagnen-Spend
         const rec = { c, p: prettyPlacement(r.placement), pct: r.percentage, roas, croas: cr, rel, spend: r.spend,
-                      aboveAcc: roas >= accountRoas };
+                      campSpend, spendShare, aboveAcc: roas >= accountRoas };
         // Problem: Anpassung erhöht, aber Platzierung liegt unter dem Kampagnenschnitt
-        if (r.percentage > 0 && rel < -margin) {
+        if (r.percentage > 0 && rel < -marginProblem) {
             problems.push(rec);
         // Chance: keine Anpassung, aber Platzierung schlägt den Kampagnenschnitt deutlich
-        } else if (r.percentage === 0 && rel > margin) {
+        } else if (r.percentage === 0 && rel > marginChance) {
             chances.push(rec);
         }
     });
@@ -1100,7 +1104,7 @@ function buildSectionBidAdj() {
     problems.sort((a, b) => a.rel - b.rel);
     chances.sort((a, b) => b.rel - a.rel);
 
-    const headHtml = '<tr><th style="width:30%">Kampagne</th><th>Platzierung</th><th class="num">Anpassung</th><th class="num">ROAS Platz.</th><th class="num">ROAS Kamp.</th><th class="num">vs Kamp.</th><th class="num">Spend</th></tr>';
+    const headHtml = '<tr><th style="width:26%">Kampagne</th><th>Platzierung</th><th class="num">Anpassung</th><th class="num">ROAS Platz.</th><th class="num">ROAS Kamp.</th><th class="num">vs Kamp.</th><th class="num">Spend Platz.</th><th class="num">Spend Kamp.</th><th class="num">% v. Kamp.</th></tr>';
     function rowHtml(x, isProblem) {
         const pctTxt = (x.pct > 0 ? '+' : '') + x.pct.toFixed(0) + '%';
         const relTxt = (x.rel > 0 ? '+' : '') + (x.rel * 100).toFixed(0) + '%';
@@ -1114,16 +1118,18 @@ function buildSectionBidAdj() {
             '<td class="num">' + x.croas.toFixed(2) + '</td>' +
             '<td class="num" style="' + relCol + '">' + relTxt + '</td>' +
             '<td class="num">' + formatCurrency(x.spend) + '</td>' +
+            '<td class="num" style="color:var(--text-secondary)">' + formatCurrency(x.campSpend) + '</td>' +
+            '<td class="num">' + (x.spendShare * 100).toFixed(0) + '%</td>' +
             '</tr>';
     }
     document.getElementById('baProblemHead').innerHTML = headHtml;
     document.getElementById('baChanceHead').innerHTML = headHtml;
     document.getElementById('baProblemBody').innerHTML = problems.length
         ? problems.map(x => rowHtml(x, true)).join('')
-        : '<tr><td colspan="7" style="color:var(--text-secondary);padding:10px">Keine — keine Anpassung pusht eine unterdurchschnittliche Platzierung. 👍</td></tr>';
+        : '<tr><td colspan="9" style="color:var(--text-secondary);padding:10px">Keine — keine Anpassung pusht eine unterdurchschnittliche Platzierung. 👍</td></tr>';
     document.getElementById('baChanceBody').innerHTML = chances.length
         ? chances.map(x => rowHtml(x, false)).join('')
-        : '<tr><td colspan="7" style="color:var(--text-secondary);padding:10px">Keine überdurchschnittlichen Platzierungen ohne Anpassung gefunden.</td></tr>';
+        : '<tr><td colspan="9" style="color:var(--text-secondary);padding:10px">Keine überdurchschnittlichen Platzierungen ohne Anpassung gefunden.</td></tr>';
     document.getElementById('baProblemCount').textContent = '(' + problems.length + ')';
     document.getElementById('baChanceCount').textContent = '(' + chances.length + ')';
 }
