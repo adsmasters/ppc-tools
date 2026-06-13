@@ -193,6 +193,28 @@
             </div>
         </div>
 
+        <!-- Section D2: Gebotsanpassungs-Check -->
+        <div class="card hidden" id="sectionBidAdj">
+            <div class="card-title"><span class="section-label">D+</span> Gebotsanpassungs-Check (Platzierungen) <span class="tooltip-icon" data-tip="Vergleicht die aktuelle Platzierungs-Gebotsanpassung (%) je Kampagne mit dem ROAS dieser Platzierung. Findet (1) Anpassungen, die schwache Platzierungen pushen, und (2) starke Platzierungen ohne Anpassung.">i</span></div>
+            <div style="display:flex;gap:14px;margin-bottom:12px;align-items:center;flex-wrap:wrap;font-size:12px;">
+                <label>Schwach: ROAS &lt; <input type="number" id="baBadRoas" value="1.0" step="0.1" min="0" style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"></label>
+                <label>Stark (Chance): ROAS ≥ <input type="number" id="baGoodRoas" value="2.0" step="0.1" min="0" style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"></label>
+                <label>Min. Spend <input type="number" id="baMinSpend" value="10" step="1" min="0" style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"></label>
+            </div>
+            <div id="baProblemWrap" style="margin-bottom:18px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--error,#dc2626)">⚠️ Anpassung pusht schwache Platzierung <span id="baProblemCount" style="font-weight:400;color:var(--text-secondary)"></span></div>
+                <div class="results-container">
+                    <table class="results-table"><thead id="baProblemHead"></thead><tbody id="baProblemBody"></tbody></table>
+                </div>
+            </div>
+            <div id="baChanceWrap">
+                <div style="font-weight:700;font-size:13px;margin-bottom:6px;color:var(--success,#16a34a)">💡 Starke Platzierung ohne Anpassung (Chance) <span id="baChanceCount" style="font-weight:400;color:var(--text-secondary)"></span></div>
+                <div class="results-container">
+                    <table class="results-table"><thead id="baChanceHead"></thead><tbody id="baChanceBody"></tbody></table>
+                </div>
+            </div>
+        </div>
+
         <!-- Section D: Top Placements (Keywords/Targets) -->
         <div class="card hidden" id="sectionC">
             <div class="card-title"><span class="section-label">E</span> Top Placements (Keywords/Targets nach Sales)</div>
@@ -290,6 +312,7 @@ const COL = {
     ptExpr: ['product targeting expression', 'ausdruck für produkt-targeting'],
     state: ['state', 'zustand', 'état'],
     placement: ['placement', 'platzierung'],
+    percentage: ['percentage', 'prozentsatz', 'prozent'],
     campaignId: ['campaign id', 'kampagnen-id'],
     adgroupId: ['ad group id', 'anzeigengruppen-id'],
     searchterm: ['customer search term', 'suchbegriff des kunden', 'suchbegriff eines kunden', 'search term', 'query'],
@@ -388,6 +411,7 @@ function handleUpload(file) {
             const orders = useVC ? parseNum(r[cm.ordersVC]) : (cm.orders !== -1 ? parseNum(r[cm.orders]) : 0);
             const targetingType = cm.targeting !== -1 ? String(r[cm.targeting] || '').trim() : '';
             const placement = cm.placement !== -1 ? String(r[cm.placement] || '').trim() : '';
+            const percentage = cm.percentage !== -1 ? parseNum(r[cm.percentage]) : 0;
 
             // Skip rows without campaign or with no meaningful data
             if (!campaign && !keyword && !ptExpr) continue;
@@ -398,7 +422,7 @@ function handleUpload(file) {
                 product, entity, campaign, adgroup,
                 keyword: keyword || ptExpr,
                 matchtype, impressions, clicks, spend, sales, orders,
-                targetingType, placement, format,
+                targetingType, placement, percentage, format,
                 campType: detectType(campaign),
                 cpc: clicks > 0 ? spend / clicks : 0,
                 acos: sales > 0 ? (spend / sales * 100) : (spend > 0 ? Infinity : 0),
@@ -469,6 +493,7 @@ function buildDashboard() {
     buildSectionB();
     buildSectionC();
     buildSectionD();
+    buildSectionBidAdj();
     buildSectionSB();
     buildSectionSD();
 }
@@ -1019,6 +1044,70 @@ function buildSectionD() {
             '<td class="num">' + cpc + '</td>' +
             '</tr>';
     }).join('');
+}
+
+// --- Section D+: Gebotsanpassungs-Check (Platzierungen) ---
+function prettyPlacement(p) {
+    var s = String(p || '').replace(/^placement\s*/i, '').trim();
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : '–';
+}
+function buildSectionBidAdj() {
+    const section = document.getElementById('sectionBidAdj');
+    const baRows = allRows.filter(r => r.format === 'SP' && r.placement && r.placement.trim() !== '' &&
+        (r.entity.includes('gebotsanpassung') || r.entity.includes('bidding adjustment')));
+    if (baRows.length === 0) { section.classList.add('hidden'); return; }
+    section.classList.remove('hidden');
+
+    const badRoas  = parseFloat(document.getElementById('baBadRoas').value)  || 1.0;
+    const goodRoas = parseFloat(document.getElementById('baGoodRoas').value) || 2.0;
+    const minSpend = parseFloat(document.getElementById('baMinSpend').value) || 0;
+
+    // Kampagnen-Gesamt (über alle Platzierungen) für Kontext
+    const campAgg = {};
+    baRows.forEach(r => {
+        const c = r.campaign || '(ohne Kampagne)';
+        if (!campAgg[c]) campAgg[c] = { spend: 0, sales: 0 };
+        campAgg[c].spend += r.spend; campAgg[c].sales += r.sales;
+    });
+    const campRoas = c => (campAgg[c] && campAgg[c].spend > 0) ? campAgg[c].sales / campAgg[c].spend : 0;
+
+    const problems = [], chances = [];
+    baRows.forEach(r => {
+        const c = r.campaign || '(ohne Kampagne)';
+        const roas = r.spend > 0 ? r.sales / r.spend : 0;
+        if (r.spend < minSpend && r.clicks < 10) return;
+        if (r.percentage > 0 && roas < badRoas) {
+            problems.push({ c, p: prettyPlacement(r.placement), pct: r.percentage, roas, croas: campRoas(c), spend: r.spend });
+        } else if (r.percentage === 0 && roas >= goodRoas && r.spend >= Math.max(minSpend, 1)) {
+            chances.push({ c, p: prettyPlacement(r.placement), pct: r.percentage, roas, croas: campRoas(c), spend: r.spend });
+        }
+    });
+    problems.sort((a, b) => b.spend - a.spend);
+    chances.sort((a, b) => b.spend - a.spend);
+
+    const headHtml = '<tr><th style="width:34%">Kampagne</th><th>Platzierung</th><th class="num">Anpassung</th><th class="num">ROAS Platz.</th><th class="num">ROAS Kamp.</th><th class="num">Spend</th></tr>';
+    function rowHtml(x, isProblem) {
+        const pctTxt = (x.pct > 0 ? '+' : '') + x.pct.toFixed(0) + '%';
+        const roasCol = isProblem ? 'color:var(--error,#dc2626);font-weight:700' : 'color:var(--success,#16a34a);font-weight:700';
+        return '<tr>' +
+            '<td title="' + escapeHtml(x.c) + '">' + escapeHtml(x.c.length > 46 ? x.c.slice(0, 46) + '…' : x.c) + '</td>' +
+            '<td>' + escapeHtml(x.p) + '</td>' +
+            '<td class="num"' + (isProblem ? ' style="color:var(--error,#dc2626);font-weight:700"' : '') + '>' + pctTxt + '</td>' +
+            '<td class="num" style="' + roasCol + '">' + x.roas.toFixed(2) + '</td>' +
+            '<td class="num">' + x.croas.toFixed(2) + '</td>' +
+            '<td class="num">' + formatCurrency(x.spend) + '</td>' +
+            '</tr>';
+    }
+    document.getElementById('baProblemHead').innerHTML = headHtml;
+    document.getElementById('baChanceHead').innerHTML = headHtml;
+    document.getElementById('baProblemBody').innerHTML = problems.length
+        ? problems.map(x => rowHtml(x, true)).join('')
+        : '<tr><td colspan="6" style="color:var(--text-secondary);padding:10px">Keine — keine Anpassung pusht eine schwache Platzierung. 👍</td></tr>';
+    document.getElementById('baChanceBody').innerHTML = chances.length
+        ? chances.map(x => rowHtml(x, false)).join('')
+        : '<tr><td colspan="6" style="color:var(--text-secondary);padding:10px">Keine starken Platzierungen ohne Anpassung gefunden.</td></tr>';
+    document.getElementById('baProblemCount').textContent = '(' + problems.length + ')';
+    document.getElementById('baChanceCount').textContent = '(' + chances.length + ')';
 }
 
 // --- Section E: Sponsored Brands Suchbegriff-Analyse ---
