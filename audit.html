@@ -1080,7 +1080,7 @@ function buildSectionBidAdj() {
 
     const problems = [], chances = [];
     baRows.forEach(r => {
-        if (r.spend < minSpend && r.clicks < 10) return;
+        if (r.spend < minSpend) return; // harte Spend-Grenze
         const c = r.campaign || '(ohne Kampagne)';
         const roas = r.spend > 0 ? r.sales / r.spend : 0;
         const cr = campRoas(c);
@@ -1107,8 +1107,8 @@ function buildSectionBidAdj() {
         const relCol = isProblem ? 'color:var(--error,#dc2626);font-weight:700' : 'color:var(--success,#16a34a);font-weight:700';
         const accTag = x.aboveAcc ? '' : ' <span title="unter Account-Schnitt" style="color:var(--text-muted);font-size:10px">⌄Acc</span>';
         return '<tr>' +
-            '<td title="' + escapeHtml(x.c) + '">' + escapeHtml(x.c.length > 42 ? x.c.slice(0, 42) + '…' : x.c) + '</td>' +
-            '<td>' + escapeHtml(x.p) + accTag + '</td>' +
+            '<td style="white-space:normal;word-break:break-word">' + escapeHtml(x.c) + '</td>' +
+            '<td style="white-space:normal">' + escapeHtml(x.p) + accTag + '</td>' +
             '<td class="num"' + (isProblem ? ' style="color:var(--error,#dc2626);font-weight:700"' : '') + '>' + pctTxt + '</td>' +
             '<td class="num">' + x.roas.toFixed(2) + '</td>' +
             '<td class="num">' + x.croas.toFixed(2) + '</td>' +
