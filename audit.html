@@ -195,10 +195,10 @@
 
         <!-- Section D2: Gebotsanpassungs-Check -->
         <div class="card hidden" id="sectionBidAdj">
-            <div class="card-title"><span class="section-label">D+</span> Gebotsanpassungs-Check (Platzierungen) <span class="tooltip-icon" data-tip="Vergleicht die aktuelle Platzierungs-Gebotsanpassung (%) je Kampagne mit dem ROAS dieser Platzierung. Findet (1) Anpassungen, die schwache Platzierungen pushen, und (2) starke Platzierungen ohne Anpassung.">i</span></div>
+            <div class="card-title"><span class="section-label">D+</span> Gebotsanpassungs-Check (Platzierungen) <span class="tooltip-icon" data-tip="Bewertet jede Platzierungs-Gebotsanpassung RELATIV zur Kampagnen- und Account-Performance – nicht nach festen ROAS-Zahlen. Chance = Platzierung schlägt den Kampagnenschnitt und hat keine Anpassung. Problem = Anpassung >0% obwohl die Platzierung unter dem Kampagnenschnitt liegt.">i</span></div>
+            <div id="baAccountInfo" style="font-size:12px;color:var(--text-secondary);margin-bottom:8px"></div>
             <div style="display:flex;gap:14px;margin-bottom:12px;align-items:center;flex-wrap:wrap;font-size:12px;">
-                <label>Schwach: ROAS &lt; <input type="number" id="baBadRoas" value="1.0" step="0.1" min="0" style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"></label>
-                <label>Stark (Chance): ROAS ≥ <input type="number" id="baGoodRoas" value="2.0" step="0.1" min="0" style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"></label>
+                <label>Mind. Abweichung vom Kampagnenschnitt: ±<input type="number" id="baMargin" value="20" step="5" min="0" style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"> %</label>
                 <label>Min. Spend <input type="number" id="baMinSpend" value="10" step="1" min="0" style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;" oninput="buildSectionBidAdj()"></label>
             </div>
             <div id="baProblemWrap" style="margin-bottom:18px">
@@ -1058,43 +1058,60 @@ function buildSectionBidAdj() {
     if (baRows.length === 0) { section.classList.add('hidden'); return; }
     section.classList.remove('hidden');
 
-    const badRoas  = parseFloat(document.getElementById('baBadRoas').value)  || 1.0;
-    const goodRoas = parseFloat(document.getElementById('baGoodRoas').value) || 2.0;
+    const margin   = (parseFloat(document.getElementById('baMargin').value)   || 0) / 100; // z.B. 0.20
     const minSpend = parseFloat(document.getElementById('baMinSpend').value) || 0;
 
-    // Kampagnen-Gesamt (über alle Platzierungen) für Kontext
+    // Benchmarks – alle auf gleicher Basis (Gebotsanpassung-Zeilen), damit
+    // Platzierung/Kampagne/Account fair vergleichbar sind.
+    let accSpend = 0, accSales = 0;
     const campAgg = {};
     baRows.forEach(r => {
         const c = r.campaign || '(ohne Kampagne)';
         if (!campAgg[c]) campAgg[c] = { spend: 0, sales: 0 };
         campAgg[c].spend += r.spend; campAgg[c].sales += r.sales;
+        accSpend += r.spend; accSales += r.sales;
     });
+    const accountRoas = accSpend > 0 ? accSales / accSpend : 0;
     const campRoas = c => (campAgg[c] && campAgg[c].spend > 0) ? campAgg[c].sales / campAgg[c].spend : 0;
+
+    document.getElementById('baAccountInfo').innerHTML =
+        'Benchmark: <strong>Account-ROAS ' + accountRoas.toFixed(2) + '</strong> · Bewertung ist relativ zum jeweiligen Kampagnenschnitt (nicht nach festen ROAS-Zahlen).';
 
     const problems = [], chances = [];
     baRows.forEach(r => {
+        if (r.spend < minSpend && r.clicks < 10) return;
         const c = r.campaign || '(ohne Kampagne)';
         const roas = r.spend > 0 ? r.sales / r.spend : 0;
-        if (r.spend < minSpend && r.clicks < 10) return;
-        if (r.percentage > 0 && roas < badRoas) {
-            problems.push({ c, p: prettyPlacement(r.placement), pct: r.percentage, roas, croas: campRoas(c), spend: r.spend });
-        } else if (r.percentage === 0 && roas >= goodRoas && r.spend >= Math.max(minSpend, 1)) {
-            chances.push({ c, p: prettyPlacement(r.placement), pct: r.percentage, roas, croas: campRoas(c), spend: r.spend });
+        const cr = campRoas(c);
+        if (cr <= 0) return;
+        const rel = roas / cr - 1; // +0.30 = 30% über Kampagnenschnitt
+        const rec = { c, p: prettyPlacement(r.placement), pct: r.percentage, roas, croas: cr, rel, spend: r.spend,
+                      aboveAcc: roas >= accountRoas };
+        // Problem: Anpassung erhöht, aber Platzierung liegt unter dem Kampagnenschnitt
+        if (r.percentage > 0 && rel < -margin) {
+            problems.push(rec);
+        // Chance: keine Anpassung, aber Platzierung schlägt den Kampagnenschnitt deutlich
+        } else if (r.percentage === 0 && rel > margin) {
+            chances.push(rec);
         }
     });
-    problems.sort((a, b) => b.spend - a.spend);
-    chances.sort((a, b) => b.spend - a.spend);
+    // Sortierung: stärkste Abweichung zuerst (relevanteste Fälle oben)
+    problems.sort((a, b) => a.rel - b.rel);
+    chances.sort((a, b) => b.rel - a.rel);
 
-    const headHtml = '<tr><th style="width:34%">Kampagne</th><th>Platzierung</th><th class="num">Anpassung</th><th class="num">ROAS Platz.</th><th class="num">ROAS Kamp.</th><th class="num">Spend</th></tr>';
+    const headHtml = '<tr><th style="width:30%">Kampagne</th><th>Platzierung</th><th class="num">Anpassung</th><th class="num">ROAS Platz.</th><th class="num">ROAS Kamp.</th><th class="num">vs Kamp.</th><th class="num">Spend</th></tr>';
     function rowHtml(x, isProblem) {
         const pctTxt = (x.pct > 0 ? '+' : '') + x.pct.toFixed(0) + '%';
-        const roasCol = isProblem ? 'color:var(--error,#dc2626);font-weight:700' : 'color:var(--success,#16a34a);font-weight:700';
+        const relTxt = (x.rel > 0 ? '+' : '') + (x.rel * 100).toFixed(0) + '%';
+        const relCol = isProblem ? 'color:var(--error,#dc2626);font-weight:700' : 'color:var(--success,#16a34a);font-weight:700';
+        const accTag = x.aboveAcc ? '' : ' <span title="unter Account-Schnitt" style="color:var(--text-muted);font-size:10px">⌄Acc</span>';
         return '<tr>' +
-            '<td title="' + escapeHtml(x.c) + '">' + escapeHtml(x.c.length > 46 ? x.c.slice(0, 46) + '…' : x.c) + '</td>' +
-            '<td>' + escapeHtml(x.p) + '</td>' +
+            '<td title="' + escapeHtml(x.c) + '">' + escapeHtml(x.c.length > 42 ? x.c.slice(0, 42) + '…' : x.c) + '</td>' +
+            '<td>' + escapeHtml(x.p) + accTag + '</td>' +
             '<td class="num"' + (isProblem ? ' style="color:var(--error,#dc2626);font-weight:700"' : '') + '>' + pctTxt + '</td>' +
-            '<td class="num" style="' + roasCol + '">' + x.roas.toFixed(2) + '</td>' +
+            '<td class="num">' + x.roas.toFixed(2) + '</td>' +
             '<td class="num">' + x.croas.toFixed(2) + '</td>' +
+            '<td class="num" style="' + relCol + '">' + relTxt + '</td>' +
             '<td class="num">' + formatCurrency(x.spend) + '</td>' +
             '</tr>';
     }
@@ -1102,10 +1119,10 @@ function buildSectionBidAdj() {
     document.getElementById('baChanceHead').innerHTML = headHtml;
     document.getElementById('baProblemBody').innerHTML = problems.length
         ? problems.map(x => rowHtml(x, true)).join('')
-        : '<tr><td colspan="6" style="color:var(--text-secondary);padding:10px">Keine — keine Anpassung pusht eine schwache Platzierung. 👍</td></tr>';
+        : '<tr><td colspan="7" style="color:var(--text-secondary);padding:10px">Keine — keine Anpassung pusht eine unterdurchschnittliche Platzierung. 👍</td></tr>';
     document.getElementById('baChanceBody').innerHTML = chances.length
         ? chances.map(x => rowHtml(x, false)).join('')
-        : '<tr><td colspan="6" style="color:var(--text-secondary);padding:10px">Keine starken Platzierungen ohne Anpassung gefunden.</td></tr>';
+        : '<tr><td colspan="7" style="color:var(--text-secondary);padding:10px">Keine überdurchschnittlichen Platzierungen ohne Anpassung gefunden.</td></tr>';
     document.getElementById('baProblemCount').textContent = '(' + problems.length + ')';
     document.getElementById('baChanceCount').textContent = '(' + chances.length + ')';
 }
