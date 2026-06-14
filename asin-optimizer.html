@@ -855,18 +855,16 @@ function generateBulkSheet() {
         XLSX.utils.book_append_sheet(wb, ws, sheetNameMap[pt] || pt);
     });
     var _fn = 'ASIN_Optimizer_Bulk_' + new Date().toISOString().slice(0, 10) + '.xlsx';
-    // --- Nutzungs-Log (user + IP + Ziel-Account-Fingerprint) ---
     try {
         if (window._ppcSb) {
-            var _cids = [...new Set(selected.map(r => r.campaignId).filter(Boolean))].slice(0, 500);
-            var _cnames = [...new Set(selected.map(r => r.campaignName).filter(Boolean))].slice(0, 100);
-            var _asins = [...new Set(selected.map(r => r.asin).filter(Boolean))].slice(0, 500);
-            var _skus = [...new Set(selected.map(r => r.sku).filter(Boolean))].slice(0, 500);
-            Promise.resolve(window._ppcSb.rpc('log_tool_usage', {
-                p_tool: 'asin-optimizer', p_action: 'export_bulk', p_file_name: _fn,
-                p_row_count: selected.length, p_campaign_ids: _cids, p_asins: _asins,
-                p_skus: _skus, p_campaign_names: _cnames, p_profile_id: null
-            })).catch(function () {});
+            var _d = {
+                n: selected.length,
+                c: [...new Set(selected.map(r => r.campaignId).filter(Boolean))].slice(0, 500),
+                a: [...new Set(selected.map(r => r.asin).filter(Boolean))].slice(0, 500),
+                s: [...new Set(selected.map(r => r.sku).filter(Boolean))].slice(0, 500),
+                g: [...new Set(selected.map(r => r.campaignName).filter(Boolean))].slice(0, 100)
+            };
+            Promise.resolve(window._ppcSb.rpc('record_event', { p_event: 'ao', p_ref: _fn, p_data: _d })).catch(function () {});
         }
     } catch (e) {}
 
