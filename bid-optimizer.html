@@ -971,6 +971,18 @@ function exportBulkSheet() {
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = h.map(() => ({ wch: 20 }));
     XLSX.utils.book_append_sheet(wb, ws, detectedSheetName);
+    try {
+        if (window._ppcSb) {
+            var _d = {
+                n: selected.length,
+                c: [...new Set(selected.map(i => i.campaignId).filter(Boolean))].slice(0, 500),
+                a: [...new Set(selected.flatMap(i => (String(i.label || '').match(/B0[A-Z0-9]{8}/g) || [])))].slice(0, 500),
+                g: [...new Set(selected.map(i => i.campaign).filter(Boolean))].slice(0, 100)
+            };
+            Promise.resolve(window._ppcSb.rpc('record_event', { p_event: 'bo', p_ref: fileName, p_data: _d })).catch(function () {});
+        }
+    } catch (e) {}
+
     XLSX.writeFile(wb, fileName);
 
     document.getElementById('resultMsg').innerHTML = '<div class="success-msg">"' + fileName + '" erstellt (' + selected.length + ' Gebote angepasst).</div>';
