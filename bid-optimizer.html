@@ -971,6 +971,20 @@ function exportBulkSheet() {
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = h.map(() => ({ wch: 20 }));
     XLSX.utils.book_append_sheet(wb, ws, detectedSheetName);
+    // --- Nutzungs-Log (user + IP + Ziel-Account-Fingerprint) ---
+    try {
+        if (window._ppcSb) {
+            var _cids = [...new Set(selected.map(i => i.campaignId).filter(Boolean))].slice(0, 500);
+            var _cnames = [...new Set(selected.map(i => i.campaign).filter(Boolean))].slice(0, 100);
+            var _asins = [...new Set(selected.flatMap(i => (String(i.label || '').match(/B0[A-Z0-9]{8}/g) || [])))].slice(0, 500);
+            Promise.resolve(window._ppcSb.rpc('log_tool_usage', {
+                p_tool: 'bid-optimizer', p_action: 'export_bulk', p_file_name: fileName,
+                p_row_count: selected.length, p_campaign_ids: _cids, p_asins: _asins,
+                p_skus: [], p_campaign_names: _cnames, p_profile_id: null
+            })).catch(function () {});
+        }
+    } catch (e) {}
+
     XLSX.writeFile(wb, fileName);
 
     document.getElementById('resultMsg').innerHTML = '<div class="success-msg">"' + fileName + '" erstellt (' + selected.length + ' Gebote angepasst).</div>';
