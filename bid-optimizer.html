@@ -185,12 +185,40 @@
         </div>
         <div id="fileInfoContainer"></div>
         <div class="msg-container" id="uploadMsg"></div>
+
+        <div style="margin-top:18px;padding-top:18px;border-top:1px dashed var(--border);">
+            <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Optional: Impression-Share-Bericht <span class="tooltip-icon" data-tip="Amazon „Sponsored Products – Impression Share des Suchbegriffs“-Bericht. Wird über das auslösende Keyword (Spalte „Ausrichtung“) + Kampagne + Anzeigengruppe mit dem Bulk Sheet verknüpft. Dann werden Gebote nur dort gesenkt, wo du laut Impression Share überbelichtet bist.">?</span></div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">Lädst du ihn dazu, kannst du Gebote gezielt nur bei hohem Impression Share senken (genau die „Optimierung“-Fälle).</div>
+            <div class="upload-zone" id="isUploadZone" onclick="document.getElementById('isFileInput').click()">
+                <div class="icon">&#128202;</div>
+                <div class="label">Impression-Share-Bericht (optional)</div>
+                <div class="hint">CSV/Excel · „Suchbegriff des Kunden“, „Impression Share“, „Ausrichtung“</div>
+                <input type="file" id="isFileInput" accept=".csv,.xlsx,.xls,.tsv">
+            </div>
+            <div id="isFileInfoContainer"></div>
+            <div class="msg-container" id="isUploadMsg"></div>
+        </div>
     </div>
 
     <!-- STEP 2 -->
     <div class="card hidden" id="stepTargets">
         <div class="card-title"><span class="step">2</span> ROAS-Korridore definieren</div>
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Definiere ROAS-Bereiche und die jeweilige Gebots-Aktion. Das Tool passt die Gebote entsprechend an.</p>
+
+        <div id="isSettings" class="hidden" style="margin-bottom:16px;padding:12px 14px;background:rgba(229,131,42,0.08);border:1px solid rgba(229,131,42,0.35);border-radius:8px;">
+            <div style="font-size:13px;font-weight:600;margin-bottom:8px;">&#128202; Impression-Share-Steuerung aktiv</div>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-bottom:6px;cursor:pointer;">
+                <input type="checkbox" id="isGateActive" checked style="width:14px;height:14px;accent-color:var(--accent);">
+                Gebote nur senken, wenn Impression Share &ge;
+                <input type="number" id="isMinShare" value="20" step="1" min="0" max="100" style="width:64px;padding:4px 6px;"> %
+                <span class="tooltip-icon" data-tip="Eine Senkung (Korridor, Pause oder „keine Klicks“) wird nur angewendet, wenn das auslösende Keyword laut IS-Bericht mindestens diesen Impression Share hat. Sonst bleibt das Gebot unverändert.">?</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                <input type="checkbox" id="isOnlyMatched" style="width:14px;height:14px;accent-color:var(--accent);">
+                Nur Keywords/Targets bearbeiten, die im IS-Bericht vorkommen
+                <span class="tooltip-icon" data-tip="Wenn aktiv, werden alle Keywords ohne Treffer im IS-Bericht komplett unverändert gelassen.">?</span>
+            </label>
+        </div>
 
         <div class="corridor-list" id="corridorList"></div>
         <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 14px;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.3);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--text-secondary);line-height:1.5;">
@@ -635,6 +663,178 @@ function clearUpload() {
     fileInput.value = '';
 }
 
+// ============================================================
+//  Impression-Share-Bericht (optional)
+//  Verknüpft den Amazon "Impression Share des Suchbegriffs"-Bericht
+//  über das auslösende Keyword (Spalte "Ausrichtung") + Kampagne +
+//  Anzeigengruppe mit den Keyword/Target-Zeilen aus dem Bulk Sheet.
+//  Parsing-Aliase 1:1 aus dem Impression-Share-Tool übernommen.
+// ============================================================
+const IS_COL_ALIASES = {
+    searchterm:      ['suchbegriff des kunden', 'customer search term'],
+    rank:            ['impression-rang des suchbegriffs', 'impression rank of the search term', 'impression rank'],
+    impressionShare: ['impression share für den suchbegriff', 'impression share for the search term', 'impression share'],
+    campaign:        ['kampagnen-name', 'campaign name'],
+    adgroup:         ['anzeigengruppenname', 'ad group name'],
+    clicks:          ['klicks', 'clicks'],
+    impressions:     ['impressionen', 'impressions'],
+    spend:           ['ausgaben', 'spend'],
+    orders:          ['gesamtaufträge in 7 tagen (anzahl)', 'gesamtauftr', 'total orders', '7 day total orders'],
+    sales:           ['gesamtverkäufe in 7 tagen', 'gesamtverkäufe', 'total sales', '7 day total sales'],
+    matchtype:       ['übereinstimmungstyp', 'match type'],
+    targeting:       ['ausrichtung', 'targeting']
+};
+
+let isReportLoaded = false;
+let isAggStrict = {};   // targeting|campaign|adgroup|matchtype -> aggregate
+let isAggLoose  = {};   // targeting|campaign|adgroup           -> aggregate
+let isRowCount  = 0;
+
+function isFindColIdx(headers, key) {
+    const aliases = IS_COL_ALIASES[key] || [];
+    const lower = headers.map(h => String(h).toLowerCase().trim());
+    for (const a of aliases) { const i = lower.findIndex(h => h.includes(a)); if (i !== -1) return i; }
+    return -1;
+}
+function isParsePercent(v) {
+    if (v == null || v === '') return 0;
+    return parseFloat(String(v).replace('%', '').replace(',', '.').trim()) || 0;
+}
+function isNorm(s) { return String(s == null ? '' : s).toLowerCase().trim().replace(/\s+/g, ' '); }
+function isNormMatch(m) {
+    const l = isNorm(m);
+    if (l.includes('exact') || l.includes('genau') || l.includes('exakt')) return 'exact';
+    if (l.includes('phrase') || l.includes('wortgruppe')) return 'phrase';
+    if (l.includes('broad') || l.includes('breit') || l.includes('weitgehend')) return 'broad';
+    return l;
+}
+function isKeyStrict(targ, camp, ag, match) { return isNorm(targ) + '|' + isNorm(camp) + '|' + isNorm(ag) + '|' + isNormMatch(match); }
+function isKeyLoose(targ, camp, ag) { return isNorm(targ) + '|' + isNorm(camp) + '|' + isNorm(ag); }
+
+function isAddRow(map, key, share, impr, spend, sales, orders, clicks) {
+    let a = map[key];
+    if (!a) { a = { isWsum: 0, impr: 0, spend: 0, sales: 0, orders: 0, clicks: 0, n: 0, shareSum: 0 }; map[key] = a; }
+    a.isWsum += share * (impr || 0);
+    a.shareSum += share; a.n++;
+    a.impr += (impr || 0); a.spend += spend; a.sales += sales; a.orders += orders; a.clicks += clicks;
+}
+
+// Returns: number of processed rows, 0 if none, or -1 if essential columns missing
+function isProcessRows(rows) {
+    if (!rows || rows.length < 2) return 0;
+    let headerIdx = -1;
+    for (let i = 0; i < Math.min(rows.length, 8); i++) {
+        const row = rows[i].map(c => String(c).toLowerCase());
+        if (row.some(c => c.includes('suchbegriff') || c.includes('search term') || c.includes('impression share'))) { headerIdx = i; break; }
+    }
+    if (headerIdx === -1) return 0;
+    const headers = rows[headerIdx].map(c => String(c));
+    const cm = {};
+    for (const key of Object.keys(IS_COL_ALIASES)) cm[key] = isFindColIdx(headers, key);
+    if (cm.searchterm === -1 || cm.impressionShare === -1 || cm.targeting === -1) return -1;
+    let count = 0;
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || r.length < 3) continue;
+        const targeting = cm.targeting !== -1 ? String(r[cm.targeting] || '').trim() : '';
+        if (!targeting) continue;
+        const campaign  = cm.campaign  !== -1 ? String(r[cm.campaign]  || '').trim() : '';
+        const adgroup   = cm.adgroup   !== -1 ? String(r[cm.adgroup]   || '').trim() : '';
+        const matchtype = cm.matchtype !== -1 ? String(r[cm.matchtype] || '').trim() : '';
+        const share  = isParsePercent(r[cm.impressionShare]);
+        const impr   = cm.impressions !== -1 ? parseNum(r[cm.impressions]) : 0;
+        const spend  = cm.spend  !== -1 ? parseNum(r[cm.spend])  : 0;
+        const sales  = cm.sales  !== -1 ? parseNum(r[cm.sales])  : 0;
+        const orders = cm.orders !== -1 ? parseNum(r[cm.orders]) : 0;
+        const clicks = cm.clicks !== -1 ? parseNum(r[cm.clicks]) : 0;
+        isAddRow(isAggStrict, isKeyStrict(targeting, campaign, adgroup, matchtype), share, impr, spend, sales, orders, clicks);
+        isAddRow(isAggLoose,  isKeyLoose(targeting, campaign, adgroup), share, impr, spend, sales, orders, clicks);
+        count++;
+    }
+    return count;
+}
+
+// Look up the impression-share aggregate for a bulk-sheet item.
+// Tries the strict key (incl. match type) first, then the looser key.
+function isLookup(item) {
+    if (!isReportLoaded) return null;
+    const a = isAggStrict[isKeyStrict(item.label, item.campaign, item.adgroup, item.matchtype)]
+           || isAggLoose[isKeyLoose(item.label, item.campaign, item.adgroup)];
+    if (!a) return null;
+    const is = a.impr > 0 ? a.isWsum / a.impr : (a.n > 0 ? a.shareSum / a.n : 0);
+    return { is: is, impr: a.impr, spend: a.spend, sales: a.sales, orders: a.orders, clicks: a.clicks };
+}
+
+// --- IS upload wiring ---
+const isUploadZone = document.getElementById('isUploadZone');
+const isFileInput  = document.getElementById('isFileInput');
+if (isUploadZone && isFileInput) {
+    isUploadZone.addEventListener('dragover', e => { e.preventDefault(); isUploadZone.classList.add('drag-over'); });
+    isUploadZone.addEventListener('dragleave', () => isUploadZone.classList.remove('drag-over'));
+    isUploadZone.addEventListener('drop', e => { e.preventDefault(); isUploadZone.classList.remove('drag-over'); if (e.dataTransfer.files[0]) handleISUpload(e.dataTransfer.files[0]); });
+    isFileInput.addEventListener('change', e => { if (e.target.files[0]) handleISUpload(e.target.files[0]); });
+}
+
+function handleISUpload(file) {
+    const msgEl = document.getElementById('isUploadMsg');
+    msgEl.innerHTML = '';
+    isAggStrict = {}; isAggLoose = {}; isRowCount = 0; isReportLoaded = false;
+
+    function done(res) {
+        if (res === -1) { msgEl.innerHTML = '<div class="error-msg">Pflichtspalten nicht gefunden (Suchbegriff des Kunden / Impression Share / Ausrichtung). Bitte den „Impression Share des Suchbegriffs“-Bericht hochladen.</div>'; return; }
+        if (!res) { msgEl.innerHTML = '<div class="error-msg">Keine verwertbaren Zeilen im IS-Bericht gefunden.</div>'; return; }
+        isRowCount = res;
+        finishISUpload(file);
+    }
+
+    if (file.name.match(/\.(xlsx|xls)$/i)) {
+        const reader = new FileReader();
+        reader.onload = evt => {
+            const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+            let total = 0, sawCols = false, missingCols = false;
+            wb.SheetNames.forEach(sn => {
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+                const c = isProcessRows(rows);
+                if (c === -1) { missingCols = true; return; }
+                if (c > 0) { total += c; sawCols = true; }
+            });
+            done(sawCols ? total : (missingCols ? -1 : 0));
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        const reader = new FileReader();
+        reader.onload = evt => {
+            const text = evt.target.result;
+            const sep = text.includes('\t') ? '\t' : (text.indexOf(';') !== -1 && text.indexOf(',') === -1 ? ';' : ',');
+            const rows = text.split(/\r?\n/).filter(l => l.trim()).map(l => {
+                const res = []; let cur = '', q = false;
+                for (let i = 0; i < l.length; i++) { if (l[i] === '"') { q = !q; continue; } if (l[i] === sep && !q) { res.push(cur.trim()); cur = ''; continue; } cur += l[i]; }
+                res.push(cur.trim()); return res;
+            });
+            done(isProcessRows(rows));
+        };
+        reader.readAsText(file);
+    }
+}
+
+function finishISUpload(file) {
+    isReportLoaded = true;
+    const strictKeys = Object.keys(isAggStrict).length;
+    document.getElementById('isFileInfoContainer').innerHTML = '<div class="file-info"><span class="name">' + escapeHtml(file.name) + '</span><span class="meta">' + isRowCount + ' Suchbegriff-Zeilen · ' + strictKeys + ' Keywords</span><span class="remove" onclick="clearISUpload()">&times;</span></div>';
+    const isSettings = document.getElementById('isSettings');
+    if (isSettings) isSettings.classList.remove('hidden');
+}
+
+function clearISUpload() {
+    isReportLoaded = false;
+    isAggStrict = {}; isAggLoose = {}; isRowCount = 0;
+    document.getElementById('isFileInfoContainer').innerHTML = '';
+    document.getElementById('isUploadMsg').innerHTML = '';
+    if (isFileInput) isFileInput.value = '';
+    const isSettings = document.getElementById('isSettings');
+    if (isSettings) isSettings.classList.add('hidden');
+}
+
 // --- Optimization ---
 function optimizeBids() {
     const useMinBid = document.getElementById('useMinBid').checked;
@@ -643,6 +843,12 @@ function optimizeBids() {
     const maxBid = useMaxBid ? (parseFloat(document.getElementById('maxBid').value) || Infinity) : Infinity;
     const minClicks = parseInt(document.getElementById('minClicks').value) || 0;
     const noClicksAction = document.getElementById('noClicksAction').value;
+
+    // Impression-Share-Steuerung (nur wenn IS-Bericht geladen)
+    const isGateActive  = isReportLoaded && document.getElementById('isGateActive') && document.getElementById('isGateActive').checked;
+    const isOnlyMatched = isReportLoaded && document.getElementById('isOnlyMatched') && document.getElementById('isOnlyMatched').checked;
+    const isMinShare    = parseFloat((document.getElementById('isMinShare') || {}).value) || 20;
+    window._isMin = isMinShare;
 
     // Parse exclusions
     const excludeKwRaw = document.getElementById('excludeKeywords').value.trim();
@@ -654,6 +860,9 @@ function optimizeBids() {
         let newBid = item.currentBid;
         let reason = '';
 
+        // Impression-Share-Daten für dieses Keyword/Target (oder null)
+        const itemIS = isLookup(item);
+
         // Check exclusions
         const kwLower = item.label.toLowerCase();
         const campLower = item.campaign.toLowerCase();
@@ -661,6 +870,8 @@ function optimizeBids() {
 
         if (isExcluded) {
             reason = 'Ausgeschlossen';
+        } else if (isOnlyMatched && !itemIS) {
+            reason = 'Nicht im IS-Bericht';
         } else if (item.clicks === 0) {
             switch (noClicksAction) {
                 case 'reduce20': newBid = item.currentBid * 0.8; reason = 'Keine Klicks (−20%)'; break;
@@ -709,6 +920,19 @@ function optimizeBids() {
             }
         }
 
+        // IS-Gate: Senkungen (Korridor, Pause, "keine Klicks") nur dort zulassen,
+        // wo das auslösende Keyword laut IS-Bericht überbelichtet ist.
+        if (isGateActive && !isExcluded) {
+            const wantsReduction = reason.indexOf('Pausiert') !== -1 || newBid < item.currentBid - 1e-9;
+            const overExposed = itemIS && itemIS.is >= isMinShare;
+            if (wantsReduction && !overExposed) {
+                newBid = item.currentBid;
+                reason = 'IS ' + (itemIS ? Math.round(itemIS.is) + '%' : 'k.A.') + ' < ' + isMinShare + '% → keine Senkung';
+            } else if (wantsReduction && overExposed) {
+                reason += ' · IS ' + Math.round(itemIS.is) + '%';
+            }
+        }
+
         // Global clamp – nur wenn aktiviert
         newBid = Math.round(newBid * 100) / 100;
         if (useMaxBid && maxBid > 0) newBid = Math.min(maxBid, newBid);
@@ -721,8 +945,19 @@ function optimizeBids() {
         const isPaused = reason.includes('Pausiert');
         const direction = isExcluded ? 'same' : isPaused ? 'pause' : (Math.abs(changePct) < 1 ? 'same' : (change > 0 ? 'up' : 'down'));
 
-        return { ...item, newBid, change, changePct, direction, reason, excluded: isExcluded, paused: isPaused };
+        return { ...item, newBid, change, changePct, direction, reason, excluded: isExcluded, paused: isPaused, is: itemIS ? itemIS.is : null };
     });
+
+    // Hinweis zur IS-Verknüpfung
+    const resultMsgEl = document.getElementById('resultMsg');
+    if (resultMsgEl) {
+        if (isReportLoaded) {
+            const matched = optimizedItems.filter(it => it.is != null).length;
+            resultMsgEl.innerHTML = '<div style="padding:10px 14px;background:rgba(229,131,42,0.08);border:1px solid rgba(229,131,42,0.35);border-radius:8px;font-size:12px;color:var(--text-secondary);">&#128202; Impression-Share-Bericht verknüpft: <strong>' + matched + ' von ' + optimizedItems.length + '</strong> Keywords/Targets im IS-Bericht gefunden' + (isGateActive ? ' · Senkungen nur bei IS &ge; ' + isMinShare + '%' : '') + '.</div>';
+        } else {
+            resultMsgEl.innerHTML = '';
+        }
+    }
 
     // Select all with changes by default
     selectedItems.clear();
@@ -834,6 +1069,7 @@ function renderTable() {
         { id: 'changePct', label: 'Änderung', sort: true, num: true },
         { id: 'acos', label: 'ACoS', sort: true, num: true },
         { id: 'roas', label: 'ROAS', sort: true, num: true },
+        ...(isReportLoaded ? [{ id: 'is', label: 'Imp. Share', sort: true, num: true }] : []),
         { id: 'orders', label: 'Orders', sort: true, num: true },
         { id: 'clicks', label: 'Klicks', sort: true, num: true },
         { id: 'spend', label: 'Spend', sort: true, num: true },
@@ -878,6 +1114,7 @@ function renderTable() {
             '<td class="num"><span class="bid-change ' + dirClass + '">' + arrow + changeTxt + '</span></td>' +
             '<td class="num" style="color:' + acosColor + '">' + acosDisplay + '</td>' +
             '<td class="num" style="color:' + roasColor + '">' + roasDisplay + '</td>' +
+            (isReportLoaded ? ('<td class="num">' + (row.is == null ? '<span style="color:var(--text-secondary)">–</span>' : '<span style="color:' + (row.is >= (window._isMin || 20) ? '#e5832a' : 'var(--text-secondary)') + '">' + Math.round(row.is) + '%</span>') + '</td>') : '') +
             '<td class="num">' + row.orders + '</td>' +
             '<td class="num">' + row.clicks.toLocaleString('de-DE') + '</td>' +
             '<td class="num">' + formatCurrency(row.spend) + '</td>' +
