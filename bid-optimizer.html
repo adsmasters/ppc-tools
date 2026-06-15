@@ -935,7 +935,15 @@ function optimizeBids() {
 
         // Global clamp – nur wenn aktiviert
         newBid = Math.round(newBid * 100) / 100;
-        if (useMaxBid && maxBid > 0) newBid = Math.min(maxBid, newBid);
+        // Max-Gebot deckelt nur nach OBEN: ein Keyword, das nicht aktiv gesenkt wurde
+        // (beibehalten / zu wenig Daten / ausgeschlossen / IS-geblockt), wird durch den
+        // Deckel NICHT künstlich reduziert. Senkungen und Erhöhungen werden weiterhin gedeckelt.
+        // Symmetrisch zum Min-Gebot, das ein Keyword nie über sein aktuelles Gebot hebt.
+        if (useMaxBid && maxBid > 0) {
+            const intendedReduction = newBid < item.currentBid - 1e-9;
+            const ceiling = intendedReduction ? maxBid : Math.max(maxBid, item.currentBid);
+            newBid = Math.min(newBid, ceiling);
+        }
         if (useMinBid && minBid > 0 && newBid < minBid) {
             newBid = Math.min(minBid, item.currentBid);
         }
