@@ -371,7 +371,7 @@ fileInput.addEventListener('change', e => { if (e.target.files[0]) handleUpload(
 
 function handleUpload(file) {
     const msgEl = document.getElementById('uploadMsg');
-    msgEl.innerHTML = '';
+    msgEl.innerHTML = '<div style="padding:8px 12px;background:var(--bg-hover);border-radius:6px;color:var(--text-secondary);font-size:13px;">⏳ Bulk Sheet wird verarbeitet … bei sehr großen Dateien bitte kurz Geduld (der Tab kann dabei einen Moment „hängen").</div>';
     allRows = [];
 
     function processSheet(rows, sheetName) {
@@ -437,26 +437,31 @@ function handleUpload(file) {
     if (file.name.match(/\.(xlsx|xls)$/i)) {
         const reader = new FileReader();
         reader.onload = evt => {
-            const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
-            console.log('[Audit] Sheets found:', wb.SheetNames.join(', '));
-            wb.SheetNames.forEach(sn => {
-                const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
-                processSheet(rows, sn);
-            });
-            finishUpload(file);
+            // Parsen verzögert starten, damit der Browser die Ladeanzeige zuerst rendert
+            setTimeout(() => {
+                const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array', dense: true });
+                console.log('[Audit] Sheets found:', wb.SheetNames.join(', '));
+                wb.SheetNames.forEach(sn => {
+                    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+                    processSheet(rows, sn);
+                });
+                finishUpload(file);
+            }, 30);
         };
         reader.readAsArrayBuffer(file);
     } else {
         const reader = new FileReader();
         reader.onload = evt => {
-            const sep = evt.target.result.includes('\t') ? '\t' : ',';
-            const rows = evt.target.result.split(/\r?\n/).filter(l => l.trim()).map(l => {
-                const res = []; let cur = '', q = false;
-                for (let i = 0; i < l.length; i++) { if (l[i]==='"'){q=!q;continue;} if (l[i]===sep&&!q){res.push(cur.trim());cur='';continue;} cur+=l[i]; }
-                res.push(cur.trim()); return res;
-            });
-            processSheet(rows, 'CSV');
-            finishUpload(file);
+            setTimeout(() => {
+                const sep = evt.target.result.includes('\t') ? '\t' : ',';
+                const rows = evt.target.result.split(/\r?\n/).filter(l => l.trim()).map(l => {
+                    const res = []; let cur = '', q = false;
+                    for (let i = 0; i < l.length; i++) { if (l[i]==='"'){q=!q;continue;} if (l[i]===sep&&!q){res.push(cur.trim());cur='';continue;} cur+=l[i]; }
+                    res.push(cur.trim()); return res;
+                });
+                processSheet(rows, 'CSV');
+                finishUpload(file);
+            }, 30);
         };
         reader.readAsText(file);
     }
@@ -469,6 +474,7 @@ function finishUpload(file) {
         return;
     }
 
+    msgEl.innerHTML = '';
     const formats = new Set(allRows.filter(r => r.format).map(r => r.format));
     document.getElementById('fileInfoContainer').innerHTML = '<div class="file-info"><span class="name">' + escapeHtml(file.name) + '</span><span class="meta">' + allRows.length + ' Zeilen, Formate: ' + (formats.size > 0 ? [...formats].join(', ') : 'nicht erkannt') + '</span><span class="remove" onclick="clearUpload()">&times;</span></div>';
 
