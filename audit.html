@@ -171,7 +171,7 @@
 
         <!-- Section B: SP Kampagnentyp-Analyse -->
         <div class="card hidden" id="sectionB">
-            <div class="card-title"><span class="section-label">C</span> SP Kampagnentyp-Analyse <span class="tooltip-icon" data-tip="Auto vs. Manuell wird über die Targeting-Typ Spalte erkannt. Innerhalb Manuell: Keyword Targeting vs. Product Targeting basierend auf der Entity.">i</span></div>
+            <div class="card-title"><span class="section-label">C</span> SP Kampagnentyp-Analyse <span class="tooltip-icon" data-tip="Auto vs. Manuell wird über die Targeting-Typ Spalte erkannt. Spend/Klicks aus Kampagnen-Zeilen, Sales/Orders aus Produktanzeige-Zeilen (Gesamtverkäufe, wie Amazon-UI) – so ergibt Auto + Manuell exakt Gesamt SP. Die Keyword-/Product-Targeting-Unterzeilen sind klick-attribuiert (andere, meist niedrigere Metrik) und summieren sich bewusst nicht auf die Manuell-Zeile.">i</span></div>
             <div class="results-container">
                 <table class="results-table" id="campTypeTable">
                     <colgroup><col style="width:22%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:11%"></colgroup>
@@ -698,9 +698,10 @@ function buildSectionB() {
         manualSub[key].clicks += r.clicks;
     });
 
-    // Manuell Sales/Orders = Summe der KW+PT-Unterzeilen (konsistent, keine Diskrepanz)
-    autoManual['Manuell'].sales = manualSub['Keyword Targeting'].sales + manualSub['Product Targeting'].sales;
-    autoManual['Manuell'].orders = manualSub['Keyword Targeting'].orders + manualSub['Product Targeting'].orders;
+    // Manuell Sales/Orders bleiben auf Produktanzeige-Ebene (= Gesamtverkäufe, wie Amazon-UI,
+    // aus Step 2), damit Auto + Manuell exakt der "Gesamt SP"-Zeile entspricht. Die KW/PT-
+    // Unterzeilen zeigen die klick-attribuierten Sales je Targeting-Typ – eine andere (i.d.R.
+    // niedrigere) Metrik, die sich bewusst NICHT auf die Manuell-Zeile aufsummiert.
 
     // Render table
     const head = document.getElementById('campTypeHead');
@@ -731,8 +732,8 @@ function buildSectionB() {
     let html = '';
     html += typeRow('Auto', autoManual['Auto'], false);
     html += typeRow('Manuell', autoManual['Manuell'], false); // immer Kampagnen-Ebene
-    if (manualSub['Keyword Targeting'].keywords > 0) html += typeRow('↳ Keyword Targeting', manualSub['Keyword Targeting'], true);
-    if (manualSub['Product Targeting'].keywords > 0) html += typeRow('↳ Product Targeting', manualSub['Product Targeting'], true);
+    if (manualSub['Keyword Targeting'].keywords > 0) html += typeRow('↳ Keyword Targeting (klick-attribuiert)', manualSub['Keyword Targeting'], true);
+    if (manualSub['Product Targeting'].keywords > 0) html += typeRow('↳ Product Targeting (klick-attribuiert)', manualSub['Product Targeting'], true);
 
     // Gesamt SP: Spend/Clicks aus Kampagnen-Zeilen, Sales/Orders aus Produktanzeige-Zeilen (= Amazon UI)
     const spFormatTotal = getFormatData()['SP'] || { spend: 0, sales: 0, orders: 0, clicks: 0 };
