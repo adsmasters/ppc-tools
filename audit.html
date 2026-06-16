@@ -849,6 +849,7 @@ function buildSectionC() {
         stMapForWasted[key].impressions += r.impressions;
     });
     const allSearchTerms = Object.values(stMapForWasted);
+    const stTotalSpend = allSearchTerms.reduce((s, r) => s + r.spend, 0);
     const wasted = allSearchTerms.filter(s => s.clicks >= wastedClicksMin && s.spend > 0 && (s.sales / s.spend) < wastedRoasThreshold);
     const wastedSpend = wasted.reduce((s, r) => s + r.spend, 0);
 
@@ -871,7 +872,7 @@ function buildSectionC() {
         '<div class="stat-card"><div class="stat-label">Spend</div><div class="stat-value">' + formatCurrency(totalSpend) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">' + salesLabel + salesTip + '</div><div class="stat-value">' + formatCurrency(totalSales) + '</div></div>' +
         '<div class="stat-card"><div class="stat-label">ROAS</div><div class="stat-value">' + (totalSpend > 0 ? (totalSales/totalSpend).toFixed(2) : '–') + '</div></div>' +
-        '<div class="stat-card"><div class="stat-label">Wasted Spend (Suchbegriffe, ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + formatCurrency(wastedSpend) + (totalSpend > 0 ? ' <span style="font-size:14px;font-weight:400;opacity:0.85;">(' + (wastedSpend / totalSpend * 100).toFixed(1) + '%)</span>' : '') + '</div></div>' +
+        '<div class="stat-card"><div class="stat-label">Wasted Spend (Suchbegriffe, ROAS&lt;' + wastedRoasThreshold + ', Klicks≥' + wastedClicksMin + ')</div><div class="stat-value" style="color:var(--error)">' + (allSearchTerms.length === 0 ? '<span style="font-size:14px;font-weight:400;color:var(--text-secondary)">keine Suchbegriffsdaten</span>' : formatCurrency(wastedSpend) + (stTotalSpend > 0 ? ' <span style="font-size:14px;font-weight:400;opacity:0.85;">(' + (wastedSpend / stTotalSpend * 100).toFixed(1) + '% des Suchbegriff-Spends)</span>' : '')) + '</div></div>' +
         '</div>' +
         (showAttributionNote ? '<div style="font-size:12px;padding:8px 12px;background:var(--bg-hover);border-radius:6px;margin-bottom:12px;color:var(--text-secondary);">ℹ️ <strong>Warum weichen die Zahlen von Sektion B ab?</strong> Kampagnen-Sales (Sektion B): <strong>' + formatCurrency(spCampSales) + '</strong> · Keyword-attributierte Sales: <strong>' + formatCurrency(totalSales) + '</strong>. Amazon vergibt im 7-Tage-Attributionsfenster denselben Kauf ggf. an mehrere Keywords gleichzeitig – die Keyword-Summe kann daher höher sein. Das ist normales Amazon-Verhalten.</div>' : '');
 
