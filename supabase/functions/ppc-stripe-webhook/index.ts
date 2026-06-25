@@ -109,6 +109,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
 
+// Stripe API 2025+ (clover/basil) removed current_period_start/end from the
+// subscription object and moved them onto each subscription item. Read the
+// legacy top-level field first, then fall back to the item-level field.
+// Returns a unix timestamp (seconds) or null if neither is present.
+function subPeriodEnd(sub: any): number | null {
+  return sub?.current_period_end ?? sub?.items?.data?.[0]?.current_period_end ?? null;
+}
+function subPeriodStart(sub: any): number | null {
+  return sub?.current_period_start ?? sub?.items?.data?.[0]?.current_period_start ?? null;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -165,12 +176,14 @@ Deno.serve(async (req: Request) => {
       });
       const sub = await subRes.json();
 
-      const periodEnd = sub.current_period_end
-        ? new Date(sub.current_period_end * 1000).toISOString()
+      const periodEndUnix = subPeriodEnd(sub);
+      const periodEnd = periodEndUnix
+        ? new Date(periodEndUnix * 1000).toISOString()
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // fallback: +30 days
 
-      const periodStart = sub.current_period_start
-        ? new Date(sub.current_period_start * 1000)
+      const periodStartUnix = subPeriodStart(sub);
+      const periodStart = periodStartUnix
+        ? new Date(periodStartUnix * 1000)
         : new Date();
 
       // Check if this is a returning customer (had subscription before)
@@ -282,11 +295,14 @@ Deno.serve(async (req: Request) => {
       if (!userId) return new Response("ok", { status: 200 });
 
       const status = sub.status === "active" ? "active" : sub.status === "past_due" ? "past_due" : "cancelled";
-      const periodEnd = new Date(sub.current_period_end * 1000);
+      const periodEndUnix = subPeriodEnd(sub);
+      const periodEnd = periodEndUnix ? new Date(periodEndUnix * 1000) : null;
 
       await sb.from("ppc_subscriptions").update({
         status,
-        current_period_end: periodEnd.toISOString(),
+        // Only overwrite the period when Stripe actually sent one, so a missing
+        // value never nulls out a valid date.
+        ...(periodEnd ? { current_period_end: periodEnd.toISOString() } : {}),
         updated_at: new Date().toISOString(),
       }).eq("user_id", userId);
 
@@ -299,7 +315,7 @@ Deno.serve(async (req: Request) => {
         const { data: userRow } = await sb.auth.admin.getUserById(userId);
         const customerEmail = userRow?.user?.email || "";
         const customerName = profile?.company_name || "";
-        const endStr = periodEnd.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+        const endStr = (periodEnd || new Date()).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
         const cancelBody = [
           `Hallo${customerName ? " " + customerName : ""},`,
           ``,
@@ -351,8 +367,9 @@ Deno.serve(async (req: Request) => {
       const { data: userRow } = await sb.auth.admin.getUserById(userId);
       const customerEmail = userRow?.user?.email || "";
       const customerName = profile?.company_name || "";
-      const periodEnd = sub.current_period_end
-        ? new Date(sub.current_period_end * 1000).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+      const periodEndUnix = subPeriodEnd(sub);
+      const periodEnd = periodEndUnix
+        ? new Date(periodEndUnix * 1000).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
         : null;
 
       if (customerEmail) {
