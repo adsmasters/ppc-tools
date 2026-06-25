@@ -415,6 +415,20 @@ Deno.serve(async (req: Request) => {
       const recurringLabel = `Abonnement ${periodStart} – ${periodEnd}`;
       const recurringStart = new Date(invoice.lines?.data?.[0]?.period?.start * 1000);
       const recurringEnd = new Date(invoice.lines?.data?.[0]?.period?.end * 1000);
+
+      // CRITICAL: extend the subscription period on every successful renewal.
+      // Without this, current_period_end stays at the first-cycle value and the
+      // auth-guard locks the (still paying) customer out one cycle after signup.
+      // Done before the LexOffice call so access is restored even if invoicing fails.
+      if (subRowForInvoice?.user_id && !isNaN(recurringEnd.getTime())) {
+        await sb.from("ppc_subscriptions").update({
+          status: "active",
+          current_period_end: recurringEnd.toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq("user_id", subRowForInvoice.user_id);
+        console.log(`[PPC Webhook] Subscription period extended: ${subRowForInvoice.user_id} -> ${recurringEnd.toISOString()}`);
+      }
+
       const recurringLexId = await createLexOfficeInvoice(customerName, customerEmail, recurringLabel, recurringStart, recurringEnd, recurringBillingAddress);
       if (recurringLexId && subRowForInvoice?.user_id) {
         await sb.from("ppc_invoices").insert({
