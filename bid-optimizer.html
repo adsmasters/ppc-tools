@@ -169,9 +169,16 @@
         <h1 class="page-title">Bid Optimizer</h1>
         <p class="page-sub">Optimiere Gebote basierend auf ROAS-Korridoren — Keywords und Product Targeting</p>
     </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+        <span style="font-size:13px;font-weight:600;color:var(--text-secondary);">Werbeart:</span>
+        <div style="display:inline-flex;background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:3px;">
+            <button type="button" id="adType-sp" onclick="setAdType('sp')" style="padding:6px 14px;border:none;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;color:var(--text-secondary);font-weight:500;">Sponsored Products</button>
+            <button type="button" id="adType-sb" onclick="setAdType('sb')" style="padding:6px 14px;border:none;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;color:var(--text-secondary);font-weight:500;">Sponsored Brands <span style="opacity:.7;font-size:10px;">Beta</span></button>
+        </div>
+    </div>
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--warn-bg);border:1px solid var(--warn);border-radius:8px;margin-bottom:20px;font-size:13px;color:var(--warn);">
         <span style="font-size:16px;">&#9888;</span>
-        <span><strong>Aktuell nur Sponsored Products (SP) unterstützt.</strong> Sponsored Brands (SB) und Sponsored Display (SD) Kampagnen werden beim Upload automatisch übersprungen. SB/SD-Unterstützung folgt in Kürze.</span>
+        <span id="adTypeNoteText"></span>
     </div>
 
     <!-- STEP 1 -->
@@ -325,7 +332,7 @@
     <div class="card hidden" id="stepExport">
         <div class="card-title"><span class="step">4</span> Optimiertes Bulk Sheet erstellen</div>
         <div class="btn-row" style="justify-content:flex-start;margin-top:0;">
-            <button class="btn btn-primary" onclick="exportBulkSheet()">Optimiertes Bulk Sheet erstellen</button>
+            <button class="btn btn-primary" onclick="doExport()">Optimiertes Bulk Sheet erstellen</button>
         </div>
         <div style="font-size:12px;color:var(--text-secondary);margin-top:10px;" id="selectedCount">0 Anpassungen ausgewählt</div>
     </div>
@@ -349,6 +356,24 @@ let selectedItems = new Set();
 let campaignTypes = {};
 let campaignBudgets = {};
 let detectedSheetName = 'Sponsored Products Campaigns';
+// --- Ad type (SP default; SB writes only to the "SB Anzeigengruppe Kampagnen" sheet) ---
+let adType = 'sp';
+let sbRawRows = null;                 // full source AOA of the SB ad-group sheet (for schema-identical export)
+let sbSheetName = 'SB Anzeigengruppe Kampagnen';
+function setAdType(t) {
+    adType = t;
+    const sp = document.getElementById('adType-sp'), sb = document.getElementById('adType-sb');
+    [sp, sb].forEach(b => { if (!b) return; b.style.background = 'transparent'; b.style.color = 'var(--text-secondary)'; b.style.fontWeight = '500'; });
+    const active = t === 'sb' ? sb : sp;
+    if (active) { active.style.background = 'var(--accent)'; active.style.color = '#fff'; active.style.fontWeight = '700'; }
+    const note = document.getElementById('adTypeNoteText');
+    if (note) {
+        note.innerHTML = t === 'sb'
+            ? '<strong>Sponsored Brands (Beta).</strong> Es wird ausschließlich das Blatt „SB Anzeigengruppe Kampagnen“ optimiert (Legacy-SB-Blatt bleibt unangetastet). Nur tatsächlich angepasste Keywords landen in der Datei. <strong>Vor dem Einsatz auf echten Kampagnen bitte einen kontrollierten Test-Upload auf 1–2 unkritische Keywords machen.</strong>'
+            : '<strong>Sponsored Products.</strong> SB-/SD-Zeilen werden in diesem Modus übersprungen. Für Sponsored Brands oben umschalten.';
+    }
+    if (typeof clearUpload === 'function') clearUpload();
+}
 let sortCol = 'changePct';
 let sortDir = 'desc';
 let currentPage = 1;
@@ -459,6 +484,7 @@ function parseNum(v) { if (v == null || v === '') return 0; return parseFloat(St
 // --- Column detection ---
 const COL = {
     product: ['product', 'produkt'],
+    operation: ['operation', 'vorgang'],
     campaignId: ['campaign id', 'kampagnen-id'],
     adgroupId: ['ad group id', 'anzeigengruppen-id'],
     keywordId: ['keyword id', 'keyword-id'],
@@ -545,8 +571,9 @@ function handleUpload(file) {
             if (!isKeyword && !isPT) continue;
             if (entity.includes('negat')) continue;
 
-            const product = cm.product !== -1 ? String(r[cm.product] || '').trim() : 'Sponsored Products';
-            if (product && product !== 'Sponsored Products') continue; // SP only
+            const wantProduct = adType === 'sb' ? 'Sponsored Brands' : 'Sponsored Products';
+            const product = cm.product !== -1 ? String(r[cm.product] || '').trim() : wantProduct;
+            if (product && product !== wantProduct) continue; // only the selected ad type
             // Skip non-enabled keywords/targets to avoid accidentally re-enabling on bid update
             const stateRaw = cm.state !== -1 ? String(r[cm.state] || '').toLowerCase().trim() : '';
             if (stateRaw && !(stateRaw.includes('enabled') || stateRaw.includes('aktiviert') || stateRaw.includes('activé') || stateRaw.includes('activado') || stateRaw.includes('attivo'))) continue;
@@ -590,13 +617,27 @@ function handleUpload(file) {
         const reader = new FileReader();
         reader.onload = evt => {
             const wb = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
-            const spSheetNames = ['Sponsored Products-Kampagnen','Sponsored Products Campaigns','Campagnes Sponsored Products','Campagne Sponsored Products','Campañas de Sponsored Products'];
-            const detected = wb.SheetNames.find(sn => spSheetNames.includes(sn));
-            if (detected) detectedSheetName = detected;
-            wb.SheetNames.forEach(sn => {
-                const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+            if (adType === 'sb') {
+                // SB: only the ad-group sheet is read and later written back (schema-identical).
+                sbRawRows = null;
+                const sbName = wb.SheetNames.find(sn => /sb\s*anzeigengruppe|sb\s*ad\s*group/i.test(sn));
+                if (!sbName) {
+                    document.getElementById('uploadMsg').innerHTML = '<div class="error-msg">Kein Blatt „SB Anzeigengruppe Kampagnen“ in der Datei gefunden. Exportiere das Bulk Sheet inklusive dieses Blatts.</div>';
+                    return;
+                }
+                sbSheetName = sbName;
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[sbName], { header: 1, defval: '' });
+                sbRawRows = rows;
                 processSheet(rows);
-            });
+            } else {
+                const spSheetNames = ['Sponsored Products-Kampagnen','Sponsored Products Campaigns','Campagnes Sponsored Products','Campagne Sponsored Products','Campañas de Sponsored Products'];
+                const detected = wb.SheetNames.find(sn => spSheetNames.includes(sn));
+                if (detected) detectedSheetName = detected;
+                wb.SheetNames.forEach(sn => {
+                    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: '' });
+                    processSheet(rows);
+                });
+            }
             finishUpload(file);
         };
         reader.readAsArrayBuffer(file);
@@ -654,6 +695,7 @@ function finishUpload(file) {
 function clearUpload() {
     rawItems = [];
     optimizedItems = [];
+    sbRawRows = null;
     campaignTypes = {};
     campaignBudgets = {};
     document.getElementById('fileInfoContainer').innerHTML = '';
@@ -1173,6 +1215,65 @@ function updateSelectedCount() { document.getElementById('selectedCount').textCo
 // All values in English - Amazon accepts English across all marketplaces
 const EXPORT_HEADERS = ['Product', 'Entity', 'Operation', 'Campaign ID', 'Ad Group ID', 'Portfolio ID', 'Ad ID', 'Keyword ID', 'Product Targeting ID', 'Campaign Name', 'Ad Group Name', 'Start Date', 'End Date', 'Targeting Type', 'State', 'Daily Budget', 'SKU', 'ASIN', 'Ad Group Default Bid', 'Bid', 'Keyword Text', 'Match Type', 'Bidding Strategy', 'Placement', 'Percentage', 'Product Targeting Expression'];
 
+function doExport() { return adType === 'sb' ? exportSBBulkSheet() : exportBulkSheet(); }
+
+// Sponsored Brands export: clone the source "SB Anzeigengruppe Kampagnen" sheet and
+// touch ONLY the actually-adjusted keyword rows (matched by Keyword-ID) — every other
+// cell stays byte-identical, so the file imports back into Amazon unchanged elsewhere.
+function exportSBBulkSheet() {
+    const resultMsg = document.getElementById('resultMsg');
+    if (!sbRawRows || sbRawRows.length < 2) { resultMsg.innerHTML = '<div class="error-msg">Keine SB-Daten geladen.</div>'; return; }
+
+    // Only rows that a corridor actually changed (or paused), and that the user kept selected.
+    const updates = {};
+    optimizedItems.forEach((it, i) => {
+        if (!selectedItems.has(i) || it.excluded) return;
+        const adjusted = it.paused || it.direction === 'up' || it.direction === 'down';
+        if (!adjusted || !it.keywordId) return;
+        updates[String(it.keywordId)] = { bid: it.newBid, paused: it.paused };
+    });
+    const ids = Object.keys(updates);
+    if (!ids.length) { resultMsg.innerHTML = '<div class="error-msg">Keine Anpassungen ausgewählt.</div>'; return; }
+
+    const H = sbRawRows[0].map(c => String(c));
+    const ci = {}; ['entity', 'keywordId', 'operation', 'bid', 'state'].forEach(k => ci[k] = findCol(H, k));
+    if (ci.keywordId === -1 || ci.bid === -1 || ci.operation === -1) {
+        resultMsg.innerHTML = '<div class="error-msg">SB-Blatt: erwartete Spalten (Keyword-ID, Gebot, Operation) nicht gefunden.</div>'; return;
+    }
+
+    const out = [H.slice()];
+    let n = 0;
+    for (let i = 1; i < sbRawRows.length; i++) {
+        const r = sbRawRows[i];
+        const ent = String(r[ci.entity] || '').toLowerCase();
+        if (!ent.includes('keyword') || ent.includes('negat')) continue;
+        const kid = String(r[ci.keywordId] || '');
+        if (!updates[kid]) continue;
+        const nr = r.slice();
+        nr[ci.operation] = 'update';
+        if (updates[kid].paused) { if (ci.state !== -1) nr[ci.state] = 'paused'; }
+        else { nr[ci.bid] = updates[kid].bid; }
+        out.push(nr); n++;
+    }
+
+    const today = new Date();
+    const dateStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const fileName = 'SB-Bid-Optimization ' + dateStr + '.xlsx';
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(out);
+    ws['!cols'] = H.map(() => ({ wch: 18 }));
+    XLSX.utils.book_append_sheet(wb, ws, sbSheetName);
+    try {
+        if (window._ppcSb) {
+            var _d = { n: n, c: [...new Set(optimizedItems.map(i => i.campaignId).filter(Boolean))].slice(0, 500) };
+            Promise.resolve(window._ppcSb.rpc('record_event', { p_event: 'bo_sb', p_ref: fileName, p_data: _d })).catch(function () {});
+        }
+    } catch (e) {}
+    XLSX.writeFile(wb, fileName);
+    resultMsg.innerHTML = '<div class="success-msg">"' + fileName + '" erstellt (' + n + ' SB-Gebote angepasst · nur Blatt „' + sbSheetName + '").</div>';
+    setTimeout(() => { const el = resultMsg.querySelector('.success-msg'); if (el) el.remove(); }, 5000);
+}
+
 function exportBulkSheet() {
     const selected = optimizedItems.filter((_, i) => selectedItems.has(i));
     if (selected.length === 0) { document.getElementById('resultMsg').innerHTML = '<div class="error-msg">Keine Anpassungen ausgewählt.</div>'; return; }
@@ -1237,6 +1338,7 @@ function exportBulkSheet() {
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
+    setAdType('sp');
     renderCorridors();
     ['minBid', 'maxBid', 'minClicks', 'excludeKeywords', 'excludeCampaigns'].forEach(id => {
         const el = document.getElementById(id);
