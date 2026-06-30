@@ -131,6 +131,9 @@
 
         .filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
         .filter-row select { width: auto; min-width: 140px; padding: 6px 10px; font-size: 12px; }
+        .adv-filter { width: 58px; padding: 4px 6px; font-size: 12px; }
+        .adv-filter-label { font-size: 12px; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 4px; }
+        #bulkActionRow { background: var(--bg-hover); padding: 8px 12px; border-radius: 6px; }
 
         @media (max-width: 900px) { .field-row { grid-template-columns: 1fr 1fr; } .corridor-row { grid-template-columns: 60px 16px 60px 1fr 36px; } }
         @media (max-width: 600px) { .topbar { height: auto; padding: 10px 12px; flex-wrap: wrap; gap: 8px; } .main { padding: 16px; } .field-row { grid-template-columns: 1fr; } .corridor-row { grid-template-columns: 1fr; } .btn-row { flex-direction: column; } .btn-row .btn { width: 100%; text-align: center; } }
@@ -302,6 +305,28 @@
             <select id="filterCampaign" onchange="currentPage=1;renderTable()">
                 <option value="">Alle Kampagnen</option>
             </select>
+        </div>
+
+        <div class="filter-row" id="advFilterRow">
+            <span class="adv-filter-label" style="font-weight:600;">Erweiterte Filter:</span>
+            <span class="adv-filter-label">Gebot
+                <input type="text" id="fBidMin" class="adv-filter" placeholder="min" inputmode="decimal" oninput="currentPage=1;renderTable()">–<input type="text" id="fBidMax" class="adv-filter" placeholder="max" inputmode="decimal" oninput="currentPage=1;renderTable()"> €</span>
+            <span class="adv-filter-label" id="fIsWrap">Imp. Share
+                <input type="text" id="fIsMin" class="adv-filter" placeholder="min" inputmode="decimal" oninput="currentPage=1;renderTable()">–<input type="text" id="fIsMax" class="adv-filter" placeholder="max" inputmode="decimal" oninput="currentPage=1;renderTable()"> %</span>
+            <span class="adv-filter-label">ROAS
+                <input type="text" id="fRoasMin" class="adv-filter" placeholder="min" inputmode="decimal" oninput="currentPage=1;renderTable()">–<input type="text" id="fRoasMax" class="adv-filter" placeholder="max" inputmode="decimal" oninput="currentPage=1;renderTable()"></span>
+            <button class="btn-sm" onclick="resetAdvFilters()">Filter zurücksetzen</button>
+        </div>
+
+        <div class="filter-row" id="bulkActionRow">
+            <strong style="font-size:12px;">Bulk-Anpassung der <span id="bulkCount">0</span> gefilterten Zeilen:</strong>
+            <span class="adv-filter-label">festes Gebot
+                <input type="text" id="bulkSetValue" class="adv-filter" placeholder="z.B. 1,30" inputmode="decimal"> €</span>
+            <button class="btn-sm" onclick="bulkSetBid()">auf gefilterte setzen</button>
+            <span class="adv-filter-label" style="color:var(--text-secondary);">oder</span>
+            <span class="adv-filter-label">um
+                <input type="text" id="bulkPctValue" class="adv-filter" placeholder="z.B. -15" inputmode="decimal"> %</span>
+            <button class="btn-sm" onclick="bulkAdjustPct()">prozentual (ggü. Aktuell) anpassen</button>
         </div>
 
         <div class="table-controls">
@@ -1079,11 +1104,23 @@ function renderFilters() {
 }
 
 // --- Table ---
+function parseAdv(id) {
+    const el = document.getElementById(id);
+    if (!el) return null;
+    const s = el.value.trim();
+    if (s === '') return null;
+    const n = parseFloat(s.replace(',', '.'));
+    return isNaN(n) ? null : n;
+}
+
 function getFilteredData() {
     const search = document.getElementById('searchInput').value.toLowerCase().trim();
     const typeFilter = document.getElementById('filterType').value;
     const dirFilter = document.getElementById('filterDirection').value;
     const campFilter = document.getElementById('filterCampaign').value;
+    const bidMin = parseAdv('fBidMin'), bidMax = parseAdv('fBidMax');
+    const isMin = parseAdv('fIsMin'), isMax = parseAdv('fIsMax');
+    const roasMin = parseAdv('fRoasMin'), roasMax = parseAdv('fRoasMax');
 
     return optimizedItems.map((item, idx) => ({ ...item, idx })).filter(item => {
         if (search && !item.label.toLowerCase().includes(search) && !item.campaign.toLowerCase().includes(search)) return false;
@@ -1091,8 +1128,56 @@ function getFilteredData() {
         if (dirFilter === 'changed' && item.direction === 'same') return false;
         else if (dirFilter && dirFilter !== 'changed' && item.direction !== dirFilter) return false;
         if (campFilter && item.campaign !== campFilter) return false;
+        // Erweiterte Filter: Gebot (aktuell), Impression Share, ROAS
+        if (bidMin != null && item.currentBid < bidMin) return false;
+        if (bidMax != null && item.currentBid > bidMax) return false;
+        if (isMin != null && (item.is == null || item.is < isMin)) return false;
+        if (isMax != null && (item.is == null || item.is > isMax)) return false;
+        if (roasMin != null && item.roas < roasMin) return false;
+        if (roasMax != null && item.roas > roasMax) return false;
         return true;
     });
+}
+
+function resetAdvFilters() {
+    ['fBidMin', 'fBidMax', 'fIsMin', 'fIsMax', 'fRoasMin', 'fRoasMax'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    currentPage = 1;
+    renderTable();
+}
+
+// Wendet ein neues Gebot auf alle aktuell gefilterten Zeilen an und markiert sie für den Export.
+function bulkApply(mapFn, label) {
+    const rows = getFilteredData();
+    if (rows.length === 0) { showResultMsg('Keine gefilterten Zeilen vorhanden.', 'error'); return; }
+    rows.forEach(r => {
+        const item = optimizedItems[r.idx];
+        let nb = mapFn(item);
+        nb = Math.round(nb * 100) / 100;
+        if (nb < 0.02) nb = 0.02;
+        item.newBid = nb;
+        applyChange(r.idx);
+        selectedItems.add(r.idx);
+    });
+    renderTable();
+    showResultMsg(rows.length + ' Gebot(e) ' + label + ' und für den Export markiert.', 'success');
+}
+
+function bulkSetBid() {
+    const v = parseAdv('bulkSetValue');
+    if (v == null || v <= 0) { showResultMsg('Bitte ein gültiges festes Gebot eingeben (z.B. 1,30).', 'error'); return; }
+    bulkApply(() => v, 'auf ' + formatCurrency(v) + ' gesetzt');
+}
+
+function bulkAdjustPct() {
+    const p = parseAdv('bulkPctValue');
+    if (p == null) { showResultMsg('Bitte einen Prozentwert eingeben (z.B. -15).', 'error'); return; }
+    bulkApply(item => item.currentBid * (1 + p / 100), 'um ' + (p > 0 ? '+' : '') + p + '% angepasst');
+}
+
+function showResultMsg(text, type) {
+    const cls = type === 'error' ? 'error-msg' : 'success-msg';
+    document.getElementById('resultMsg').innerHTML = '<div class="' + cls + '">' + escapeHtml(text) + '</div>';
+    setTimeout(() => { const el = document.getElementById('resultMsg').querySelector('.' + cls); if (el) el.remove(); }, 4000);
 }
 
 function renderTable() {
@@ -1173,15 +1258,21 @@ function renderTable() {
     }).join('');
 
     document.getElementById('tableCount').textContent = data.length + ' von ' + optimizedItems.length;
+    const bc = document.getElementById('bulkCount'); if (bc) bc.textContent = data.length;
+    const isWrap = document.getElementById('fIsWrap'); if (isWrap) isWrap.style.display = isReportLoaded ? '' : 'none';
     updateSelectedCount();
     renderPagination(totalPages);
 }
 
-function recalcChange(idx) {
+function applyChange(idx) {
     const item = optimizedItems[idx];
     item.change = item.newBid - item.currentBid;
     item.changePct = item.currentBid > 0 ? (item.change / item.currentBid * 100) : 0;
     item.direction = Math.abs(item.changePct) < 1 ? 'same' : (item.change > 0 ? 'up' : 'down');
+}
+
+function recalcChange(idx) {
+    applyChange(idx);
     renderTable();
 }
 
